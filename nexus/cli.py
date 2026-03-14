@@ -7,7 +7,12 @@ import typer
 
 from nexus.activities import create_activity, list_activities, update_activity_status
 from nexus.cycles import create_cycle, list_cycles
-from nexus.documents import create_document, inspect_document, list_documents
+from nexus.documents import (
+    create_document,
+    inspect_document,
+    list_documents,
+    update_document_status,
+)
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.relations import create_relation, list_relations, relation_display_map
 from nexus.workspace import (
@@ -295,6 +300,40 @@ def document_show_command(
         typer.echo(f"Approved: {inspection.approved_at}")
     typer.echo("Preview:")
     typer.echo(inspection.content_preview)
+
+
+@document_app.command("set-status")
+def document_set_status_command(
+    selector: str = typer.Argument(
+        ...,
+        help="Document id or exact title.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Target status: approved or archived, depending on current state.",
+    ),
+) -> None:
+    """Update only the lifecycle status of one document in the current Nexus workspace."""
+
+    record = _run_or_exit(
+        lambda: update_document_status(
+            Path.cwd(),
+            selector=selector,
+            status=status,
+            actor="user",
+            reason="CLI document status update",
+            cli_id="local",
+            allow_title_lookup=True,
+        )
+    )
+
+    typer.echo(f"Document status updated: {record.id}")
+    typer.echo(f"Title: {record.title}")
+    typer.echo(f"Status: {record.status}")
+    typer.echo(f"Version: {record.version}")
+    if record.approved_at:
+        typer.echo(f"Approved: {record.approved_at}")
 
 
 @relation_app.command("create")

@@ -11,7 +11,12 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from nexus.activities import ActivityRecord, get_activity, list_activities, update_activity_status
 from nexus.cockpit import render_cockpit_page
 from nexus.cycles import CycleRecord, get_cycle, list_cycles
-from nexus.documents import DocumentInspection, inspect_document, list_documents
+from nexus.documents import (
+    DocumentInspection,
+    inspect_document,
+    list_documents,
+    update_document_status,
+)
 from nexus.entities import EntityRecord, get_entity, list_entities
 from nexus.relations import RelationRecord, list_relations
 from nexus.workspace import WorkspaceBootstrapError, inspect_workspace
@@ -148,6 +153,33 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
     @app.get(f"{API_PREFIX}/documents/{{document_id}}")
     def document_read(document_id: str) -> dict[str, object]:
         inspection = api_call(lambda: inspect_document(resolve_workspace_root(), selector=document_id))
+        return {"status": "ok", "data": serialize_document_inspection(inspection)}
+
+    @app.patch(f"{API_PREFIX}/documents/{{document_id}}")
+    def document_status_update(
+        document_id: str,
+        payload: dict[str, object] = Body(...),
+    ) -> dict[str, object]:
+        raw_status = payload.get("status")
+        if not isinstance(raw_status, str) or not raw_status.strip():
+            raise NexusApiException(
+                status_code=400,
+                message="Field 'status' is required for document updates.",
+            )
+        api_call(
+            lambda: update_document_status(
+                resolve_workspace_root(),
+                selector=document_id,
+                status=raw_status,
+                actor="user",
+                reason="API document status update",
+                cli_id="api",
+                allow_title_lookup=False,
+            )
+        )
+        inspection = api_call(
+            lambda: inspect_document(resolve_workspace_root(), selector=document_id)
+        )
         return {"status": "ok", "data": serialize_document_inspection(inspection)}
 
     @app.get(f"{API_PREFIX}/relations")

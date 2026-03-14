@@ -18,6 +18,13 @@ from nexus.workspace import (
     utc_now,
 )
 
+ALLOWED_DOCUMENT_STATUSES = ("draft", "approved", "archived")
+ALLOWED_DOCUMENT_STATUS_TRANSITIONS = {
+    "draft": {"approved"},
+    "approved": {"archived"},
+    "archived": set(),
+}
+
 
 @dataclass(frozen=True)
 class DocumentRecord:
@@ -31,6 +38,8 @@ class DocumentRecord:
     version: str
     created_at: str
     created_by: str
+    modified_at: str
+    approved_at: str | None
 
 
 @dataclass(frozen=True)
@@ -177,6 +186,8 @@ def create_document(
         version="1.0",
         created_at=timestamp,
         created_by=created_by,
+        modified_at=timestamp,
+        approved_at=None,
     )
 
 
@@ -199,7 +210,9 @@ def list_documents(
             content_hash,
             version,
             created_at,
-            created_by
+            created_by,
+            modified_at,
+            approved_at
         FROM documents
     """
     clauses: list[str] = []
@@ -240,50 +253,11 @@ def inspect_document(workspace_root: Path, *, selector: str) -> DocumentInspecti
     normalized_selector = validate_required_text("Document selector", selector)
 
     with connect_workspace_database(workspace.database_path, read_only=True) as connection:
-        row = connection.execute(
-            """
-            SELECT
-                id,
-                title,
-                type,
-                cycle_id,
-                status,
-                path,
-                content_hash,
-                version,
-                created_at,
-                created_by,
-                modified_at,
-                approved_at
-            FROM documents
-            WHERE id = ?
-            """,
-            [normalized_selector],
-        ).fetchone()
-        if row is None:
-            row = connection.execute(
-                """
-                SELECT
-                    id,
-                    title,
-                    type,
-                    cycle_id,
-                    status,
-                    path,
-                    content_hash,
-                    version,
-                    created_at,
-                    created_by,
-                    modified_at,
-                    approved_at
-                FROM documents
-                WHERE title = ?
-                """,
-                [normalized_selector],
-            ).fetchone()
-
-    if row is None:
-        raise WorkspaceBootstrapError(f"Document not found: {normalized_selector}")
+        row = fetch_document_row(
+            connection,
+            normalized_selector,
+            allow_title_lookup=True,
+        )
 
     record = document_record_from_row(row)
     absolute_path = workspace.workspace_root / record.path
@@ -304,9 +278,111 @@ def inspect_document(workspace_root: Path, *, selector: str) -> DocumentInspecti
         absolute_path=absolute_path,
         content=content,
         content_preview=build_content_preview(content),
-        modified_at=str(row[10]),
-        approved_at=str(row[11]) if row[11] is not None else None,
+        modified_at=record.modified_at,
+        approved_at=record.approved_at,
     )
+
+
+def update_document_status(
+    workspace_root: Path,
+    *,
+    selector: str,
+    status: str,
+    actor: str = "user",
+    reason: str = "Document status update",
+    cli_id: str = "local",
+    allow_title_lookup: bool = True,
+) -> DocumentRecord:
+    workspace = require_workspace(workspace_root)
+    normalized_selector = validate_required_text("Document selector", selector)
+    normalized_status = validate_document_status(status)
+    normalized_actor = validate_required_text("Actor", actor)
+    normalized_reason = validate_required_text("Reason", reason)
+    timestamp = utc_now()
+
+    with connect_workspace_database(workspace.database_path) as connection:
+        workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
+        old_row = fetch_document_row(
+            connection,
+            normalized_selector,
+            allow_title_lookup=allow_title_lookup,
+        )
+        old_record = document_record_from_row(old_row)
+        absolute_path = workspace.workspace_root / old_record.path
+        if not absolute_path.exists():
+            raise WorkspaceBootstrapError(
+                f"Document backing file is missing: {absolute_path}"
+            )
+
+        if old_record.status == normalized_status:
+            return old_record
+
+        allowed_statuses = ALLOWED_DOCUMENT_STATUS_TRANSITIONS.get(old_record.status, set())
+        if normalized_status not in allowed_statuses:
+            allowed_display = ", ".join(sorted(allowed_statuses)) or "no further transitions"
+            raise WorkspaceBootstrapError(
+                "Invalid document status transition: "
+                f"{old_record.status} -> {normalized_status}. "
+                f"Allowed: {allowed_display}."
+            )
+
+        approved_at = old_record.approved_at
+        if normalized_status == "approved":
+            approved_at = timestamp
+
+        connection.execute(
+            """
+            UPDATE documents
+            SET status = ?, version = ?, approved_at = ?, modified_by = ?, modified_at = ?, id_cli = ?
+            WHERE id = ?
+            """,
+            [
+                normalized_status,
+                bump_major_version(old_record.version),
+                approved_at,
+                normalized_actor,
+                timestamp,
+                cli_id,
+                old_record.id,
+            ],
+        )
+
+        new_row = fetch_document_row(connection, old_record.id, allow_title_lookup=False)
+        new_record = document_record_from_row(new_row)
+
+        connection.execute(
+            """
+            INSERT INTO audit_log (
+                id,
+                action,
+                entity_type,
+                entity_id,
+                old_state,
+                new_state,
+                agent,
+                reason,
+                timestamp,
+                id_workspace,
+                id_cli
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                str(uuid4()),
+                "update",
+                "document",
+                old_record.id,
+                json.dumps(document_state_payload(old_record), ensure_ascii=True),
+                json.dumps(document_state_payload(new_record), ensure_ascii=True),
+                normalized_actor,
+                normalized_reason,
+                timestamp,
+                workspace_id,
+                cli_id,
+            ],
+        )
+
+    return new_record
 
 
 def build_document_relative_path(document_type: str, title: str) -> Path:
@@ -379,6 +455,81 @@ def slugify(value: str) -> str:
     return normalized
 
 
+def bump_major_version(version: str) -> str:
+    raw_version = validate_required_text("Document version", version)
+    major_part, _, _ = raw_version.partition(".")
+    try:
+        major_value = int(major_part)
+    except ValueError as exc:
+        raise WorkspaceBootstrapError(
+            f"Document version is not a supported major.minor value: {raw_version}"
+        ) from exc
+    return f"{major_value + 1}.0"
+
+
+def fetch_document_row(
+    connection,
+    selector: str,
+    *,
+    allow_title_lookup: bool,
+) -> Sequence[object]:
+    base_query = """
+        SELECT
+            id,
+            title,
+            type,
+            cycle_id,
+            status,
+            path,
+            content_hash,
+            version,
+            created_at,
+            created_by,
+            modified_at,
+            approved_at
+        FROM documents
+    """
+    row = connection.execute(
+        base_query + " WHERE id = ?",
+        [selector],
+    ).fetchone()
+    if row is None and allow_title_lookup:
+        row = connection.execute(
+            base_query + " WHERE title = ?",
+            [selector],
+        ).fetchone()
+    if row is None:
+        raise WorkspaceBootstrapError(f"Document not found: {selector}")
+    return row
+
+
+def validate_document_status(status: str) -> str:
+    normalized_status = validate_required_text("Document status", status).lower()
+    if normalized_status not in ALLOWED_DOCUMENT_STATUSES:
+        allowed_display = ", ".join(ALLOWED_DOCUMENT_STATUSES)
+        raise WorkspaceBootstrapError(
+            f"Invalid document status: {normalized_status}. Allowed: {allowed_display}."
+        )
+    return normalized_status
+
+
+def document_state_payload(record: DocumentRecord) -> dict[str, object]:
+    return {
+        "id": record.id,
+        "title": record.title,
+        "type": record.type,
+        "cycle_id": record.cycle_id,
+        "status": record.status,
+        "path": record.path,
+        "content_hash": record.content_hash,
+        "version": record.version,
+        "created_at": record.created_at,
+        "created_by": record.created_by,
+        "modified_at": record.modified_at,
+        "approved_at": record.approved_at,
+    }
+
+
 def document_record_from_row(row: Sequence[object]) -> DocumentRecord:
     return DocumentRecord(
         id=str(row[0]),
@@ -391,4 +542,6 @@ def document_record_from_row(row: Sequence[object]) -> DocumentRecord:
         version=str(row[7]),
         created_at=str(row[8]),
         created_by=str(row[9]),
+        modified_at=str(row[10]),
+        approved_at=None if row[11] is None else str(row[11]),
     )

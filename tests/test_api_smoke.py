@@ -52,11 +52,13 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn('id="activities-cycle-filter"', response.text)
             self.assertIn('id="documents-cycle-filter"', response.text)
             self.assertIn('id="activity-status-controls"', response.text)
+            self.assertIn('id="document-status-controls"', response.text)
             self.assertIn('id="documents-status-filter"', response.text)
             self.assertIn('id="cycles-status-filter"', response.text)
             self.assertIn('id="activities-status-filter"', response.text)
             self.assertIn("/api/cycles", response.text)
             self.assertIn("/api/activities", response.text)
+            self.assertIn("/api/documents", response.text)
 
     def test_health_and_status_in_initialized_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -177,6 +179,105 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(response.status_code, 409)
             self.assertEqual(response.json()["status"], "error")
             self.assertIn("Document backing file is missing:", response.json()["message"])
+
+    def test_document_status_update_endpoint_updates_record_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.patch(
+                f"/api/documents/{document.id}",
+                json={"status": "approved"},
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["id"], document.id)
+            self.assertEqual(payload["data"]["status"], "approved")
+            self.assertEqual(payload["data"]["version"], "2.0")
+            self.assertIsNotNone(payload["data"]["approved_at"])
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                document_row = connection.execute(
+                    "SELECT status, version, approved_at FROM documents WHERE id = ?",
+                    [document.id],
+                ).fetchone()
+                self.assertEqual(document_row[0], "approved")
+                self.assertEqual(document_row[1], "2.0")
+                self.assertIsNotNone(document_row[2])
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent, reason
+                    FROM audit_log
+                    WHERE entity_type = 'document' AND entity_id = ? AND action = 'update'
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    [document.id],
+                ).fetchone()
+                self.assertEqual(
+                    audit_row,
+                    ("update", "document", "user", "API document status update"),
+                )
+            finally:
+                connection.close()
+
+    def test_document_status_update_rejects_invalid_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            approve_response = client.patch(
+                f"/api/documents/{document.id}",
+                json={"status": "approved"},
+            )
+            self.assertEqual(approve_response.status_code, 200)
+            archive_response = client.patch(
+                f"/api/documents/{document.id}",
+                json={"status": "archived"},
+            )
+            self.assertEqual(archive_response.status_code, 200)
+
+            response = client.patch(
+                f"/api/documents/{document.id}",
+                json={"status": "approved"},
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn(
+                "Invalid document status transition: archived -> approved.",
+                response.json()["message"],
+            )
+
+    def test_document_status_update_returns_404_for_missing_record(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.patch(
+                "/api/documents/missing-document",
+                json={"status": "approved"},
+            )
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Document not found: missing-document", response.json()["message"])
 
     def test_relation_list_exposes_existing_local_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -388,6 +489,17 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(document_response.status_code, 409)
             self.assertEqual(document_response.json()["status"], "error")
             self.assertIn("Current directory is not a Nexus workspace", document_response.json()["message"])
+
+            document_update_response = client.patch(
+                "/api/documents/document-123",
+                json={"status": "approved"},
+            )
+            self.assertEqual(document_update_response.status_code, 409)
+            self.assertEqual(document_update_response.json()["status"], "error")
+            self.assertIn(
+                "Current directory is not a Nexus workspace",
+                document_update_response.json()["message"],
+            )
 
             relation_response = client.get("/api/relations")
             self.assertEqual(relation_response.status_code, 409)

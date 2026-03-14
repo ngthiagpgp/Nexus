@@ -462,7 +462,9 @@ def render_cockpit_page() -> str:
               <div id="document-content" hidden>
                 <div class="detail-grid" id="document-meta-grid"></div>
                 <div class="compact-badges" id="document-flags"></div>
+                <div class="detail-actions" id="document-status-controls"></div>
                 <div class="detail-actions" id="document-actions"></div>
+                <div class="inline-note" id="document-status-feedback"></div>
                 <div class="detail-preview" id="document-preview"></div>
               </div>
             </section>
@@ -580,6 +582,14 @@ def render_cockpit_page() -> str:
             );
           });
         });
+        document.querySelectorAll("[data-set-document-status]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await updateDocumentStatus(
+              button.dataset.documentId,
+              button.dataset.setDocumentStatus
+            );
+          });
+        });
       }
 
       function populateCycleFilterOptions() {
@@ -687,6 +697,9 @@ def render_cockpit_page() -> str:
           "operations-summary",
           [
             `Active cycles: ${data.counts?.active_cycles ?? 0}`,
+            `Draft docs: ${data.counts?.draft_documents ?? 0}`,
+            `Approved docs: ${data.counts?.approved_documents ?? 0}`,
+            `Archived docs: ${data.counts?.archived_documents ?? 0}`,
             `Pending: ${activity.pending ?? 0}`,
             `In progress: ${activity.in_progress ?? 0}`,
             `Completed: ${activity.completed ?? 0}`,
@@ -845,13 +858,43 @@ def render_cockpit_page() -> str:
         `).join("");
       }
 
+      function documentStatusBadgeClass(status) {
+        if (status === "draft") return "warning";
+        if (status === "approved") return "success";
+        if (status === "archived") return "danger";
+        return "";
+      }
+
+      function renderDocumentStatusControls(documentRecord) {
+        const controls = document.getElementById("document-status-controls");
+        const allowedTransitions = {
+          draft: ["approved"],
+          approved: ["archived"],
+          archived: []
+        };
+        const targets = [documentRecord.status].concat(allowedTransitions[documentRecord.status] || []);
+        controls.innerHTML = targets.map((status) => `
+          <button
+            class="inline-button ${documentRecord.status === status ? "primary" : ""}"
+            type="button"
+            data-document-id="${escapeAttribute(documentRecord.id)}"
+            data-set-document-status="${escapeAttribute(status)}"
+            ${documentRecord.status === status ? "disabled" : ""}
+          >
+            ${escapeHtml(status)}
+          </button>
+        `).join("");
+      }
+
       async function refreshOperationalData() {
-        const [status, cycles, activities] = await Promise.all([
+        const [status, documents, cycles, activities] = await Promise.all([
           fetchJson(api.status),
+          fetchJson(api.documents),
           fetchJson(api.cycles),
           fetchJson(api.activities)
         ]);
         renderWorkspaceStatus(status);
+        state.documents = documents;
         state.cycles = cycles;
         state.activities = activities;
         populateCycleFilterOptions();
@@ -878,6 +921,26 @@ def render_cockpit_page() -> str:
         }
       }
 
+      async function updateDocumentStatus(documentId, status) {
+        const feedback = document.getElementById("document-status-feedback");
+        const currentView = state.activeView;
+        feedback.textContent = "Updating document status...";
+        feedback.classList.remove("error");
+        try {
+          const updated = await patchJson(`/api/documents/${encodeURIComponent(documentId)}`, { status });
+          await refreshOperationalData();
+          await loadDocument(updated.id);
+          if (state.focusedCycleId) {
+            await loadCycle(state.focusedCycleId);
+          }
+          activateView(currentView);
+          feedback.textContent = `Status updated to ${updated.status}.`;
+        } catch (error) {
+          feedback.textContent = error.message;
+          feedback.classList.add("error");
+        }
+      }
+
       async function loadDocument(documentId) {
         state.selectedDocumentId = documentId;
         activateView("documents-view");
@@ -888,7 +951,9 @@ def render_cockpit_page() -> str:
         content.hidden = false;
         setHtml("document-meta-grid", "");
         setHtml("document-flags", "");
+        setHtml("document-status-controls", "");
         setHtml("document-actions", "");
+        setText("document-status-feedback", "");
         preview.classList.remove("error-state");
         preview.textContent = "Loading document...";
         try {
@@ -901,17 +966,20 @@ def render_cockpit_page() -> str:
             ["Version", doc.version],
             ["Cycle", doc.cycle_id || "-"],
             ["Created", doc.created_at],
-            ["Modified", doc.modified_at]
+            ["Modified", doc.modified_at],
+            ["Approved", doc.approved_at || "-"]
           ]));
           setHtml(
             "document-flags",
             [
               `<span class="badge">${escapeHtml(doc.type)}</span>`,
-              `<span class="badge success">${escapeHtml(doc.status)}</span>`,
+              `<span class="badge ${documentStatusBadgeClass(doc.status)}">${escapeHtml(doc.status)}</span>`,
               doc.cycle_id ? `<span class="badge">cycle ${escapeHtml(doc.cycle_id)}</span>` : "",
-              doc.approved_at ? `<span class="badge">${escapeHtml(doc.approved_at)}</span>` : ""
+              doc.approved_at ? `<span class="badge">approved ${escapeHtml(doc.approved_at)}</span>` : "",
+              `<span class="badge">version ${escapeHtml(doc.version)}</span>`
             ].join("")
           );
+          renderDocumentStatusControls(doc);
           setHtml(
             "document-actions",
             doc.cycle_id
@@ -926,6 +994,7 @@ def render_cockpit_page() -> str:
             ["State", "Unavailable"]
           ]));
           setHtml("document-flags", '<span class="badge danger">backing file issue</span>');
+          setHtml("document-status-controls", "");
           setHtml("document-actions", "");
           preview.classList.add("error-state");
           preview.textContent = `Document inspection failed. ${error.message}`;

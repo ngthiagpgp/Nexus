@@ -422,6 +422,134 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertEqual(show_run.returncode, 1, show_run.stdout + show_run.stderr)
             self.assertIn("Document backing file is missing:", show_run.stderr)
 
+    def test_document_set_status_updates_database_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+
+            update_run = self.run_cli(
+                "document",
+                "set-status",
+                "Daily 2026-03-13",
+                "--status",
+                "approved",
+                cwd=workspace_root,
+            )
+            self.assertEqual(update_run.returncode, 0, update_run.stdout + update_run.stderr)
+            self.assertIn(f"Document status updated: {document_id}", update_run.stdout)
+            self.assertIn("Status: approved", update_run.stdout)
+            self.assertIn("Version: 2.0", update_run.stdout)
+            self.assertIn("Approved:", update_run.stdout)
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                document_row = connection.execute(
+                    "SELECT status, version, approved_at FROM documents WHERE id = ?",
+                    [document_id],
+                ).fetchone()
+                self.assertEqual(document_row[0], "approved")
+                self.assertEqual(document_row[1], "2.0")
+                self.assertIsNotNone(document_row[2])
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent, reason
+                    FROM audit_log
+                    WHERE entity_type = 'document' AND entity_id = ? AND action = 'update'
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    [document_id],
+                ).fetchone()
+                self.assertEqual(
+                    audit_row,
+                    ("update", "document", "user", "CLI document status update"),
+                )
+            finally:
+                connection.close()
+
+    def test_document_set_status_rejects_invalid_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+            self.run_cli(
+                "document",
+                "set-status",
+                document_id,
+                "--status",
+                "approved",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "document",
+                "set-status",
+                document_id,
+                "--status",
+                "archived",
+                cwd=workspace_root,
+            )
+
+            update_run = self.run_cli(
+                "document",
+                "set-status",
+                document_id,
+                "--status",
+                "approved",
+                cwd=workspace_root,
+            )
+            self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
+            self.assertIn(
+                "Invalid document status transition: archived -> approved. Allowed: no further transitions.",
+                update_run.stderr,
+            )
+
+    def test_document_set_status_rejects_missing_document(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            update_run = self.run_cli(
+                "document",
+                "set-status",
+                "missing-document",
+                "--status",
+                "approved",
+                cwd=workspace_root,
+            )
+            self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
+            self.assertIn("Document not found: missing-document", update_run.stderr)
+
     def test_document_show_fails_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             outside_root = Path(temp_dir) / "outside"
@@ -445,6 +573,17 @@ class NexusCliSmokeTest(unittest.TestCase):
             list_run = self.run_cli("document", "list", cwd=outside_root)
             self.assertEqual(list_run.returncode, 1, list_run.stdout + list_run.stderr)
             self.assertIn("Current directory is not a Nexus workspace", list_run.stderr)
+
+            update_run = self.run_cli(
+                "document",
+                "set-status",
+                "doc-123",
+                "--status",
+                "approved",
+                cwd=outside_root,
+            )
+            self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", update_run.stderr)
 
     def test_document_create_rejects_blank_required_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
