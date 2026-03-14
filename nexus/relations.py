@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -147,6 +148,7 @@ def list_relations(
     workspace_root: Path,
     *,
     from_entity: str | None = None,
+    to_entity: str | None = None,
     relation_type: str | None = None,
 ) -> list[RelationRecord]:
     workspace = require_workspace(workspace_root)
@@ -167,11 +169,16 @@ def list_relations(
 
     with connect_workspace_database(workspace.database_path, read_only=True) as connection:
         normalized_from = normalize_optional_text(from_entity)
+        normalized_to = normalize_optional_text(to_entity)
         normalized_type = normalize_optional_text(relation_type)
 
         if normalized_from:
             clauses.append("entity_a_id = ?")
             params.append(resolve_entity_reference(connection, normalized_from))
+
+        if normalized_to:
+            clauses.append("entity_b_id = ?")
+            params.append(resolve_entity_reference(connection, normalized_to))
 
         if normalized_type:
             clauses.append("relation_type = ?")
@@ -184,16 +191,7 @@ def list_relations(
         rows = connection.execute(query, params).fetchall()
 
     return [
-        RelationRecord(
-            id=row[0],
-            entity_a_id=row[1],
-            entity_b_id=row[2],
-            relation_type=row[3],
-            weight=float(row[4]),
-            context=row[5],
-            created_at=str(row[6]),
-            created_by=row[7],
-        )
+        relation_record_from_row(row)
         for row in rows
     ]
 
@@ -225,3 +223,16 @@ def resolve_entity_reference(connection, reference: str) -> str:
         )
 
     raise WorkspaceBootstrapError(f"Entity not found: {reference}")
+
+
+def relation_record_from_row(row: Sequence[object]) -> RelationRecord:
+    return RelationRecord(
+        id=str(row[0]),
+        entity_a_id=str(row[1]),
+        entity_b_id=str(row[2]),
+        relation_type=str(row[3]),
+        weight=float(row[4]),
+        context=None if row[5] is None else str(row[5]),
+        created_at=str(row[6]),
+        created_by=str(row[7]),
+    )

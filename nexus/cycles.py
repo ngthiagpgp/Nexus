@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from pathlib import Path
@@ -163,6 +164,30 @@ def list_cycles(
     status: str | None = None,
 ) -> list[CycleRecord]:
     workspace = require_workspace(workspace_root)
+    rows = fetch_cycle_rows(
+        workspace.database_path,
+        cycle_type=cycle_type,
+        status=status,
+    )
+    return [cycle_record_from_row(row) for row in rows]
+
+
+def get_cycle(workspace_root: Path, *, cycle_id: str) -> CycleRecord:
+    workspace = require_workspace(workspace_root)
+    normalized_cycle_id = validate_required_text("Cycle id", cycle_id)
+    rows = fetch_cycle_rows(workspace.database_path, cycle_id=normalized_cycle_id)
+    if not rows:
+        raise WorkspaceBootstrapError(f"Cycle not found: {normalized_cycle_id}")
+    return cycle_record_from_row(rows[0])
+
+
+def fetch_cycle_rows(
+    database_path: Path,
+    *,
+    cycle_type: str | None = None,
+    status: str | None = None,
+    cycle_id: str | None = None,
+) -> list[Sequence[object]]:
     query = """
         SELECT
             c.id,
@@ -183,6 +208,11 @@ def list_cycles(
     """
     clauses: list[str] = []
     params: list[str] = []
+
+    normalized_cycle_id = normalize_optional_text(cycle_id)
+    if normalized_cycle_id:
+        clauses.append("c.id = ?")
+        params.append(normalized_cycle_id)
 
     normalized_type = normalize_optional_text(cycle_type)
     if normalized_type:
@@ -210,27 +240,8 @@ def list_cycles(
     """
     query += " ORDER BY c.start_date DESC, c.type ASC"
 
-    with connect_workspace_database(workspace.database_path, read_only=True) as connection:
-        rows = connection.execute(query, params).fetchall()
-
-    return [
-        CycleRecord(
-            id=row[0],
-            type=row[1],
-            start_date=str(row[2]),
-            end_date=str(row[3]) if row[3] is not None else None,
-            status=row[4],
-            description=row[5],
-            created_at=str(row[6]),
-            created_by=row[7],
-            activity_count=int(row[8]),
-            pending_count=int(row[9]),
-            in_progress_count=int(row[10]),
-            completed_count=int(row[11]),
-            blocked_count=int(row[12]),
-        )
-        for row in rows
-    ]
+    with connect_workspace_database(database_path, read_only=True) as connection:
+        return connection.execute(query, params).fetchall()
 
 
 def build_cycle_id(cycle_type: str, start_dt: datetime) -> str:
@@ -263,3 +274,21 @@ def parse_cycle_datetime(label: str, value: str) -> datetime:
 
 def format_cycle_datetime(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def cycle_record_from_row(row: Sequence[object]) -> CycleRecord:
+    return CycleRecord(
+        id=str(row[0]),
+        type=str(row[1]),
+        start_date=str(row[2]),
+        end_date=None if row[3] is None else str(row[3]),
+        status=str(row[4]),
+        description=None if row[5] is None else str(row[5]),
+        created_at=str(row[6]),
+        created_by=str(row[7]),
+        activity_count=int(row[8]),
+        pending_count=int(row[9]),
+        in_progress_count=int(row[10]),
+        completed_count=int(row[11]),
+        blocked_count=int(row[12]),
+    )

@@ -8,8 +8,11 @@ from typing import Any
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 
+from nexus.activities import ActivityRecord, get_activity, list_activities
+from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import DocumentInspection, inspect_document, list_documents
 from nexus.entities import EntityRecord, get_entity, list_entities
+from nexus.relations import RelationRecord, list_relations
 from nexus.workspace import WorkspaceBootstrapError, inspect_workspace
 
 API_PREFIX = "/api"
@@ -142,6 +145,52 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
         inspection = api_call(lambda: inspect_document(resolve_workspace_root(), selector=document_id))
         return {"status": "ok", "data": serialize_document_inspection(inspection)}
 
+    @app.get(f"{API_PREFIX}/relations")
+    def relation_list(
+        entity_a: str | None = Query(None),
+        entity_b: str | None = Query(None),
+        relation_type: str | None = Query(None, alias="type"),
+    ) -> dict[str, object]:
+        records = api_call(
+            lambda: list_relations(
+                resolve_workspace_root(),
+                from_entity=entity_a,
+                to_entity=entity_b,
+                relation_type=relation_type,
+            )
+        )
+        return {"status": "ok", "data": [serialize_relation(record) for record in records]}
+
+    @app.get(f"{API_PREFIX}/cycles")
+    def cycle_list(
+        cycle_type: str | None = Query(None, alias="type"),
+        status: str | None = Query(None),
+    ) -> dict[str, object]:
+        records = api_call(
+            lambda: list_cycles(resolve_workspace_root(), cycle_type=cycle_type, status=status)
+        )
+        return {"status": "ok", "data": [serialize_cycle(record) for record in records]}
+
+    @app.get(f"{API_PREFIX}/cycles/{{cycle_id}}")
+    def cycle_read(cycle_id: str) -> dict[str, object]:
+        record = api_call(lambda: get_cycle(resolve_workspace_root(), cycle_id=cycle_id))
+        return {"status": "ok", "data": serialize_cycle(record)}
+
+    @app.get(f"{API_PREFIX}/activities")
+    def activity_list(
+        cycle_id: str | None = Query(None),
+        status: str | None = Query(None),
+    ) -> dict[str, object]:
+        records = api_call(
+            lambda: list_activities(resolve_workspace_root(), cycle_id=cycle_id, status=status)
+        )
+        return {"status": "ok", "data": [serialize_activity(record) for record in records]}
+
+    @app.get(f"{API_PREFIX}/activities/{{activity_id}}")
+    def activity_read(activity_id: str) -> dict[str, object]:
+        record = api_call(lambda: get_activity(resolve_workspace_root(), activity_id=activity_id))
+        return {"status": "ok", "data": serialize_activity(record)}
+
     return app
 
 
@@ -183,6 +232,18 @@ def serialize_document_inspection(inspection: DocumentInspection) -> dict[str, A
         }
     )
     return data
+
+
+def serialize_relation(record: RelationRecord) -> dict[str, Any]:
+    return asdict(record)
+
+
+def serialize_cycle(record: CycleRecord) -> dict[str, Any]:
+    return asdict(record)
+
+
+def serialize_activity(record: ActivityRecord) -> dict[str, Any]:
+    return asdict(record)
 
 
 app = create_app()

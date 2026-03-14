@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -149,6 +150,30 @@ def list_activities(
     status: str | None = None,
 ) -> list[ActivityRecord]:
     workspace = require_workspace(workspace_root)
+    rows = fetch_activity_rows(
+        workspace.database_path,
+        cycle_id=cycle_id,
+        status=status,
+    )
+    return [activity_record_from_row(row) for row in rows]
+
+
+def get_activity(workspace_root: Path, *, activity_id: str) -> ActivityRecord:
+    workspace = require_workspace(workspace_root)
+    normalized_activity_id = validate_required_text("Activity id", activity_id)
+    rows = fetch_activity_rows(workspace.database_path, activity_id=normalized_activity_id)
+    if not rows:
+        raise WorkspaceBootstrapError(f"Activity not found: {normalized_activity_id}")
+    return activity_record_from_row(rows[0])
+
+
+def fetch_activity_rows(
+    database_path: Path,
+    *,
+    cycle_id: str | None = None,
+    status: str | None = None,
+    activity_id: str | None = None,
+) -> list[Sequence[object]]:
     query = """
         SELECT
             a.id,
@@ -168,12 +193,16 @@ def list_activities(
     clauses: list[str] = []
     params: list[str] = []
 
+    if activity_id:
+        clauses.append("a.id = ?")
+        params.append(validate_required_text("Activity id", activity_id))
+
     if cycle_id:
-        clauses.append("cycle_id = ?")
+        clauses.append("a.cycle_id = ?")
         params.append(validate_required_text("Cycle id", cycle_id))
 
     if status:
-        clauses.append("status = ?")
+        clauses.append("a.status = ?")
         params.append(validate_required_text("Activity status", status))
 
     if clauses:
@@ -181,25 +210,8 @@ def list_activities(
 
     query += " ORDER BY c.start_date DESC, a.priority ASC, a.created_at DESC, a.title ASC"
 
-    with connect_workspace_database(workspace.database_path, read_only=True) as connection:
-        rows = connection.execute(query, params).fetchall()
-
-    return [
-        ActivityRecord(
-            id=row[0],
-            title=row[1],
-            cycle_id=row[2],
-            cycle_type=row[3],
-            cycle_start_date=str(row[4]),
-            status=row[5],
-            priority=int(row[6]),
-            activity_type=row[7],
-            description=row[8],
-            created_at=str(row[9]),
-            created_by=row[10],
-        )
-        for row in rows
-    ]
+    with connect_workspace_database(database_path, read_only=True) as connection:
+        return connection.execute(query, params).fetchall()
 
 
 def fetch_cycle_details(connection, cycle_id: str) -> tuple[str, str]:
@@ -210,3 +222,19 @@ def fetch_cycle_details(connection, cycle_id: str) -> tuple[str, str]:
     if row is None:
         raise WorkspaceBootstrapError(f"Cycle not found: {cycle_id}")
     return row[0], str(row[1])
+
+
+def activity_record_from_row(row: Sequence[object]) -> ActivityRecord:
+    return ActivityRecord(
+        id=str(row[0]),
+        title=str(row[1]),
+        cycle_id=str(row[2]),
+        cycle_type=None if row[3] is None else str(row[3]),
+        cycle_start_date=None if row[4] is None else str(row[4]),
+        status=str(row[5]),
+        priority=int(row[6]),
+        activity_type=None if row[7] is None else str(row[7]),
+        description=None if row[8] is None else str(row[8]),
+        created_at=str(row[9]),
+        created_by=str(row[10]),
+    )
