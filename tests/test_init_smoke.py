@@ -151,6 +151,19 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertIn("Projeto X | project", filtered_run.stdout)
             self.assertNotIn("Alice | person", filtered_run.stdout)
 
+    def test_list_output_includes_table_separator(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "entity", "create", "--name", "Projeto X", "--type", "project", cwd=workspace_root
+            )
+
+            list_run = self.run_cli("entity", "list", cwd=workspace_root)
+            self.assertEqual(list_run.returncode, 0, list_run.stdout + list_run.stderr)
+            self.assertIn("ID | Name | Type | Context", list_run.stdout)
+            self.assertIn("--------------------------", list_run.stdout)
+
     def test_entity_commands_fail_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             outside_root = Path(temp_dir) / "outside"
@@ -165,6 +178,7 @@ class NexusCliSmokeTest(unittest.TestCase):
             list_run = self.run_cli("entity", "list", cwd=outside_root)
             self.assertEqual(list_run.returncode, 1, list_run.stdout + list_run.stderr)
             self.assertIn("Current directory is not a Nexus workspace", list_run.stderr)
+            self.assertIn("Error:", list_run.stderr)
 
     def test_entity_create_rejects_blank_required_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable, TypeVar
 
 import typer
 
@@ -26,6 +27,7 @@ document_app = typer.Typer(help="Manage Nexus documents.")
 relation_app = typer.Typer(help="Manage Nexus relations.")
 activity_app = typer.Typer(help="Manage Nexus activities.")
 cycle_app = typer.Typer(help="Manage Nexus cycles.")
+T = TypeVar("T")
 
 
 @app.callback()
@@ -38,6 +40,22 @@ app.add_typer(document_app, name="document")
 app.add_typer(relation_app, name="relation")
 app.add_typer(activity_app, name="activity")
 app.add_typer(cycle_app, name="cycle")
+
+
+def _run_or_exit(operation: Callable[[], T]) -> T:
+    try:
+        return operation()
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
+def _print_table(headers: list[str], rows: list[list[str]]) -> None:
+    header_line = " | ".join(headers)
+    typer.echo(header_line)
+    typer.echo("-" * len(header_line))
+    for row in rows:
+        typer.echo(" | ".join(row))
 
 
 @app.command("init")
@@ -53,11 +71,7 @@ def init_command(
 ) -> None:
     """Bootstrap a local Nexus workspace."""
 
-    try:
-        result = initialize_workspace(target)
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    result = _run_or_exit(lambda: initialize_workspace(target))
 
     typer.echo(f"Nexus workspace ready: {result.workspace_root}")
     typer.echo(f"Database: {result.database_path}")
@@ -80,11 +94,7 @@ def init_command(
 def status_command() -> None:
     """Show minimal local workspace status for the current directory."""
 
-    try:
-        status = inspect_workspace(Path.cwd())
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    status = _run_or_exit(lambda: inspect_workspace(Path.cwd()))
 
     typer.echo("Nexus workspace status")
     typer.echo(f"Root: {status.workspace_root}")
@@ -128,16 +138,14 @@ def entity_create_command(
 ) -> None:
     """Create a new entity in the current Nexus workspace."""
 
-    try:
-        record = create_entity(
+    record = _run_or_exit(
+        lambda: create_entity(
             Path.cwd(),
             name=validate_required_text("Entity name", name),
             entity_type=validate_required_text("Entity type", entity_type),
             context=context,
         )
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    )
 
     typer.echo(f"Entity created: {record.id}")
     typer.echo(f"Name: {record.name}")
@@ -152,21 +160,19 @@ def entity_list_command(
 ) -> None:
     """List entities in the current Nexus workspace."""
 
-    try:
-        records = list_entities(Path.cwd(), entity_type=entity_type)
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    records = _run_or_exit(lambda: list_entities(Path.cwd(), entity_type=entity_type))
 
     if not records:
         typer.echo("No entities found.")
         return
 
-    typer.echo("ID | Name | Type | Context")
-    for record in records:
-        typer.echo(
-            f"{record.id} | {record.name} | {record.type} | {record.context or '-'}"
-        )
+    _print_table(
+        ["ID", "Name", "Type", "Context"],
+        [
+            [record.id, record.name, record.type, record.context or "-"]
+            for record in records
+        ],
+    )
 
 
 @document_app.command("create")
@@ -189,16 +195,14 @@ def document_create_command(
 ) -> None:
     """Create a new document in the current Nexus workspace."""
 
-    try:
-        record = create_document(
+    record = _run_or_exit(
+        lambda: create_document(
             Path.cwd(),
             document_type=document_type,
             title=title,
             cycle_id=cycle_id,
         )
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    )
 
     typer.echo(f"Document created: {record.id}")
     typer.echo(f"Title: {record.title}")
@@ -214,21 +218,21 @@ def document_list_command(
 ) -> None:
     """List documents in the current Nexus workspace."""
 
-    try:
-        records = list_documents(Path.cwd(), document_type=document_type, status=status)
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    records = _run_or_exit(
+        lambda: list_documents(Path.cwd(), document_type=document_type, status=status)
+    )
 
     if not records:
         typer.echo("No documents found.")
         return
 
-    typer.echo("ID | Title | Type | Status | Path")
-    for record in records:
-        typer.echo(
-            f"{record.id} | {record.title} | {record.type} | {record.status} | {record.path}"
-        )
+    _print_table(
+        ["ID", "Title", "Type", "Status", "Path"],
+        [
+            [record.id, record.title, record.type, record.status, record.path]
+            for record in records
+        ],
+    )
 
 
 @relation_app.command("create")
@@ -256,17 +260,15 @@ def relation_create_command(
 ) -> None:
     """Create a new relation in the current Nexus workspace."""
 
-    try:
-        record = create_relation(
+    record = _run_or_exit(
+        lambda: create_relation(
             Path.cwd(),
             from_entity=from_entity,
             to_entity=to_entity,
             relation_type=relation_type,
             context=context,
         )
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    )
 
     typer.echo(f"Relation created: {record.id}")
     typer.echo(f"From: {record.entity_a_id}")
@@ -292,31 +294,33 @@ def relation_list_command(
 ) -> None:
     """List relations in the current Nexus workspace."""
 
-    try:
-        records = list_relations(
+    records = _run_or_exit(
+        lambda: list_relations(
             Path.cwd(),
             from_entity=from_entity,
             relation_type=relation_type,
         )
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    )
 
     if not records:
         typer.echo("No relations found.")
         return
 
-    display_names = relation_display_map(Path.cwd())
-    typer.echo("ID | From | To | Type | Weight | Context")
-    for record in records:
-        typer.echo(
-            f"{record.id} | "
-            f"{display_names.get(record.entity_a_id, record.entity_a_id)} | "
-            f"{display_names.get(record.entity_b_id, record.entity_b_id)} | "
-            f"{record.relation_type} | "
-            f"{record.weight:.1f} | "
-            f"{record.context or '-'}"
-        )
+    display_names = _run_or_exit(lambda: relation_display_map(Path.cwd()))
+    _print_table(
+        ["ID", "From", "To", "Type", "Weight", "Context"],
+        [
+            [
+                record.id,
+                display_names.get(record.entity_a_id, record.entity_a_id),
+                display_names.get(record.entity_b_id, record.entity_b_id),
+                record.relation_type,
+                f"{record.weight:.1f}",
+                record.context or "-",
+            ]
+            for record in records
+        ],
+    )
 
 
 @activity_app.command("create")
@@ -330,15 +334,13 @@ def activity_create_command(
 ) -> None:
     """Create a new activity in the current Nexus workspace."""
 
-    try:
-        record = create_activity(
+    record = _run_or_exit(
+        lambda: create_activity(
             Path.cwd(),
             title=title,
             cycle_id=cycle_id,
         )
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    )
 
     typer.echo(f"Activity created: {record.id}")
     typer.echo(f"Title: {record.title}")
@@ -362,27 +364,29 @@ def activity_list_command(
 ) -> None:
     """List activities in the current Nexus workspace."""
 
-    try:
-        records = list_activities(Path.cwd(), cycle_id=cycle_id, status=status)
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    records = _run_or_exit(
+        lambda: list_activities(Path.cwd(), cycle_id=cycle_id, status=status)
+    )
 
     if not records:
         typer.echo("No activities found.")
         return
 
-    typer.echo("ID | Title | Cycle | Cycle Type | Cycle Start | Status | Priority")
-    for record in records:
-        typer.echo(
-            f"{record.id} | "
-            f"{record.title} | "
-            f"{record.cycle_id} | "
-            f"{record.cycle_type or '-'} | "
-            f"{record.cycle_start_date or '-'} | "
-            f"{record.status} | "
-            f"{record.priority}"
-        )
+    _print_table(
+        ["ID", "Title", "Cycle", "Cycle Type", "Cycle Start", "Status", "Priority"],
+        [
+            [
+                record.id,
+                record.title,
+                record.cycle_id,
+                record.cycle_type or "-",
+                record.cycle_start_date or "-",
+                record.status,
+                str(record.priority),
+            ]
+            for record in records
+        ],
+    )
 
 
 @cycle_app.command("create")
@@ -401,16 +405,14 @@ def cycle_create_command(
 ) -> None:
     """Create a new cycle in the current Nexus workspace."""
 
-    try:
-        record = create_cycle(
+    record = _run_or_exit(
+        lambda: create_cycle(
             Path.cwd(),
             cycle_type=cycle_type,
             start=start,
             end=end,
         )
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    )
 
     typer.echo(f"Cycle created: {record.id}")
     typer.echo(f"Type: {record.type}")
@@ -427,29 +429,41 @@ def cycle_list_command(
 ) -> None:
     """List cycles in the current Nexus workspace."""
 
-    try:
-        records = list_cycles(Path.cwd(), cycle_type=cycle_type, status=status)
-    except WorkspaceBootstrapError as exc:
-        typer.echo(f"Error: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
+    records = _run_or_exit(
+        lambda: list_cycles(Path.cwd(), cycle_type=cycle_type, status=status)
+    )
 
     if not records:
         typer.echo("No cycles found.")
         return
 
-    typer.echo("ID | Type | Start | Status | Activities | Pending | In Progress | Completed | Blocked")
-    for record in records:
-        typer.echo(
-            f"{record.id} | "
-            f"{record.type} | "
-            f"{record.start_date} | "
-            f"{record.status} | "
-            f"{record.activity_count} | "
-            f"{record.pending_count} | "
-            f"{record.in_progress_count} | "
-            f"{record.completed_count} | "
-            f"{record.blocked_count}"
-        )
+    _print_table(
+        [
+            "ID",
+            "Type",
+            "Start",
+            "Status",
+            "Activities",
+            "Pending",
+            "In Progress",
+            "Completed",
+            "Blocked",
+        ],
+        [
+            [
+                record.id,
+                record.type,
+                record.start_date,
+                record.status,
+                str(record.activity_count),
+                str(record.pending_count),
+                str(record.in_progress_count),
+                str(record.completed_count),
+                str(record.blocked_count),
+            ]
+            for record in records
+        ],
+    )
 
 
 def main() -> None:
