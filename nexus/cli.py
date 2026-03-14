@@ -372,10 +372,16 @@ def activity_list_command(
         typer.echo("No activities found.")
         return
 
-    typer.echo("ID | Title | Cycle | Status | Priority")
+    typer.echo("ID | Title | Cycle | Cycle Type | Cycle Start | Status | Priority")
     for record in records:
         typer.echo(
-            f"{record.id} | {record.title} | {record.cycle_id} | {record.status} | {record.priority}"
+            f"{record.id} | "
+            f"{record.title} | "
+            f"{record.cycle_id} | "
+            f"{record.cycle_type or '-'} | "
+            f"{record.cycle_start_date or '-'} | "
+            f"{record.status} | "
+            f"{record.priority}"
         )
 
 
@@ -431,10 +437,18 @@ def cycle_list_command(
         typer.echo("No cycles found.")
         return
 
-    typer.echo("ID | Type | Start | Status")
+    typer.echo("ID | Type | Start | Status | Activities | Pending | In Progress | Completed | Blocked")
     for record in records:
         typer.echo(
-            f"{record.id} | {record.type} | {record.start_date} | {record.status}"
+            f"{record.id} | "
+            f"{record.type} | "
+            f"{record.start_date} | "
+            f"{record.status} | "
+            f"{record.activity_count} | "
+            f"{record.pending_count} | "
+            f"{record.in_progress_count} | "
+            f"{record.completed_count} | "
+            f"{record.blocked_count}"
         )
 
 

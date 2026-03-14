@@ -26,6 +26,11 @@ class CycleRecord:
     description: str | None
     created_at: str
     created_by: str
+    activity_count: int
+    pending_count: int
+    in_progress_count: int
+    completed_count: int
+    blocked_count: int
 
 
 def create_cycle(
@@ -143,6 +148,11 @@ def create_cycle(
         description=None,
         created_at=timestamp,
         created_by=actor,
+        activity_count=0,
+        pending_count=0,
+        in_progress_count=0,
+        completed_count=0,
+        blocked_count=0,
     )
 
 
@@ -155,33 +165,50 @@ def list_cycles(
     workspace = require_workspace(workspace_root)
     query = """
         SELECT
-            id,
-            type,
-            start_date,
-            end_date,
-            status,
-            description,
-            created_at,
-            created_by
-        FROM cycles
+            c.id,
+            c.type,
+            c.start_date,
+            c.end_date,
+            c.status,
+            c.description,
+            c.created_at,
+            c.created_by,
+            COUNT(a.id) AS activity_count,
+            COALESCE(SUM(CASE WHEN a.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_count,
+            COALESCE(SUM(CASE WHEN a.status = 'in_progress' THEN 1 ELSE 0 END), 0) AS in_progress_count,
+            COALESCE(SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END), 0) AS completed_count,
+            COALESCE(SUM(CASE WHEN a.status = 'blocked' THEN 1 ELSE 0 END), 0) AS blocked_count
+        FROM cycles c
+        LEFT JOIN activities a ON a.cycle_id = c.id
     """
     clauses: list[str] = []
     params: list[str] = []
 
     normalized_type = normalize_optional_text(cycle_type)
     if normalized_type:
-        clauses.append("type = ?")
+        clauses.append("c.type = ?")
         params.append(normalized_type)
 
     normalized_status = normalize_optional_text(status)
     if normalized_status:
-        clauses.append("status = ?")
+        clauses.append("c.status = ?")
         params.append(normalized_status)
 
     if clauses:
         query += " WHERE " + " AND ".join(clauses)
 
-    query += " ORDER BY start_date DESC, type ASC"
+    query += """
+        GROUP BY
+            c.id,
+            c.type,
+            c.start_date,
+            c.end_date,
+            c.status,
+            c.description,
+            c.created_at,
+            c.created_by
+    """
+    query += " ORDER BY c.start_date DESC, c.type ASC"
 
     with connect_workspace_database(workspace.database_path, read_only=True) as connection:
         rows = connection.execute(query, params).fetchall()
@@ -196,6 +223,11 @@ def list_cycles(
             description=row[5],
             created_at=str(row[6]),
             created_by=row[7],
+            activity_count=int(row[8]),
+            pending_count=int(row[9]),
+            in_progress_count=int(row[10]),
+            completed_count=int(row[11]),
+            blocked_count=int(row[12]),
         )
         for row in rows
     ]

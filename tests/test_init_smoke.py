@@ -592,9 +592,15 @@ class NexusCliSmokeTest(unittest.TestCase):
 
             list_run = self.run_cli("activity", "list", cwd=workspace_root)
             self.assertEqual(list_run.returncode, 0, list_run.stdout + list_run.stderr)
-            self.assertIn("ID | Title | Cycle | Status | Priority", list_run.stdout)
-            self.assertIn("Finish report | cycle-daily-2026-03-13 | pending | 3", list_run.stdout)
-            self.assertIn("Plan next week | cycle-weekly-2026-03-10 | pending | 3", list_run.stdout)
+            self.assertIn("ID | Title | Cycle | Cycle Type | Cycle Start | Status | Priority", list_run.stdout)
+            self.assertIn(
+                "Finish report | cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | pending | 3",
+                list_run.stdout,
+            )
+            self.assertIn(
+                "Plan next week | cycle-weekly-2026-03-10 | weekly | 2026-03-10 00:00:00 | pending | 3",
+                list_run.stdout,
+            )
 
             filtered_run = self.run_cli(
                 "activity",
@@ -604,8 +610,14 @@ class NexusCliSmokeTest(unittest.TestCase):
                 cwd=workspace_root,
             )
             self.assertEqual(filtered_run.returncode, 0, filtered_run.stdout + filtered_run.stderr)
-            self.assertIn("Finish report | cycle-daily-2026-03-13 | pending | 3", filtered_run.stdout)
-            self.assertNotIn("Plan next week | cycle-weekly-2026-03-10 | pending | 3", filtered_run.stdout)
+            self.assertIn(
+                "Finish report | cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | pending | 3",
+                filtered_run.stdout,
+            )
+            self.assertNotIn(
+                "Plan next week | cycle-weekly-2026-03-10 | weekly | 2026-03-10 00:00:00 | pending | 3",
+                filtered_run.stdout,
+            )
 
     def test_activity_commands_fail_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -740,14 +752,92 @@ class NexusCliSmokeTest(unittest.TestCase):
 
             list_run = self.run_cli("cycle", "list", cwd=workspace_root)
             self.assertEqual(list_run.returncode, 0, list_run.stdout + list_run.stderr)
-            self.assertIn("ID | Type | Start | Status", list_run.stdout)
-            self.assertIn("cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | active", list_run.stdout)
-            self.assertIn("cycle-weekly-2026-03-10 | weekly | 2026-03-10 00:00:00 | active", list_run.stdout)
+            self.assertIn(
+                "ID | Type | Start | Status | Activities | Pending | In Progress | Completed | Blocked",
+                list_run.stdout,
+            )
+            self.assertIn(
+                "cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | active | 0 | 0 | 0 | 0 | 0",
+                list_run.stdout,
+            )
+            self.assertIn(
+                "cycle-weekly-2026-03-10 | weekly | 2026-03-10 00:00:00 | active | 0 | 0 | 0 | 0 | 0",
+                list_run.stdout,
+            )
 
             filtered_run = self.run_cli("cycle", "list", "--type", "daily", cwd=workspace_root)
             self.assertEqual(filtered_run.returncode, 0, filtered_run.stdout + filtered_run.stderr)
-            self.assertIn("cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | active", filtered_run.stdout)
-            self.assertNotIn("cycle-weekly-2026-03-10 | weekly | 2026-03-10 00:00:00 | active", filtered_run.stdout)
+            self.assertIn(
+                "cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | active | 0 | 0 | 0 | 0 | 0",
+                filtered_run.stdout,
+            )
+            self.assertNotIn(
+                "cycle-weekly-2026-03-10 | weekly | 2026-03-10 00:00:00 | active | 0 | 0 | 0 | 0 | 0",
+                filtered_run.stdout,
+            )
+
+    def test_cycle_activity_operational_review_flow(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            cycle_run = self.run_cli(
+                "cycle",
+                "create",
+                "--type",
+                "daily",
+                "--start",
+                "2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(cycle_run.returncode, 0, cycle_run.stdout + cycle_run.stderr)
+
+            self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Review inbox",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+
+            activity_list_run = self.run_cli(
+                "activity",
+                "list",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(
+                activity_list_run.returncode,
+                0,
+                activity_list_run.stdout + activity_list_run.stderr,
+            )
+            self.assertIn(
+                "Finish report | cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | pending | 3",
+                activity_list_run.stdout,
+            )
+            self.assertIn(
+                "Review inbox | cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | pending | 3",
+                activity_list_run.stdout,
+            )
+
+            cycle_list_run = self.run_cli("cycle", "list", cwd=workspace_root)
+            self.assertEqual(cycle_list_run.returncode, 0, cycle_list_run.stdout + cycle_list_run.stderr)
+            self.assertIn(
+                "cycle-daily-2026-03-13 | daily | 2026-03-13 00:00:00 | active | 2 | 2 | 0 | 0 | 0",
+                cycle_list_run.stdout,
+            )
 
     def test_cycle_commands_fail_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

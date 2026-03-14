@@ -20,6 +20,8 @@ class ActivityRecord:
     id: str
     title: str
     cycle_id: str
+    cycle_type: str | None
+    cycle_start_date: str | None
     status: str
     priority: int
     activity_type: str | None
@@ -40,7 +42,7 @@ def create_activity(workspace_root: Path, *, title: str, cycle_id: str) -> Activ
 
     with connect_workspace_database(workspace.database_path) as connection:
         workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
-        ensure_cycle_exists(connection, normalized_cycle_id)
+        cycle_type, cycle_start_date = fetch_cycle_details(connection, normalized_cycle_id)
 
         connection.execute(
             """
@@ -129,6 +131,8 @@ def create_activity(workspace_root: Path, *, title: str, cycle_id: str) -> Activ
         id=activity_id,
         title=normalized_title,
         cycle_id=normalized_cycle_id,
+        cycle_type=cycle_type,
+        cycle_start_date=cycle_start_date,
         status="pending",
         priority=3,
         activity_type=None,
@@ -147,16 +151,19 @@ def list_activities(
     workspace = require_workspace(workspace_root)
     query = """
         SELECT
-            id,
-            title,
-            cycle_id,
-            status,
-            priority,
-            type,
-            description,
-            created_at,
-            created_by
-        FROM activities
+            a.id,
+            a.title,
+            a.cycle_id,
+            c.type,
+            c.start_date,
+            a.status,
+            a.priority,
+            a.type,
+            a.description,
+            a.created_at,
+            a.created_by
+        FROM activities a
+        JOIN cycles c ON c.id = a.cycle_id
     """
     clauses: list[str] = []
     params: list[str] = []
@@ -172,7 +179,7 @@ def list_activities(
     if clauses:
         query += " WHERE " + " AND ".join(clauses)
 
-    query += " ORDER BY created_at DESC, title ASC"
+    query += " ORDER BY c.start_date DESC, a.priority ASC, a.created_at DESC, a.title ASC"
 
     with connect_workspace_database(workspace.database_path, read_only=True) as connection:
         rows = connection.execute(query, params).fetchall()
@@ -182,21 +189,24 @@ def list_activities(
             id=row[0],
             title=row[1],
             cycle_id=row[2],
-            status=row[3],
-            priority=int(row[4]),
-            activity_type=row[5],
-            description=row[6],
-            created_at=str(row[7]),
-            created_by=row[8],
+            cycle_type=row[3],
+            cycle_start_date=str(row[4]),
+            status=row[5],
+            priority=int(row[6]),
+            activity_type=row[7],
+            description=row[8],
+            created_at=str(row[9]),
+            created_by=row[10],
         )
         for row in rows
     ]
 
 
-def ensure_cycle_exists(connection, cycle_id: str) -> None:
+def fetch_cycle_details(connection, cycle_id: str) -> tuple[str, str]:
     row = connection.execute(
-        "SELECT id FROM cycles WHERE id = ?",
+        "SELECT type, start_date FROM cycles WHERE id = ?",
         [cycle_id],
     ).fetchone()
     if row is None:
         raise WorkspaceBootstrapError(f"Cycle not found: {cycle_id}")
+    return row[0], str(row[1])
