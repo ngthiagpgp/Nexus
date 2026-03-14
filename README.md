@@ -37,3 +37,10 @@ Para inspecionar se o diretorio atual ja e um workspace Nexus:
 ```bash
 python -m nexus status
 ```
+
+Para criar e listar entidades no workspace atual:
+
+```bash
+python -m nexus entity create --name "Projeto X" --type project
+python -m nexus entity list --type project
+```

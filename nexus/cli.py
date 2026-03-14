@@ -4,6 +4,7 @@ from pathlib import Path
 
 import typer
 
+from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.workspace import (
     SCHEMA_COMPATIBILITY_NOTE,
     WorkspaceBootstrapError,
@@ -16,11 +17,15 @@ app = typer.Typer(
     help="Nexus local-first workspace CLI.",
     no_args_is_help=True,
 )
+entity_app = typer.Typer(help="Manage Nexus entities.")
 
 
 @app.callback()
 def app_callback() -> None:
     """Nexus command group."""
+
+
+app.add_typer(entity_app, name="entity")
 
 
 @app.command("init")
@@ -101,6 +106,55 @@ def status_command() -> None:
         typer.echo("Notes:")
         for note in status.notes:
             typer.echo(f"  - {note}")
+
+
+@entity_app.command("create")
+def entity_create_command(
+    name: str = typer.Option(..., "--name", help="Entity name."),
+    entity_type: str = typer.Option(..., "--type", help="Entity type, e.g. project or person."),
+    context: str | None = typer.Option(None, "--context", help="Optional short context for the entity."),
+) -> None:
+    """Create a new entity in the current Nexus workspace."""
+
+    try:
+        record = create_entity(
+            Path.cwd(),
+            name=validate_required_text("Entity name", name),
+            entity_type=validate_required_text("Entity type", entity_type),
+            context=context,
+        )
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Entity created: {record.id}")
+    typer.echo(f"Name: {record.name}")
+    typer.echo(f"Type: {record.type}")
+    if record.context:
+        typer.echo(f"Context: {record.context}")
+
+
+@entity_app.command("list")
+def entity_list_command(
+    entity_type: str | None = typer.Option(None, "--type", help="Filter entities by type."),
+) -> None:
+    """List entities in the current Nexus workspace."""
+
+    try:
+        records = list_entities(Path.cwd(), entity_type=entity_type)
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not records:
+        typer.echo("No entities found.")
+        return
+
+    typer.echo("ID | Name | Type | Context")
+    for record in records:
+        typer.echo(
+            f"{record.id} | {record.name} | {record.type} | {record.context or '-'}"
+        )
 
 
 def main() -> None:

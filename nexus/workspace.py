@@ -162,6 +162,16 @@ def inspect_workspace(target: Path) -> WorkspaceStatus:
     )
 
 
+def require_workspace(target: Path) -> WorkspaceStatus:
+    status = inspect_workspace(target)
+    if not status.is_workspace:
+        raise WorkspaceBootstrapError(
+            f"Current directory is not a Nexus workspace: {status.workspace_root}. "
+            "Run `nexus init` first."
+        )
+    return status
+
+
 def load_schema_sql() -> SchemaBootstrapPayload:
     schema_path = Path(__file__).resolve().parents[1] / "Plan" / "NEXUS_MVP_SCHEMA.sql"
     if not schema_path.exists():
