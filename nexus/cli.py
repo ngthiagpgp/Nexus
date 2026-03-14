@@ -4,6 +4,7 @@ from pathlib import Path
 
 import typer
 
+from nexus.documents import create_document, list_documents
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.workspace import (
     SCHEMA_COMPATIBILITY_NOTE,
@@ -18,6 +19,7 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 entity_app = typer.Typer(help="Manage Nexus entities.")
+document_app = typer.Typer(help="Manage Nexus documents.")
 
 
 @app.callback()
@@ -26,6 +28,7 @@ def app_callback() -> None:
 
 
 app.add_typer(entity_app, name="entity")
+app.add_typer(document_app, name="document")
 
 
 @app.command("init")
@@ -154,6 +157,68 @@ def entity_list_command(
     for record in records:
         typer.echo(
             f"{record.id} | {record.name} | {record.type} | {record.context or '-'}"
+        )
+
+
+@document_app.command("create")
+def document_create_command(
+    document_type: str = typer.Option(
+        ...,
+        "--type",
+        help="Document type, e.g. daily, weekly, monthly, report or note.",
+    ),
+    title: str | None = typer.Option(
+        None,
+        "--title",
+        help="Optional explicit document title. A default title is generated when omitted.",
+    ),
+    cycle_id: str | None = typer.Option(
+        None,
+        "--cycle-id",
+        help="Optional cycle identifier to link the document to an existing cycle later.",
+    ),
+) -> None:
+    """Create a new document in the current Nexus workspace."""
+
+    try:
+        record = create_document(
+            Path.cwd(),
+            document_type=document_type,
+            title=title,
+            cycle_id=cycle_id,
+        )
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Document created: {record.id}")
+    typer.echo(f"Title: {record.title}")
+    typer.echo(f"Type: {record.type}")
+    typer.echo(f"Status: {record.status}")
+    typer.echo(f"Path: {record.path}")
+
+
+@document_app.command("list")
+def document_list_command(
+    document_type: str | None = typer.Option(None, "--type", help="Filter documents by type."),
+    status: str | None = typer.Option(None, "--status", help="Filter documents by status."),
+) -> None:
+    """List documents in the current Nexus workspace."""
+
+    try:
+        records = list_documents(Path.cwd(), document_type=document_type, status=status)
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not records:
+        typer.echo("No documents found.")
+        return
+
+    typer.echo("ID | Title | Type | Status | Path")
+    for record in records:
+        typer.echo(
+            f"{record.id} | {record.title} | {record.type} | {record.status} | {record.path}"
         )
 
 

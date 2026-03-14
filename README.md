@@ -44,3 +44,10 @@ Para criar e listar entidades no workspace atual:
 python -m nexus entity create --name "Projeto X" --type project
 python -m nexus entity list --type project
 ```
+
+Para criar e listar documentos no workspace atual:
+
+```bash
+python -m nexus document create --type daily --title "Daily 2026-03-13"
+python -m nexus document list --type daily
+```

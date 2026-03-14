@@ -182,6 +182,111 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
             self.assertIn("Entity name is required and cannot be blank.", create_run.stderr)
 
+    def test_document_create_writes_markdown_and_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            self.assertIn("Document created:", create_run.stdout)
+            self.assertIn("Path: documents/daily/2026-03-13.md", create_run.stdout)
+
+            document_path = workspace_root / "documents" / "daily" / "2026-03-13.md"
+            self.assertTrue(document_path.exists())
+            self.assertEqual(document_path.read_text(encoding="utf-8"), "# Daily 2026-03-13\n\n")
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                row = connection.execute(
+                    """
+                    SELECT title, type, status, path
+                    FROM documents
+                    WHERE title = 'Daily 2026-03-13'
+                    """
+                ).fetchone()
+                self.assertEqual(
+                    row,
+                    ("Daily 2026-03-13", "daily", "draft", "documents/daily/2026-03-13.md"),
+                )
+            finally:
+                connection.close()
+
+    def test_document_list_shows_created_documents_and_filters(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "note",
+                "--title",
+                "Research Notes",
+                cwd=workspace_root,
+            )
+
+            list_run = self.run_cli("document", "list", cwd=workspace_root)
+            self.assertEqual(list_run.returncode, 0, list_run.stdout + list_run.stderr)
+            self.assertIn("ID | Title | Type | Status | Path", list_run.stdout)
+            self.assertIn("Daily 2026-03-13 | daily | draft | documents/daily/2026-03-13.md", list_run.stdout)
+            self.assertIn("Research Notes | note | draft | documents/note/research-notes.md", list_run.stdout)
+
+            filtered_run = self.run_cli(
+                "document", "list", "--type", "daily", cwd=workspace_root
+            )
+            self.assertEqual(filtered_run.returncode, 0, filtered_run.stdout + filtered_run.stderr)
+            self.assertIn("Daily 2026-03-13 | daily | draft", filtered_run.stdout)
+            self.assertNotIn("Research Notes | note | draft", filtered_run.stdout)
+
+    def test_document_commands_fail_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outside_root = Path(temp_dir) / "outside"
+            outside_root.mkdir(parents=True, exist_ok=True)
+
+            create_run = self.run_cli(
+                "document", "create", "--type", "daily", cwd=outside_root
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", create_run.stderr)
+
+            list_run = self.run_cli("document", "list", cwd=outside_root)
+            self.assertEqual(list_run.returncode, 1, list_run.stdout + list_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", list_run.stderr)
+
+    def test_document_create_rejects_blank_required_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "   ",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Document type is required and cannot be blank.", create_run.stderr)
+
     def run_cli(
         self, *args: str, cwd: Path | None = None
     ) -> subprocess.CompletedProcess[str]:
