@@ -11,6 +11,7 @@ from nexus.documents import (
     create_document,
     inspect_document,
     list_documents,
+    reconcile_document,
     update_document_status,
     verify_document,
     verify_documents,
@@ -414,6 +415,37 @@ def document_verify_command(
     )
     typer.echo(f"Content hash: {hash_status}")
     typer.echo(f"Issues: {', '.join(result.issues) or 'none'}")
+
+
+@document_app.command("reconcile")
+def document_reconcile_command(
+    selector: str = typer.Argument(
+        ...,
+        help="Document id or exact title.",
+    ),
+) -> None:
+    """Reconcile safe document metadata drift against the current backing Markdown file."""
+
+    result = _run_or_exit(
+        lambda: reconcile_document(
+            Path.cwd(),
+            selector=selector,
+            actor="user",
+            reason="CLI document reconcile",
+            cli_id="local",
+            allow_title_lookup=True,
+        )
+    )
+
+    if result.reconciled_fields:
+        typer.echo(f"Document reconciled: {result.record.id}")
+        typer.echo(f"Title: {result.record.title}")
+        typer.echo(f"Reconciled fields: {', '.join(result.reconciled_fields)}")
+    else:
+        typer.echo(f"Document already aligned: {result.record.id}")
+        typer.echo(f"Title: {result.record.title}")
+    typer.echo(f"Integrity: {result.integrity.integrity_state}")
+    typer.echo(f"Issues: {', '.join(result.integrity.issues) or 'none'}")
 
 
 @relation_app.command("create")

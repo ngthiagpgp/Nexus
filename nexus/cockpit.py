@@ -479,6 +479,7 @@ def render_cockpit_page() -> str:
         entities: "/api/entities",
         documents: "/api/documents",
         documentIntegrity: "/api/document-integrity",
+        documentReconcile: "/api/documents",
         cycles: "/api/cycles",
         activities: "/api/activities"
       };
@@ -514,6 +515,20 @@ def render_cockpit_page() -> str:
             "Content-Type": "application/json"
           },
           body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || data.status !== "ok") {
+          throw new Error(data.message || "Unexpected API error");
+        }
+        return data.data;
+      }
+
+      async function postJson(url) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json"
+          }
         });
         const data = await response.json();
         if (!response.ok || data.status !== "ok") {
@@ -612,6 +627,11 @@ def render_cockpit_page() -> str:
               button.dataset.documentId,
               button.dataset.setDocumentStatus
             );
+          });
+        });
+        document.querySelectorAll("[data-reconcile-document]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await reconcileDocument(button.dataset.reconcileDocument);
           });
         });
       }
@@ -911,6 +931,17 @@ def render_cockpit_page() -> str:
         `).join("");
       }
 
+      function canOfferDocumentReconcile(integrity) {
+        return Boolean(
+          integrity &&
+          integrity.backing_file_exists &&
+          (
+            integrity.content_hash_matches === false ||
+            (integrity.path_matches_expected === false && integrity.expected_path_exists)
+          )
+        );
+      }
+
       async function refreshOperationalData() {
         const [status, documents, documentIntegrity, cycles, activities] = await Promise.all([
           fetchJson(api.status),
@@ -962,6 +993,28 @@ def render_cockpit_page() -> str:
           }
           activateView(currentView);
           feedback.textContent = `Status updated to ${updated.status}.`;
+        } catch (error) {
+          feedback.textContent = error.message;
+          feedback.classList.add("error");
+        }
+      }
+
+      async function reconcileDocument(documentId) {
+        const feedback = document.getElementById("document-status-feedback");
+        const currentView = state.activeView;
+        feedback.textContent = "Reconciling document metadata...";
+        feedback.classList.remove("error");
+        try {
+          const updated = await postJson(`${api.documentReconcile}/${encodeURIComponent(documentId)}/reconcile`);
+          await refreshOperationalData();
+          await loadDocument(updated.record.id);
+          if (state.focusedCycleId) {
+            await loadCycle(state.focusedCycleId);
+          }
+          activateView(currentView);
+          feedback.textContent = updated.reconciled_fields.length
+            ? `Reconciled: ${updated.reconciled_fields.join(", ")}.`
+            : "Document metadata was already aligned.";
         } catch (error) {
           feedback.textContent = error.message;
           feedback.classList.add("error");
@@ -1021,9 +1074,14 @@ def render_cockpit_page() -> str:
           renderDocumentStatusControls(doc);
           setHtml(
             "document-actions",
-            doc.cycle_id
-              ? `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(doc.cycle_id)}">Focus cycle ${escapeHtml(doc.cycle_id)}</button>`
-              : ""
+            [
+              doc.cycle_id
+                ? `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(doc.cycle_id)}">Focus cycle ${escapeHtml(doc.cycle_id)}</button>`
+                : "",
+              canOfferDocumentReconcile(integrity)
+                ? `<button class="inline-button" type="button" data-reconcile-document="${escapeAttribute(doc.id)}">Reconcile metadata</button>`
+                : ""
+            ].join("")
           );
           bindDynamicActions();
           preview.textContent = doc.content_preview || "(empty document)";
@@ -1058,7 +1116,13 @@ def render_cockpit_page() -> str:
             ].join("")
           );
           setHtml("document-status-controls", "");
-          setHtml("document-actions", "");
+          setHtml(
+            "document-actions",
+            canOfferDocumentReconcile(integrity)
+              ? `<button class="inline-button" type="button" data-reconcile-document="${escapeAttribute(integrity.document_id)}">Reconcile metadata</button>`
+              : ""
+          );
+          bindDynamicActions();
           preview.classList.add("error-state");
           preview.textContent = `Document inspection failed. ${error.message}`;
         }

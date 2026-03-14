@@ -14,8 +14,10 @@ from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import (
     DocumentIntegrityResult,
     DocumentInspection,
+    DocumentReconciliationResult,
     inspect_document,
     list_documents,
+    reconcile_document,
     update_document_status,
     verify_document,
     verify_documents,
@@ -204,6 +206,20 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
         )
         return {"status": "ok", "data": serialize_document_inspection(inspection)}
 
+    @app.post(f"{API_PREFIX}/documents/{{document_id}}/reconcile")
+    def document_reconcile(document_id: str) -> dict[str, object]:
+        result = api_call(
+            lambda: reconcile_document(
+                resolve_workspace_root(),
+                selector=document_id,
+                actor="user",
+                reason="API document reconcile",
+                cli_id="api",
+                allow_title_lookup=False,
+            )
+        )
+        return {"status": "ok", "data": serialize_document_reconciliation(result)}
+
     @app.get(f"{API_PREFIX}/relations")
     def relation_list(
         entity_a: str | None = Query(None),
@@ -320,6 +336,14 @@ def serialize_document_integrity(record: DocumentIntegrityResult) -> dict[str, A
     data = asdict(record)
     data["issues"] = list(record.issues)
     return data
+
+
+def serialize_document_reconciliation(record: DocumentReconciliationResult) -> dict[str, Any]:
+    return {
+        "record": asdict(record.record),
+        "integrity": serialize_document_integrity(record.integrity),
+        "reconciled_fields": list(record.reconciled_fields),
+    }
 
 
 def serialize_relation(record: RelationRecord) -> dict[str, Any]:

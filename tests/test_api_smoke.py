@@ -267,6 +267,76 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(response.json()["status"], "error")
             self.assertIn("Document not found: missing-document", response.json()["message"])
 
+    def test_document_reconcile_endpoint_updates_hash_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            document_path = workspace_root / document.path
+            document_path.write_text("# Daily 2026-03-13\n\nChanged\n", encoding="utf-8")
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.post(f"/api/documents/{document.id}/reconcile")
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["record"]["id"], document.id)
+            self.assertEqual(payload["data"]["reconciled_fields"], ["content_hash"])
+            self.assertEqual(payload["data"]["integrity"]["integrity_state"], "ok")
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent, reason
+                    FROM audit_log
+                    WHERE entity_type = 'document' AND entity_id = ? AND action = 'reconcile'
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    [document.id],
+                ).fetchone()
+                self.assertEqual(
+                    audit_row,
+                    ("reconcile", "document", "user", "API document reconcile"),
+                )
+            finally:
+                connection.close()
+
+    def test_document_reconcile_endpoint_rejects_missing_backing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            (workspace_root / document.path).unlink()
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.post(f"/api/documents/{document.id}/reconcile")
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Document backing file is missing:", response.json()["message"])
+
+    def test_document_reconcile_endpoint_returns_404_for_missing_record(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.post("/api/documents/missing-document/reconcile")
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Document not found: missing-document", response.json()["message"])
+
     def test_document_status_update_endpoint_updates_record_and_audit_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "workspace"
@@ -594,6 +664,14 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn(
                 "Current directory is not a Nexus workspace",
                 document_update_response.json()["message"],
+            )
+
+            document_reconcile_response = client.post("/api/documents/document-123/reconcile")
+            self.assertEqual(document_reconcile_response.status_code, 409)
+            self.assertEqual(document_reconcile_response.json()["status"], "error")
+            self.assertIn(
+                "Current directory is not a Nexus workspace",
+                document_reconcile_response.json()["message"],
             )
 
             document_integrity_read_response = client.get("/api/document-integrity/document-123")

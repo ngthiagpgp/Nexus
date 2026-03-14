@@ -61,6 +61,7 @@ class DocumentIntegrityResult:
     path: str
     expected_path: str
     absolute_path: str
+    expected_path_exists: bool
     db_record_exists: bool
     backing_file_exists: bool
     path_matches_expected: bool
@@ -69,6 +70,13 @@ class DocumentIntegrityResult:
     issues: list[str]
     recorded_content_hash: str
     current_content_hash: str | None
+
+
+@dataclass(frozen=True)
+class DocumentReconciliationResult:
+    record: DocumentRecord
+    integrity: DocumentIntegrityResult
+    reconciled_fields: list[str]
 
 
 def create_document(
@@ -333,6 +341,142 @@ def verify_documents(workspace_root: Path) -> list[DocumentIntegrityResult]:
     ]
 
 
+def reconcile_document(
+    workspace_root: Path,
+    *,
+    selector: str,
+    actor: str = "user",
+    reason: str = "Document reconcile",
+    cli_id: str = "local",
+    allow_title_lookup: bool = True,
+) -> DocumentReconciliationResult:
+    workspace = require_workspace(workspace_root)
+    normalized_selector = validate_required_text("Document selector", selector)
+    normalized_actor = validate_required_text("Actor", actor)
+    normalized_reason = validate_required_text("Reason", reason)
+    timestamp = utc_now()
+
+    with connect_workspace_database(workspace.database_path) as connection:
+        workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
+        old_row = fetch_document_row(
+            connection,
+            normalized_selector,
+            allow_title_lookup=allow_title_lookup,
+        )
+        old_record = document_record_from_row(old_row)
+        actual_path = workspace.workspace_root / old_record.path
+        expected_relative_path = build_document_relative_path(old_record.type, old_record.title)
+        expected_path = workspace.workspace_root / expected_relative_path
+
+        if not actual_path.exists():
+            raise WorkspaceBootstrapError(
+                f"Document backing file is missing: {actual_path}"
+            )
+
+        if (
+            old_record.path != expected_relative_path.as_posix()
+            and expected_path.exists()
+            and actual_path.resolve() != expected_path.resolve()
+        ):
+            raise WorkspaceBootstrapError(
+                "Document reconciliation is ambiguous because both the stored path and the "
+                f"canonical path exist: {actual_path} | {expected_path}. Resolve manually."
+            )
+
+        try:
+            current_content = actual_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise WorkspaceBootstrapError(
+                f"Failed to read document backing file: {actual_path}: {exc}"
+            ) from exc
+
+        reconciled_fields: list[str] = []
+        updates: dict[str, object] = {
+            "modified_by": normalized_actor,
+            "modified_at": timestamp,
+            "id_cli": cli_id,
+        }
+        current_content_hash = compute_content_hash(current_content)
+        if current_content_hash != old_record.content_hash:
+            updates["content_hash"] = current_content_hash
+            reconciled_fields.append("content_hash")
+
+        if (
+            old_record.path != expected_relative_path.as_posix()
+            and expected_path.exists()
+            and actual_path.resolve() == expected_path.resolve()
+        ):
+            updates["path"] = expected_relative_path.as_posix()
+            reconciled_fields.append("path")
+
+        if not reconciled_fields:
+            if old_record.path != expected_relative_path.as_posix():
+                raise WorkspaceBootstrapError(
+                    "Document reconciliation cannot safely update the stored path because the "
+                    f"canonical file does not exist yet: {expected_path}"
+                )
+            integrity = build_document_integrity_result(
+                old_record,
+                workspace_root=workspace.workspace_root,
+            )
+            return DocumentReconciliationResult(
+                record=old_record,
+                integrity=integrity,
+                reconciled_fields=[],
+            )
+
+        set_clause = ", ".join(f"{column} = ?" for column in updates)
+        params = list(updates.values()) + [old_record.id]
+        connection.execute(
+            f"UPDATE documents SET {set_clause} WHERE id = ?",
+            params,
+        )
+        new_row = fetch_document_row(connection, old_record.id, allow_title_lookup=False)
+        new_record = document_record_from_row(new_row)
+
+        connection.execute(
+            """
+            INSERT INTO audit_log (
+                id,
+                action,
+                entity_type,
+                entity_id,
+                old_state,
+                new_state,
+                agent,
+                reason,
+                timestamp,
+                id_workspace,
+                id_cli
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                str(uuid4()),
+                "reconcile",
+                "document",
+                old_record.id,
+                json.dumps(document_state_payload(old_record), ensure_ascii=True),
+                json.dumps(document_state_payload(new_record), ensure_ascii=True),
+                normalized_actor,
+                normalized_reason,
+                timestamp,
+                workspace_id,
+                cli_id,
+            ],
+        )
+
+    integrity = build_document_integrity_result(
+        new_record,
+        workspace_root=workspace.workspace_root,
+    )
+    return DocumentReconciliationResult(
+        record=new_record,
+        integrity=integrity,
+        reconciled_fields=reconciled_fields,
+    )
+
+
 def update_document_status(
     workspace_root: Path,
     *,
@@ -524,8 +668,10 @@ def build_document_integrity_result(
 ) -> DocumentIntegrityResult:
     expected_path = build_document_relative_path(record.type, record.title).as_posix()
     absolute_path = workspace_root / record.path
+    expected_absolute_path = workspace_root / expected_path
     issues: list[str] = []
     backing_file_exists = absolute_path.exists()
+    expected_path_exists = expected_absolute_path.exists()
     path_matches_expected = record.path == expected_path
     content_hash_matches: bool | None = None
     current_content_hash: str | None = None
@@ -556,6 +702,7 @@ def build_document_integrity_result(
         path=record.path,
         expected_path=expected_path,
         absolute_path=str(absolute_path),
+        expected_path_exists=expected_path_exists,
         db_record_exists=True,
         backing_file_exists=backing_file_exists,
         path_matches_expected=path_matches_expected,
@@ -605,10 +752,15 @@ def fetch_document_row(
         [selector],
     ).fetchone()
     if row is None and allow_title_lookup:
-        row = connection.execute(
+        title_rows = connection.execute(
             base_query + " WHERE title = ?",
             [selector],
-        ).fetchone()
+        ).fetchall()
+        if len(title_rows) > 1:
+            raise WorkspaceBootstrapError(
+                f"Document selector is ambiguous: {selector}. Use the document id."
+            )
+        row = title_rows[0] if title_rows else None
     if row is None:
         raise WorkspaceBootstrapError(f"Document not found: {selector}")
     return row

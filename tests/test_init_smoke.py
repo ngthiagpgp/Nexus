@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import hashlib
 import os
 import subprocess
 import sys
@@ -536,6 +537,148 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertIn("ID | Title | Status | Integrity | File | Hash | Issues", verify_run.stdout)
             self.assertIn("Daily 2026-03-13 | draft | ok | present | match | -", verify_run.stdout)
 
+    def test_document_reconcile_updates_hash_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+            document_path = workspace_root / "documents" / "daily" / "2026-03-13.md"
+            document_path.write_text("# Daily 2026-03-13\n\nChanged\n", encoding="utf-8")
+
+            reconcile_run = self.run_cli(
+                "document",
+                "reconcile",
+                document_id,
+                cwd=workspace_root,
+            )
+            self.assertEqual(reconcile_run.returncode, 0, reconcile_run.stdout + reconcile_run.stderr)
+            self.assertIn(f"Document reconciled: {document_id}", reconcile_run.stdout)
+            self.assertIn("Reconciled fields: content_hash", reconcile_run.stdout)
+            self.assertIn("Integrity: ok", reconcile_run.stdout)
+
+            verify_run = self.run_cli("document", "verify", document_id, cwd=workspace_root)
+            self.assertEqual(verify_run.returncode, 0, verify_run.stdout + verify_run.stderr)
+            self.assertIn("Integrity: ok", verify_run.stdout)
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                content_hash = connection.execute(
+                    "SELECT content_hash FROM documents WHERE id = ?",
+                    [document_id],
+                ).fetchone()
+                self.assertEqual(
+                    content_hash[0],
+                    hashlib.sha256(document_path.read_text(encoding="utf-8").encode("utf-8")).hexdigest(),
+                )
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent, reason
+                    FROM audit_log
+                    WHERE entity_type = 'document' AND entity_id = ? AND action = 'reconcile'
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    [document_id],
+                ).fetchone()
+                self.assertEqual(
+                    audit_row,
+                    ("reconcile", "document", "user", "CLI document reconcile"),
+                )
+            finally:
+                connection.close()
+
+    def test_document_reconcile_rejects_missing_backing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+            (workspace_root / "documents" / "daily" / "2026-03-13.md").unlink()
+
+            reconcile_run = self.run_cli(
+                "document",
+                "reconcile",
+                document_id,
+                cwd=workspace_root,
+            )
+            self.assertEqual(reconcile_run.returncode, 1, reconcile_run.stdout + reconcile_run.stderr)
+            self.assertIn("Document backing file is missing:", reconcile_run.stderr)
+
+    def test_document_reconcile_rejects_missing_document(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            reconcile_run = self.run_cli(
+                "document",
+                "reconcile",
+                "missing-document",
+                cwd=workspace_root,
+            )
+            self.assertEqual(reconcile_run.returncode, 1, reconcile_run.stdout + reconcile_run.stderr)
+            self.assertIn("Document not found: missing-document", reconcile_run.stderr)
+
+    def test_document_reconcile_rejects_ambiguous_title_lookup(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "note",
+                "--title",
+                "Shared Title",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "report",
+                "--title",
+                "Shared Title",
+                cwd=workspace_root,
+            )
+
+            reconcile_run = self.run_cli(
+                "document",
+                "reconcile",
+                "Shared Title",
+                cwd=workspace_root,
+            )
+            self.assertEqual(reconcile_run.returncode, 1, reconcile_run.stdout + reconcile_run.stderr)
+            self.assertIn(
+                "Document selector is ambiguous: Shared Title. Use the document id.",
+                reconcile_run.stderr,
+            )
+
     def test_document_set_status_updates_database_and_audit_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "workspace"
@@ -707,6 +850,15 @@ class NexusCliSmokeTest(unittest.TestCase):
             )
             self.assertEqual(verify_run.returncode, 1, verify_run.stdout + verify_run.stderr)
             self.assertIn("Current directory is not a Nexus workspace", verify_run.stderr)
+
+            reconcile_run = self.run_cli(
+                "document",
+                "reconcile",
+                "doc-123",
+                cwd=outside_root,
+            )
+            self.assertEqual(reconcile_run.returncode, 1, reconcile_run.stdout + reconcile_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", reconcile_run.stderr)
 
     def test_document_create_rejects_blank_required_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
