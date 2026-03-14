@@ -153,8 +153,12 @@ At the end of each implementation session, you must produce a concise session su
 - pending item 2
 
 ## Commit
-- commit hash
+- real final commit hash
 - commit message
+
+## Push
+- pushed to `origin/main` by default
+- or explicitly kept local if the session says not to push
 ```
 
 This summary should be saved under:
@@ -162,6 +166,8 @@ This summary should be saved under:
 `logs/sessions/YYYY-MM-DD_HHMM_session-summary.md`
 
 If the directory does not exist, create it.
+
+If the summary is drafted before commit or push, update the saved file after the final commit/push so it reflects the real final commit hash and actual push status.
 
 ---
 
@@ -211,11 +217,28 @@ When receiving a task, do this sequence:
 3. identify the minimal implementation slice;
 4. implement;
 5. validate locally if possible;
-6. write session summary;
-7. commit.
+6. draft or update the session summary;
+7. commit;
+8. push to `origin/main` by default unless the session explicitly says to keep changes local;
+9. update the saved session summary with the real final commit hash and push status if needed.
 
 Do not skip the session summary.  
 Do not skip the commit unless the user explicitly says not to commit.
+Do not skip the push unless the user explicitly says to keep changes local.
+
+---
+
+## Closing Ritual
+
+When closing an implementation session, the default ritual is:
+
+1. ensure the session summary exists under `logs/sessions/`;
+2. ensure the summary records the real final commit hash;
+3. create the commit;
+4. push to `origin/main` by default;
+5. update the saved summary if needed so it matches the actual final commit hash and push outcome.
+
+Only keep changes local when the session explicitly says not to push.
 
 ---
 
@@ -238,7 +261,9 @@ A task is considered done only if:
 - changes are coherent with `Plan/`;
 - the repository remains understandable;
 - a session summary was written;
-- a git commit was created.
+- the session summary records the real final commit hash;
+- a git commit was created;
+- the commit was pushed to `origin/main` by default unless the session explicitly said to keep changes local.
 
 If one of these is missing, the task is incomplete.
 
