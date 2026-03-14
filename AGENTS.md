@@ -153,8 +153,8 @@ At the end of each implementation session, you must produce a concise session su
 - pending item 2
 
 ## Commit
-- real final commit hash
-- commit message
+- main implementation commit hash
+- main implementation commit message
 
 ## Push
 - pushed to `origin/main` by default
@@ -167,7 +167,15 @@ This summary should be saved under:
 
 If the directory does not exist, create it.
 
-If the summary is drafted before commit or push, update the saved file after the final commit/push so it reflects the real final commit hash and actual push status.
+Default session-summary policy:
+
+1. The saved session summary is finalized only after the main implementation commit and the default push flow are complete.
+2. By default, do **not** include the session summary in the main implementation commit.
+3. By default, do **not** create a separate log-only commit just to store the session summary.
+4. The session summary is kept as a local artifact under `logs/sessions/` unless the user explicitly asks to version it.
+5. Record in `## Commit` the real hash and message of the main implementation commit.
+6. Record in `## Push` the actual push outcome for that main implementation commit.
+7. If push happens after the main commit, finish the push first and only then write or finalize the saved summary.
 
 ---
 
@@ -217,10 +225,9 @@ When receiving a task, do this sequence:
 3. identify the minimal implementation slice;
 4. implement;
 5. validate locally if possible;
-6. draft or update the session summary;
-7. commit;
-8. push to `origin/main` by default unless the session explicitly says to keep changes local;
-9. update the saved session summary with the real final commit hash and push status if needed.
+6. create the main implementation commit;
+7. push to `origin/main` by default unless the session explicitly says to keep changes local;
+8. write or finalize the saved session summary under `logs/sessions/` with the real main commit hash and actual push status.
 
 Do not skip the session summary.  
 Do not skip the commit unless the user explicitly says not to commit.
@@ -232,11 +239,11 @@ Do not skip the push unless the user explicitly says to keep changes local.
 
 When closing an implementation session, the default ritual is:
 
-1. ensure the session summary exists under `logs/sessions/`;
-2. ensure the summary records the real final commit hash;
-3. create the commit;
-4. push to `origin/main` by default;
-5. update the saved summary if needed so it matches the actual final commit hash and push outcome.
+1. create the main implementation commit;
+2. push it to `origin/main` by default;
+3. ensure the session summary exists under `logs/sessions/`;
+4. ensure the summary records the real hash of the main implementation commit and the actual push outcome;
+5. keep the summary local by default instead of reopening the main commit or creating a separate log-only commit.
 
 Only keep changes local when the session explicitly says not to push.
 
@@ -260,10 +267,10 @@ A task is considered done only if:
 - the requested scope was implemented;
 - changes are coherent with `Plan/`;
 - the repository remains understandable;
-- a session summary was written;
-- the session summary records the real final commit hash;
+- a session summary was written under `logs/sessions/` according to the repository policy;
+- the session summary records the real main implementation commit hash and actual push status;
 - a git commit was created;
-- the commit was pushed to `origin/main` by default unless the session explicitly said to keep changes local.
+- the main implementation commit was pushed to `origin/main` by default unless the session explicitly said to keep changes local.
 
 If one of these is missing, the task is incomplete.
 
