@@ -65,3 +65,10 @@ Para criar e listar atividades no workspace atual:
 python -m nexus activity create --title "Finish report" --cycle-id cycle-daily-2026-03-13
 python -m nexus activity list --cycle-id cycle-daily-2026-03-13
 ```
+
+Para criar e listar ciclos no workspace atual:
+
+```bash
+python -m nexus cycle create --type daily --start 2026-03-13
+python -m nexus cycle list --type daily
+```

@@ -5,6 +5,7 @@ from pathlib import Path
 import typer
 
 from nexus.activities import create_activity, list_activities
+from nexus.cycles import create_cycle, list_cycles
 from nexus.documents import create_document, list_documents
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.relations import create_relation, list_relations, relation_display_map
@@ -24,6 +25,7 @@ entity_app = typer.Typer(help="Manage Nexus entities.")
 document_app = typer.Typer(help="Manage Nexus documents.")
 relation_app = typer.Typer(help="Manage Nexus relations.")
 activity_app = typer.Typer(help="Manage Nexus activities.")
+cycle_app = typer.Typer(help="Manage Nexus cycles.")
 
 
 @app.callback()
@@ -35,6 +37,7 @@ app.add_typer(entity_app, name="entity")
 app.add_typer(document_app, name="document")
 app.add_typer(relation_app, name="relation")
 app.add_typer(activity_app, name="activity")
+app.add_typer(cycle_app, name="cycle")
 
 
 @app.command("init")
@@ -373,6 +376,65 @@ def activity_list_command(
     for record in records:
         typer.echo(
             f"{record.id} | {record.title} | {record.cycle_id} | {record.status} | {record.priority}"
+        )
+
+
+@cycle_app.command("create")
+def cycle_create_command(
+    cycle_type: str = typer.Option(..., "--type", help="Cycle type, e.g. daily or weekly."),
+    start: str = typer.Option(
+        ...,
+        "--start",
+        help="Cycle start as ISO date or datetime.",
+    ),
+    end: str | None = typer.Option(
+        None,
+        "--end",
+        help="Optional cycle end as ISO date or datetime.",
+    ),
+) -> None:
+    """Create a new cycle in the current Nexus workspace."""
+
+    try:
+        record = create_cycle(
+            Path.cwd(),
+            cycle_type=cycle_type,
+            start=start,
+            end=end,
+        )
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Cycle created: {record.id}")
+    typer.echo(f"Type: {record.type}")
+    typer.echo(f"Start: {record.start_date}")
+    typer.echo(f"Status: {record.status}")
+    if record.end_date:
+        typer.echo(f"End: {record.end_date}")
+
+
+@cycle_app.command("list")
+def cycle_list_command(
+    cycle_type: str | None = typer.Option(None, "--type", help="Filter cycles by type."),
+    status: str | None = typer.Option(None, "--status", help="Filter cycles by status."),
+) -> None:
+    """List cycles in the current Nexus workspace."""
+
+    try:
+        records = list_cycles(Path.cwd(), cycle_type=cycle_type, status=status)
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not records:
+        typer.echo("No cycles found.")
+        return
+
+    typer.echo("ID | Type | Start | Status")
+    for record in records:
+        typer.echo(
+            f"{record.id} | {record.type} | {record.start_date} | {record.status}"
         )
 
 
