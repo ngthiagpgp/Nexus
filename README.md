@@ -12,6 +12,39 @@ Workspace inicial do Nexus MVP com artefatos de especificacao e planejamento.
 - preparar publicacao em repositorio GitHub
 - registrar um rastro minimo de mudancas estruturais
 
+## 5-minute quickstart
+
+1. Instale o projeto localmente:
+
+```bash
+python -m pip install -e .
+```
+
+2. Inicialize um workspace de teste:
+
+```bash
+nexus init ./sandbox-workspace
+cd ./sandbox-workspace
+```
+
+3. Popule um dataset demo coerente:
+
+```bash
+nexus demo-seed
+```
+
+4. Suba a API local e o cockpit:
+
+```bash
+nexus serve
+```
+
+5. Abra no navegador:
+
+```text
+http://127.0.0.1:3000/
+```
+
 ## Bootstrap local
 
 Para expor o comando `nexus` localmente:
@@ -36,6 +69,8 @@ Para inspecionar se o diretorio atual ja e um workspace Nexus:
 
 ```bash
 python -m nexus status
+nexus demo-seed
+nexus serve
 ```
 
 Para criar e listar entidades no workspace atual:
@@ -78,11 +113,11 @@ python -m nexus cycle create --type daily --start 2026-03-13
 python -m nexus cycle list --type daily
 ```
 
-Para subir a API local read-only sobre um workspace Nexus:
+Para subir a API local e o cockpit sobre um workspace Nexus:
 
 ```bash
 cd ./sandbox-workspace
-python -m uvicorn nexus.api:app --port 3000
+nexus serve
 ```
 
 Para abrir o cockpit minimo no navegador local:
@@ -91,4 +126,4 @@ Para abrir o cockpit minimo no navegador local:
 http://127.0.0.1:3000/
 ```
 
-O cockpit atual e read-only e usa cycles como foco operacional principal, com inspeccao ligada a activities e documents.
+O cockpit atual e um work surface local minimo, com foco operacional em cycles e inspeccao ligada a activities e documents.

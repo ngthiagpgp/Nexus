@@ -7,6 +7,7 @@ import typer
 
 from nexus.activities import create_activity, list_activities, update_activity_status
 from nexus.cycles import create_cycle, list_cycles
+from nexus.demo_seed import seed_demo_workspace
 from nexus.documents import (
     create_document,
     inspect_document,
@@ -171,6 +172,49 @@ def status_command() -> None:
         typer.echo("Notes:")
         for note in status.notes:
             typer.echo(f"  - {note}")
+
+
+@app.command("serve")
+def serve_command(
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface for the local Nexus API."),
+    port: int = typer.Option(3000, "--port", min=1, max=65535, help="Port for the local Nexus API."),
+) -> None:
+    """Serve the local Nexus API and cockpit for the current workspace."""
+    from nexus.api import create_app
+    import uvicorn
+
+    workspace_status = _run_or_exit(lambda: inspect_workspace(Path.cwd()))
+    if not workspace_status.is_workspace:
+        typer.echo(
+            f"Error: Current directory is not a Nexus workspace: {workspace_status.workspace_root}. Run `nexus init` first.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Nexus serve: {workspace_status.workspace_root}")
+    typer.echo(f"API: http://{host}:{port}/api/health")
+    typer.echo(f"Cockpit: http://{host}:{port}/")
+    uvicorn.run(create_app(workspace_root=workspace_status.workspace_root), host=host, port=port)
+
+
+@app.command("demo-seed")
+def demo_seed_command() -> None:
+    """Create a small coherent demo dataset in the current Nexus workspace."""
+
+    result = _run_or_exit(lambda: seed_demo_workspace(Path.cwd()))
+
+    if result.created:
+        typer.echo(f"Demo seed ready: {result.workspace_root}")
+    else:
+        typer.echo(f"Demo seed already present: {result.workspace_root}")
+    typer.echo(
+        "Counts: "
+        f"cycles {result.cycle_count}, "
+        f"activities {result.activity_count}, "
+        f"entities {result.entity_count}, "
+        f"documents {result.document_count}, "
+        f"relations {result.relation_count}"
+    )
 
 
 @entity_app.command("create")

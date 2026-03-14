@@ -7,9 +7,15 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import duckdb
+from fastapi.testclient import TestClient
+
+import nexus.cli as nexus_cli
+from nexus.api import create_app
+from nexus.workspace import initialize_workspace
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -97,6 +103,77 @@ class NexusCliSmokeTest(unittest.TestCase):
                 "Current directory does not satisfy the minimal Nexus workspace contract.",
                 status_run.stdout,
             )
+
+    def test_demo_seed_creates_happy_path_workspace_for_local_mvp(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            init_run = self.run_cli("init", str(workspace_root))
+            self.assertEqual(init_run.returncode, 0, init_run.stdout + init_run.stderr)
+
+            seed_run = self.run_cli("demo-seed", cwd=workspace_root)
+            self.assertEqual(seed_run.returncode, 0, seed_run.stdout + seed_run.stderr)
+            self.assertIn("Demo seed ready:", seed_run.stdout)
+            self.assertIn("cycles 1", seed_run.stdout)
+            self.assertIn("activities 3", seed_run.stdout)
+            self.assertIn("entities 3", seed_run.stdout)
+            self.assertIn("documents 3", seed_run.stdout)
+            self.assertIn("relations 2", seed_run.stdout)
+
+            status_run = self.run_cli("status", cwd=workspace_root)
+            self.assertEqual(status_run.returncode, 0, status_run.stdout + status_run.stderr)
+            self.assertIn("  Entities: 3", status_run.stdout)
+            self.assertIn("  Documents: 3 (draft 1, approved 1, archived 1)", status_run.stdout)
+            self.assertIn("  Relations: 2", status_run.stdout)
+            self.assertIn("  Cycles: 1 (active 1, completed 0, archived 0)", status_run.stdout)
+            self.assertIn("  Activities: 3", status_run.stdout)
+            self.assertIn(
+                "  Activity statuses: pending 1, in_progress 1, completed 1, blocked 0",
+                status_run.stdout,
+            )
+
+            client = TestClient(create_app(workspace_root=workspace_root))
+            api_status = client.get("/api/system/status")
+            self.assertEqual(api_status.status_code, 200)
+            payload = api_status.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["counts"]["documents"], 3)
+            self.assertEqual(payload["data"]["counts"]["activities"], 3)
+
+            cockpit = client.get("/")
+            self.assertEqual(cockpit.status_code, 200)
+            self.assertIn("Nexus Cockpit", cockpit.text)
+
+    def test_demo_seed_is_safe_to_rerun_after_marker_is_set(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            first_run = self.run_cli("demo-seed", cwd=workspace_root)
+            self.assertEqual(first_run.returncode, 0, first_run.stdout + first_run.stderr)
+
+            second_run = self.run_cli("demo-seed", cwd=workspace_root)
+            self.assertEqual(second_run.returncode, 0, second_run.stdout + second_run.stderr)
+            self.assertIn("Demo seed already present:", second_run.stdout)
+            self.assertIn("cycles 1", second_run.stdout)
+
+    def test_serve_command_runs_uvicorn_for_current_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            original_cwd = Path.cwd()
+            try:
+                os.chdir(workspace_root)
+                with mock.patch("uvicorn.run") as uvicorn_run, mock.patch("nexus.cli.typer.echo"):
+                    nexus_cli.serve_command(host="127.0.0.1", port=3100)
+            finally:
+                os.chdir(original_cwd)
+
+            uvicorn_run.assert_called_once()
+            args, kwargs = uvicorn_run.call_args
+            self.assertEqual(len(args), 1)
+            self.assertTrue(hasattr(args[0], "routes"))
+            self.assertEqual(kwargs["host"], "127.0.0.1")
+            self.assertEqual(kwargs["port"], 3100)
 
     def test_nexus_status_summarizes_current_operational_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
