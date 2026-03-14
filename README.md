@@ -87,4 +87,4 @@ Para abrir o cockpit minimo no navegador local:
 http://127.0.0.1:3000/
 ```
 
-O cockpit atual e read-only e inclui navegacao simples para entities, documents, cycles e activities.
+O cockpit atual e read-only e usa cycles como foco operacional principal, com inspeccao ligada a activities e documents.
