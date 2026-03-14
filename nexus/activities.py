@@ -15,6 +15,14 @@ from nexus.workspace import (
     utc_now,
 )
 
+ALLOWED_ACTIVITY_STATUSES = ("pending", "in_progress", "completed", "blocked")
+ALLOWED_ACTIVITY_STATUS_TRANSITIONS = {
+    "pending": {"in_progress", "completed", "blocked"},
+    "in_progress": {"pending", "completed", "blocked"},
+    "completed": {"pending", "in_progress"},
+    "blocked": {"pending", "in_progress", "completed"},
+}
+
 
 @dataclass(frozen=True)
 class ActivityRecord:
@@ -161,10 +169,95 @@ def list_activities(
 def get_activity(workspace_root: Path, *, activity_id: str) -> ActivityRecord:
     workspace = require_workspace(workspace_root)
     normalized_activity_id = validate_required_text("Activity id", activity_id)
-    rows = fetch_activity_rows(workspace.database_path, activity_id=normalized_activity_id)
-    if not rows:
-        raise WorkspaceBootstrapError(f"Activity not found: {normalized_activity_id}")
-    return activity_record_from_row(rows[0])
+    with connect_workspace_database(workspace.database_path, read_only=True) as connection:
+        row = fetch_activity_row(connection, normalized_activity_id)
+    return activity_record_from_row(row)
+
+
+def update_activity_status(
+    workspace_root: Path,
+    *,
+    activity_id: str,
+    status: str,
+    actor: str = "user",
+    reason: str = "Activity status update",
+    cli_id: str = "local",
+) -> ActivityRecord:
+    workspace = require_workspace(workspace_root)
+    normalized_activity_id = validate_required_text("Activity id", activity_id)
+    normalized_status = validate_activity_status(status)
+    normalized_actor = validate_required_text("Actor", actor)
+    normalized_reason = validate_required_text("Reason", reason)
+    timestamp = utc_now()
+
+    with connect_workspace_database(workspace.database_path) as connection:
+        workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
+        old_row = fetch_activity_row(connection, normalized_activity_id)
+        old_record = activity_record_from_row(old_row)
+
+        if old_record.status == normalized_status:
+            return old_record
+
+        allowed_statuses = ALLOWED_ACTIVITY_STATUS_TRANSITIONS.get(old_record.status, set())
+        if normalized_status not in allowed_statuses:
+            allowed_display = ", ".join(sorted(allowed_statuses))
+            raise WorkspaceBootstrapError(
+                "Invalid activity status transition: "
+                f"{old_record.status} -> {normalized_status}. "
+                f"Allowed: {allowed_display}."
+            )
+
+        connection.execute(
+            """
+            UPDATE activities
+            SET status = ?, modified_by = ?, modified_at = ?, id_cli = ?
+            WHERE id = ?
+            """,
+            [
+                normalized_status,
+                normalized_actor,
+                timestamp,
+                cli_id,
+                normalized_activity_id,
+            ],
+        )
+
+        new_row = fetch_activity_row(connection, normalized_activity_id)
+        new_record = activity_record_from_row(new_row)
+
+        connection.execute(
+            """
+            INSERT INTO audit_log (
+                id,
+                action,
+                entity_type,
+                entity_id,
+                old_state,
+                new_state,
+                agent,
+                reason,
+                timestamp,
+                id_workspace,
+                id_cli
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                str(uuid4()),
+                "update",
+                "activity",
+                normalized_activity_id,
+                json.dumps(activity_state_payload(old_record), ensure_ascii=True),
+                json.dumps(activity_state_payload(new_record), ensure_ascii=True),
+                normalized_actor,
+                normalized_reason,
+                timestamp,
+                workspace_id,
+                cli_id,
+            ],
+        )
+
+    return new_record
 
 
 def fetch_activity_rows(
@@ -214,6 +307,32 @@ def fetch_activity_rows(
         return connection.execute(query, params).fetchall()
 
 
+def fetch_activity_row(connection, activity_id: str) -> Sequence[object]:
+    row = connection.execute(
+        """
+        SELECT
+            a.id,
+            a.title,
+            a.cycle_id,
+            c.type,
+            c.start_date,
+            a.status,
+            a.priority,
+            a.type,
+            a.description,
+            a.created_at,
+            a.created_by
+        FROM activities a
+        JOIN cycles c ON c.id = a.cycle_id
+        WHERE a.id = ?
+        """,
+        [activity_id],
+    ).fetchone()
+    if row is None:
+        raise WorkspaceBootstrapError(f"Activity not found: {activity_id}")
+    return row
+
+
 def fetch_cycle_details(connection, cycle_id: str) -> tuple[str, str]:
     row = connection.execute(
         "SELECT type, start_date FROM cycles WHERE id = ?",
@@ -238,3 +357,29 @@ def activity_record_from_row(row: Sequence[object]) -> ActivityRecord:
         created_at=str(row[9]),
         created_by=str(row[10]),
     )
+
+
+def validate_activity_status(status: str) -> str:
+    normalized_status = validate_required_text("Activity status", status).lower()
+    if normalized_status not in ALLOWED_ACTIVITY_STATUSES:
+        allowed_display = ", ".join(ALLOWED_ACTIVITY_STATUSES)
+        raise WorkspaceBootstrapError(
+            f"Invalid activity status: {normalized_status}. Allowed: {allowed_display}."
+        )
+    return normalized_status
+
+
+def activity_state_payload(record: ActivityRecord) -> dict[str, object]:
+    return {
+        "id": record.id,
+        "title": record.title,
+        "cycle_id": record.cycle_id,
+        "cycle_type": record.cycle_type,
+        "cycle_start_date": record.cycle_start_date,
+        "status": record.status,
+        "priority": record.priority,
+        "type": record.activity_type,
+        "description": record.description,
+        "created_at": record.created_at,
+        "created_by": record.created_by,
+    }

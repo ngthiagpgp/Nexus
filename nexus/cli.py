@@ -5,7 +5,7 @@ from typing import Callable, TypeVar
 
 import typer
 
-from nexus.activities import create_activity, list_activities
+from nexus.activities import create_activity, list_activities, update_activity_status
 from nexus.cycles import create_cycle, list_cycles
 from nexus.documents import create_document, inspect_document, list_documents
 from nexus.entities import create_entity, list_entities, validate_required_text
@@ -449,6 +449,34 @@ def activity_list_command(
             for record in records
         ],
     )
+
+
+@activity_app.command("set-status")
+def activity_set_status_command(
+    activity_id: str = typer.Argument(..., help="Activity identifier."),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Target status: pending, in_progress, completed, or blocked.",
+    ),
+) -> None:
+    """Update only the status of one activity in the current Nexus workspace."""
+
+    record = _run_or_exit(
+        lambda: update_activity_status(
+            Path.cwd(),
+            activity_id=activity_id,
+            status=status,
+            actor="user",
+            reason="CLI activity status update",
+            cli_id="local",
+        )
+    )
+
+    typer.echo(f"Activity status updated: {record.id}")
+    typer.echo(f"Title: {record.title}")
+    typer.echo(f"Cycle: {record.cycle_id}")
+    typer.echo(f"Status: {record.status}")
 
 
 @cycle_app.command("create")

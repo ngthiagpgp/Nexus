@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import duckdb
 from fastapi.testclient import TestClient
 
 from nexus.api import create_app
@@ -50,6 +51,7 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn('id="activities-breakdown"', response.text)
             self.assertIn('id="activities-cycle-filter"', response.text)
             self.assertIn('id="documents-cycle-filter"', response.text)
+            self.assertIn('id="activity-status-controls"', response.text)
             self.assertIn('id="documents-status-filter"', response.text)
             self.assertIn('id="cycles-status-filter"', response.text)
             self.assertIn('id="activities-status-filter"', response.text)
@@ -282,6 +284,95 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(response.json()["status"], "error")
             self.assertIn("Activity not found: missing-activity", response.json()["message"])
 
+    def test_activity_status_update_endpoint_updates_record_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            cycle = create_cycle(
+                workspace_root,
+                cycle_type="daily",
+                start="2026-03-13",
+            )
+            activity = create_activity(
+                workspace_root,
+                title="Finish report",
+                cycle_id=cycle.id,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.patch(
+                f"/api/activities/{activity.id}",
+                json={"status": "in_progress"},
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["id"], activity.id)
+            self.assertEqual(payload["data"]["status"], "in_progress")
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                activity_row = connection.execute(
+                    "SELECT status FROM activities WHERE id = ?",
+                    [activity.id],
+                ).fetchone()
+                self.assertEqual(activity_row, ("in_progress",))
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent, reason
+                    FROM audit_log
+                    WHERE entity_type = 'activity' AND entity_id = ? AND action = 'update'
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    [activity.id],
+                ).fetchone()
+                self.assertEqual(
+                    audit_row,
+                    ("update", "activity", "user", "API activity status update"),
+                )
+            finally:
+                connection.close()
+
+    def test_activity_status_update_rejects_invalid_status(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            cycle = create_cycle(
+                workspace_root,
+                cycle_type="daily",
+                start="2026-03-13",
+            )
+            activity = create_activity(
+                workspace_root,
+                title="Finish report",
+                cycle_id=cycle.id,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.patch(
+                f"/api/activities/{activity.id}",
+                json={"status": "done"},
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Invalid activity status: done.", response.json()["message"])
+
+    def test_activity_status_update_returns_404_for_missing_record(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.patch(
+                "/api/activities/missing-activity",
+                json={"status": "completed"},
+            )
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Activity not found: missing-activity", response.json()["message"])
+
     def test_graph_endpoints_fail_cleanly_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "outside"
@@ -312,6 +403,17 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(activity_response.status_code, 409)
             self.assertEqual(activity_response.json()["status"], "error")
             self.assertIn("Current directory is not a Nexus workspace", activity_response.json()["message"])
+
+            activity_update_response = client.patch(
+                "/api/activities/activity-123",
+                json={"status": "completed"},
+            )
+            self.assertEqual(activity_update_response.status_code, 409)
+            self.assertEqual(activity_update_response.json()["status"], "error")
+            self.assertIn(
+                "Current directory is not a Nexus workspace",
+                activity_update_response.json()["message"],
+            )
 
             cockpit_response = client.get("/")
             self.assertEqual(cockpit_response.status_code, 200)

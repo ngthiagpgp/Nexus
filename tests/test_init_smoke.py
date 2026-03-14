@@ -792,6 +792,130 @@ class NexusCliSmokeTest(unittest.TestCase):
                 filtered_run.stdout,
             )
 
+    def test_activity_set_status_updates_database_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "cycle",
+                "create",
+                "--type",
+                "daily",
+                "--start",
+                "2026-03-13",
+                cwd=workspace_root,
+            )
+            create_run = self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            activity_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Activity created:")
+            )
+
+            update_run = self.run_cli(
+                "activity",
+                "set-status",
+                activity_id,
+                "--status",
+                "in_progress",
+                cwd=workspace_root,
+            )
+            self.assertEqual(update_run.returncode, 0, update_run.stdout + update_run.stderr)
+            self.assertIn(f"Activity status updated: {activity_id}", update_run.stdout)
+            self.assertIn("Status: in_progress", update_run.stdout)
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                activity_row = connection.execute(
+                    "SELECT status FROM activities WHERE id = ?",
+                    [activity_id],
+                ).fetchone()
+                self.assertEqual(activity_row, ("in_progress",))
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent, reason
+                    FROM audit_log
+                    WHERE entity_type = 'activity' AND entity_id = ? AND action = 'update'
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    [activity_id],
+                ).fetchone()
+                self.assertEqual(
+                    audit_row,
+                    ("update", "activity", "user", "CLI activity status update"),
+                )
+            finally:
+                connection.close()
+
+    def test_activity_set_status_rejects_invalid_status(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "cycle",
+                "create",
+                "--type",
+                "daily",
+                "--start",
+                "2026-03-13",
+                cwd=workspace_root,
+            )
+            create_run = self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            activity_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Activity created:")
+            )
+
+            update_run = self.run_cli(
+                "activity",
+                "set-status",
+                activity_id,
+                "--status",
+                "done",
+                cwd=workspace_root,
+            )
+            self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
+            self.assertIn(
+                "Invalid activity status: done. Allowed: pending, in_progress, completed, blocked.",
+                update_run.stderr,
+            )
+
+    def test_activity_set_status_rejects_missing_activity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            update_run = self.run_cli(
+                "activity",
+                "set-status",
+                "missing-activity",
+                "--status",
+                "completed",
+                cwd=workspace_root,
+            )
+            self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
+            self.assertIn("Activity not found: missing-activity", update_run.stderr)
+
     def test_activity_commands_fail_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             outside_root = Path(temp_dir) / "outside"
@@ -812,6 +936,17 @@ class NexusCliSmokeTest(unittest.TestCase):
             list_run = self.run_cli("activity", "list", cwd=outside_root)
             self.assertEqual(list_run.returncode, 1, list_run.stdout + list_run.stderr)
             self.assertIn("Current directory is not a Nexus workspace", list_run.stderr)
+
+            update_run = self.run_cli(
+                "activity",
+                "set-status",
+                "activity-123",
+                "--status",
+                "completed",
+                cwd=outside_root,
+            )
+            self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", update_run.stderr)
 
     def test_activity_create_rejects_blank_required_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

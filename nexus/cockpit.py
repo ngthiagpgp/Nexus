@@ -232,6 +232,10 @@ def render_cockpit_page() -> str:
         gap: 8px;
         margin-top: 12px;
       }
+      .detail-actions button[disabled] {
+        opacity: 0.55;
+        cursor: default;
+      }
       .detail-preview {
         margin-top: 14px;
         padding: 14px;
@@ -446,7 +450,9 @@ def render_cockpit_page() -> str:
               <div id="activity-content" hidden>
                 <div class="detail-grid" id="activity-meta-grid"></div>
                 <div class="compact-badges" id="activity-flags"></div>
+                <div class="detail-actions" id="activity-status-controls"></div>
                 <div class="detail-actions" id="activity-actions"></div>
+                <div class="inline-note" id="activity-status-feedback"></div>
               </div>
             </section>
 
@@ -494,6 +500,22 @@ def render_cockpit_page() -> str:
           throw new Error(payload.message || "Unexpected API error");
         }
         return payload.data;
+      }
+
+      async function patchJson(url, payload) {
+        const response = await fetch(url, {
+          method: "PATCH",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || data.status !== "ok") {
+          throw new Error(data.message || "Unexpected API error");
+        }
+        return data.data;
       }
 
       function setText(id, value) {
@@ -548,6 +570,14 @@ def render_cockpit_page() -> str:
           button.addEventListener("click", () => {
             focusCycle(button.dataset.focusCycleId);
             activateView("cycles-view");
+          });
+        });
+        document.querySelectorAll("[data-set-activity-status]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await updateActivityStatus(
+              button.dataset.activityId,
+              button.dataset.setActivityStatus
+            );
           });
         });
       }
@@ -799,6 +829,55 @@ def render_cockpit_page() -> str:
         return summary;
       }
 
+      function renderActivityStatusControls(activity) {
+        const controls = document.getElementById("activity-status-controls");
+        const statuses = ["pending", "in_progress", "completed", "blocked"];
+        controls.innerHTML = statuses.map((status) => `
+          <button
+            class="inline-button ${activity.status === status ? "primary" : ""}"
+            type="button"
+            data-activity-id="${escapeAttribute(activity.id)}"
+            data-set-activity-status="${escapeAttribute(status)}"
+            ${activity.status === status ? "disabled" : ""}
+          >
+            ${escapeHtml(status)}
+          </button>
+        `).join("");
+      }
+
+      async function refreshOperationalData() {
+        const [status, cycles, activities] = await Promise.all([
+          fetchJson(api.status),
+          fetchJson(api.cycles),
+          fetchJson(api.activities)
+        ]);
+        renderWorkspaceStatus(status);
+        state.cycles = cycles;
+        state.activities = activities;
+        populateCycleFilterOptions();
+        renderAllLists();
+      }
+
+      async function updateActivityStatus(activityId, status) {
+        const feedback = document.getElementById("activity-status-feedback");
+        const currentView = state.activeView;
+        feedback.textContent = "Updating activity status...";
+        feedback.classList.remove("error");
+        try {
+          const updated = await patchJson(`/api/activities/${encodeURIComponent(activityId)}`, { status });
+          await refreshOperationalData();
+          await loadActivity(updated.id);
+          if (state.focusedCycleId) {
+            await loadCycle(state.focusedCycleId);
+          }
+          activateView(currentView);
+          feedback.textContent = `Status updated to ${updated.status}.`;
+        } catch (error) {
+          feedback.textContent = error.message;
+          feedback.classList.add("error");
+        }
+      }
+
       async function loadDocument(documentId) {
         state.selectedDocumentId = documentId;
         activateView("documents-view");
@@ -944,7 +1023,9 @@ def render_cockpit_page() -> str:
         content.hidden = false;
         setHtml("activity-meta-grid", "");
         setHtml("activity-flags", "");
+        setHtml("activity-status-controls", "");
         setHtml("activity-actions", "");
+        setText("activity-status-feedback", "");
         try {
           const activity = await fetchJson(`/api/activities/${encodeURIComponent(activityId)}`);
           setHtml("activity-meta-grid", renderMetaGrid([
@@ -968,6 +1049,7 @@ def render_cockpit_page() -> str:
               `<span class="badge">cycle ${escapeHtml(activity.cycle_id)}</span>`
             ].join("")
           );
+          renderActivityStatusControls(activity);
           setHtml(
             "activity-actions",
             `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(activity.cycle_id)}">Focus cycle ${escapeHtml(activity.cycle_id)}</button>`
@@ -978,6 +1060,7 @@ def render_cockpit_page() -> str:
             ["Activity", activityId],
             ["State", "Unavailable"]
           ]));
+          setHtml("activity-status-controls", "");
           setHtml("activity-flags", `<span class="badge danger">${escapeHtml(error.message)}</span>`);
           setHtml("activity-actions", "");
         }

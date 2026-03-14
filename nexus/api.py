@@ -5,10 +5,10 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Query, Request
+from fastapi import Body, FastAPI, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from nexus.activities import ActivityRecord, get_activity, list_activities
+from nexus.activities import ActivityRecord, get_activity, list_activities, update_activity_status
 from nexus.cockpit import render_cockpit_page
 from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import DocumentInspection, inspect_document, list_documents
@@ -194,6 +194,29 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
     @app.get(f"{API_PREFIX}/activities/{{activity_id}}")
     def activity_read(activity_id: str) -> dict[str, object]:
         record = api_call(lambda: get_activity(resolve_workspace_root(), activity_id=activity_id))
+        return {"status": "ok", "data": serialize_activity(record)}
+
+    @app.patch(f"{API_PREFIX}/activities/{{activity_id}}")
+    def activity_status_update(
+        activity_id: str,
+        payload: dict[str, object] = Body(...),
+    ) -> dict[str, object]:
+        raw_status = payload.get("status")
+        if not isinstance(raw_status, str) or not raw_status.strip():
+            raise NexusApiException(
+                status_code=400,
+                message="Field 'status' is required for activity updates.",
+            )
+        record = api_call(
+            lambda: update_activity_status(
+                resolve_workspace_root(),
+                activity_id=activity_id,
+                status=raw_status,
+                actor="user",
+                reason="API activity status update",
+                cli_id="api",
+            )
+        )
         return {"status": "ok", "data": serialize_activity(record)}
 
     return app
