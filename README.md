@@ -73,3 +73,10 @@ Para criar e listar ciclos no workspace atual:
 python -m nexus cycle create --type daily --start 2026-03-13
 python -m nexus cycle list --type daily
 ```
+
+Para subir a API local read-only sobre um workspace Nexus:
+
+```bash
+cd ./sandbox-workspace
+python -m uvicorn nexus.api:app --port 3000
+```

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,6 +37,7 @@ class DocumentRecord:
 class DocumentInspection:
     record: DocumentRecord
     absolute_path: Path
+    content: str
     content_preview: str
     modified_at: str
     approved_at: str | None
@@ -183,6 +185,7 @@ def list_documents(
     *,
     document_type: str | None = None,
     status: str | None = None,
+    cycle_id: str | None = None,
 ) -> list[DocumentRecord]:
     workspace = require_workspace(workspace_root)
     query = """
@@ -204,6 +207,7 @@ def list_documents(
 
     normalized_type = normalize_optional_text(document_type)
     normalized_status = normalize_optional_text(status)
+    normalized_cycle_id = normalize_optional_text(cycle_id)
 
     if normalized_type:
         clauses.append("type = ?")
@@ -212,6 +216,10 @@ def list_documents(
     if normalized_status:
         clauses.append("status = ?")
         params.append(normalized_status.lower())
+
+    if normalized_cycle_id:
+        clauses.append("cycle_id = ?")
+        params.append(normalized_cycle_id)
 
     if clauses:
         query += " WHERE " + " AND ".join(clauses)
@@ -222,18 +230,7 @@ def list_documents(
         rows = connection.execute(query, params).fetchall()
 
     return [
-        DocumentRecord(
-            id=row[0],
-            title=row[1],
-            type=row[2],
-            cycle_id=row[3],
-            status=row[4],
-            path=row[5],
-            content_hash=row[6],
-            version=row[7],
-            created_at=str(row[8]),
-            created_by=row[9],
-        )
+        document_record_from_row(row)
         for row in rows
     ]
 
@@ -288,18 +285,7 @@ def inspect_document(workspace_root: Path, *, selector: str) -> DocumentInspecti
     if row is None:
         raise WorkspaceBootstrapError(f"Document not found: {normalized_selector}")
 
-    record = DocumentRecord(
-        id=row[0],
-        title=row[1],
-        type=row[2],
-        cycle_id=row[3],
-        status=row[4],
-        path=row[5],
-        content_hash=row[6],
-        version=row[7],
-        created_at=str(row[8]),
-        created_by=row[9],
-    )
+    record = document_record_from_row(row)
     absolute_path = workspace.workspace_root / record.path
     if not absolute_path.exists():
         raise WorkspaceBootstrapError(
@@ -316,6 +302,7 @@ def inspect_document(workspace_root: Path, *, selector: str) -> DocumentInspecti
     return DocumentInspection(
         record=record,
         absolute_path=absolute_path,
+        content=content,
         content_preview=build_content_preview(content),
         modified_at=str(row[10]),
         approved_at=str(row[11]) if row[11] is not None else None,
@@ -390,3 +377,18 @@ def slugify(value: str) -> str:
     lowered = value.lower()
     normalized = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
     return normalized
+
+
+def document_record_from_row(row: Sequence[object]) -> DocumentRecord:
+    return DocumentRecord(
+        id=str(row[0]),
+        title=str(row[1]),
+        type=str(row[2]),
+        cycle_id=None if row[3] is None else str(row[3]),
+        status=str(row[4]),
+        path=str(row[5]),
+        content_hash=str(row[6]),
+        version=str(row[7]),
+        created_at=str(row[8]),
+        created_by=str(row[9]),
+    )
