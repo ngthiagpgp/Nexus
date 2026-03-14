@@ -50,6 +50,31 @@ class WorkspaceStatus:
     initialized_at: str | None
     missing_paths: tuple[Path, ...]
     notes: tuple[str, ...]
+    resource_counts: "WorkspaceResourceCounts | None"
+    activity_summary: "WorkspaceActivitySummary | None"
+
+
+@dataclass(frozen=True)
+class WorkspaceResourceCounts:
+    entities: int
+    documents: int
+    draft_documents: int
+    approved_documents: int
+    archived_documents: int
+    relations: int
+    cycles: int
+    active_cycles: int
+    completed_cycles: int
+    archived_cycles: int
+    activities: int
+
+
+@dataclass(frozen=True)
+class WorkspaceActivitySummary:
+    pending: int
+    in_progress: int
+    completed: int
+    blocked: int
 
 
 @dataclass(frozen=True)
@@ -123,12 +148,16 @@ def inspect_workspace(target: Path) -> WorkspaceStatus:
     workspace_name: str | None = None
     initialized_at: str | None = None
     notes: list[str] = []
+    resource_counts: WorkspaceResourceCounts | None = None
+    activity_summary: WorkspaceActivitySummary | None = None
 
     if layout.database_path.exists():
         try:
             connection = connect_workspace_database(layout.database_path, read_only=True)
             try:
                 schema_version = fetch_system_state_value(connection, "schema_version")
+                resource_counts = fetch_workspace_resource_counts(connection)
+                activity_summary = fetch_workspace_activity_summary(connection)
             finally:
                 connection.close()
         except WorkspaceBootstrapError as exc:
@@ -159,6 +188,8 @@ def inspect_workspace(target: Path) -> WorkspaceStatus:
         initialized_at=initialized_at,
         missing_paths=tuple(missing_paths),
         notes=tuple(notes),
+        resource_counts=resource_counts,
+        activity_summary=activity_summary,
     )
 
 
@@ -297,6 +328,63 @@ def fetch_system_state_value(
         [key],
     ).fetchone()
     return None if row is None else row[0]
+
+
+def fetch_workspace_resource_counts(
+    connection: duckdb.DuckDBPyConnection,
+) -> WorkspaceResourceCounts:
+    counts = {
+        "entities": fetch_table_count(connection, "entities"),
+        "documents": fetch_table_count(connection, "documents"),
+        "relations": fetch_table_count(connection, "relations"),
+        "cycles": fetch_table_count(connection, "cycles"),
+        "activities": fetch_table_count(connection, "activities"),
+    }
+    document_statuses = fetch_status_counts(connection, "documents", "status")
+    cycle_statuses = fetch_status_counts(connection, "cycles", "status")
+    return WorkspaceResourceCounts(
+        entities=counts["entities"],
+        documents=counts["documents"],
+        draft_documents=document_statuses.get("draft", 0),
+        approved_documents=document_statuses.get("approved", 0),
+        archived_documents=document_statuses.get("archived", 0),
+        relations=counts["relations"],
+        cycles=counts["cycles"],
+        active_cycles=cycle_statuses.get("active", 0),
+        completed_cycles=cycle_statuses.get("completed", 0),
+        archived_cycles=cycle_statuses.get("archived", 0),
+        activities=counts["activities"],
+    )
+
+
+def fetch_workspace_activity_summary(
+    connection: duckdb.DuckDBPyConnection,
+) -> WorkspaceActivitySummary:
+    statuses = fetch_status_counts(connection, "activities", "status")
+    return WorkspaceActivitySummary(
+        pending=statuses.get("pending", 0),
+        in_progress=statuses.get("in_progress", 0),
+        completed=statuses.get("completed", 0),
+        blocked=statuses.get("blocked", 0),
+    )
+
+
+def fetch_table_count(connection: duckdb.DuckDBPyConnection, table: str) -> int:
+    row = connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+    return 0 if row is None else int(row[0])
+
+
+def fetch_status_counts(
+    connection: duckdb.DuckDBPyConnection, table: str, column: str
+) -> dict[str, int]:
+    rows = connection.execute(
+        f"""
+        SELECT {column}, COUNT(*)
+        FROM {table}
+        GROUP BY {column}
+        """
+    ).fetchall()
+    return {str(row[0]): int(row[1]) for row in rows if row[0] is not None}
 
 
 def fetch_config_value(config_path: Path, key: str) -> str | None:

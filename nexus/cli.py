@@ -92,7 +92,7 @@ def init_command(
 
 @app.command("status")
 def status_command() -> None:
-    """Show minimal local workspace status for the current directory."""
+    """Show a compact operational status for the current directory."""
 
     status = _run_or_exit(lambda: inspect_workspace(Path.cwd()))
 
@@ -118,6 +118,41 @@ def status_command() -> None:
     typer.echo(f"Schema version: {status.schema_version or 'unknown'}")
     typer.echo(f"Workspace name: {status.workspace_name or 'unknown'}")
     typer.echo(f"Initialized at: {status.initialized_at or 'unknown'}")
+
+    if status.resource_counts:
+        typer.echo("Resources:")
+        typer.echo(f"  Entities: {status.resource_counts.entities}")
+        typer.echo(
+            "  Documents: "
+            f"{status.resource_counts.documents} "
+            f"(draft {status.resource_counts.draft_documents}, "
+            f"approved {status.resource_counts.approved_documents}, "
+            f"archived {status.resource_counts.archived_documents})"
+        )
+        typer.echo(f"  Relations: {status.resource_counts.relations}")
+        typer.echo(
+            "  Cycles: "
+            f"{status.resource_counts.cycles} "
+            f"(active {status.resource_counts.active_cycles}, "
+            f"completed {status.resource_counts.completed_cycles}, "
+            f"archived {status.resource_counts.archived_cycles})"
+        )
+        typer.echo(f"  Activities: {status.resource_counts.activities}")
+
+    if status.activity_summary and status.resource_counts:
+        typer.echo("Operational summary:")
+        typer.echo(
+            "  Open activities: "
+            f"{status.activity_summary.pending + status.activity_summary.in_progress}"
+        )
+        typer.echo(
+            "  Activity statuses: "
+            f"pending {status.activity_summary.pending}, "
+            f"in_progress {status.activity_summary.in_progress}, "
+            f"completed {status.activity_summary.completed}, "
+            f"blocked {status.activity_summary.blocked}"
+        )
+        typer.echo(f"  Active cycles: {status.resource_counts.active_cycles}")
 
     if status.missing_paths:
         typer.echo("Missing paths:")

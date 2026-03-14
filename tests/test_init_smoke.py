@@ -74,6 +74,14 @@ class NexusCliSmokeTest(unittest.TestCase):
                 f"Database: {workspace_root / 'nexus.duckdb'} (present)",
                 status_run.stdout,
             )
+            self.assertIn("Resources:", status_run.stdout)
+            self.assertIn("  Entities: 0", status_run.stdout)
+            self.assertIn("  Documents: 0 (draft 0, approved 0, archived 0)", status_run.stdout)
+            self.assertIn("  Relations: 0", status_run.stdout)
+            self.assertIn("  Cycles: 0 (active 0, completed 0, archived 0)", status_run.stdout)
+            self.assertIn("  Activities: 0", status_run.stdout)
+            self.assertIn("Operational summary:", status_run.stdout)
+            self.assertIn("  Open activities: 0", status_run.stdout)
 
     def test_nexus_status_reports_uninitialized_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -88,6 +96,82 @@ class NexusCliSmokeTest(unittest.TestCase):
                 "Current directory does not satisfy the minimal Nexus workspace contract.",
                 status_run.stdout,
             )
+
+    def test_nexus_status_summarizes_current_operational_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "entity", "create", "--name", "Projeto X", "--type", "project", cwd=workspace_root
+            )
+            self.run_cli(
+                "entity", "create", "--name", "Alice", "--type", "person", cwd=workspace_root
+            )
+            self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "Projeto X",
+                "--to",
+                "Alice",
+                "--type",
+                "owner_of",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "cycle",
+                "create",
+                "--type",
+                "daily",
+                "--start",
+                "2026-03-13",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Review inbox",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+
+            status_run = self.run_cli("status", cwd=workspace_root)
+            self.assertEqual(status_run.returncode, 0, status_run.stdout + status_run.stderr)
+            self.assertIn("Resources:", status_run.stdout)
+            self.assertIn("  Entities: 2", status_run.stdout)
+            self.assertIn("  Documents: 1 (draft 1, approved 0, archived 0)", status_run.stdout)
+            self.assertIn("  Relations: 1", status_run.stdout)
+            self.assertIn("  Cycles: 1 (active 1, completed 0, archived 0)", status_run.stdout)
+            self.assertIn("  Activities: 2", status_run.stdout)
+            self.assertIn("Operational summary:", status_run.stdout)
+            self.assertIn("  Open activities: 2", status_run.stdout)
+            self.assertIn(
+                "  Activity statuses: pending 2, in_progress 0, completed 0, blocked 0",
+                status_run.stdout,
+            )
+            self.assertIn("  Active cycles: 1", status_run.stdout)
 
     def test_entity_create_persists_to_database_and_audit_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
