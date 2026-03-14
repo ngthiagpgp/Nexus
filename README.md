@@ -80,3 +80,9 @@ Para subir a API local read-only sobre um workspace Nexus:
 cd ./sandbox-workspace
 python -m uvicorn nexus.api:app --port 3000
 ```
+
+Para abrir o cockpit minimo no navegador local:
+
+```text
+http://127.0.0.1:3000/
+```

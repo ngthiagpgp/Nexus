@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from nexus.activities import ActivityRecord, get_activity, list_activities
+from nexus.cockpit import render_cockpit_page
 from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import DocumentInspection, inspect_document, list_documents
 from nexus.entities import EntityRecord, get_entity, list_entities
@@ -49,6 +50,10 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
             status_code=exc.status_code,
             content={"status": "error", "message": exc.message},
         )
+
+    @app.get("/", response_class=HTMLResponse)
+    def cockpit() -> str:
+        return render_cockpit_page()
 
     @app.get(f"{API_PREFIX}/health")
     def health() -> dict[str, object]:

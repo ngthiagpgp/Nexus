@@ -16,6 +16,33 @@ from nexus.workspace import initialize_workspace
 
 
 class NexusApiSmokeTest(unittest.TestCase):
+    def test_cockpit_root_serves_html_shell(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            create_entity(
+                workspace_root,
+                name="Projeto X",
+                entity_type="project",
+                context="Pesquisa em economia",
+            )
+            create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.get("/")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("text/html", response.headers["content-type"])
+            self.assertIn("Nexus Cockpit", response.text)
+            self.assertIn("/api/system/status", response.text)
+            self.assertIn('id="entities-list"', response.text)
+            self.assertIn('id="documents-list"', response.text)
+            self.assertIn('id="document-detail"', response.text)
+
     def test_health_and_status_in_initialized_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "workspace"
@@ -272,6 +299,10 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(activity_response.status_code, 409)
             self.assertEqual(activity_response.json()["status"], "error")
             self.assertIn("Current directory is not a Nexus workspace", activity_response.json()["message"])
+
+            cockpit_response = client.get("/")
+            self.assertEqual(cockpit_response.status_code, 200)
+            self.assertIn("Nexus Cockpit", cockpit_response.text)
 
 
 if __name__ == "__main__":
