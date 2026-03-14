@@ -31,3 +31,9 @@ Alternativamente, sem instalar o script:
 ```bash
 python -m nexus init ./sandbox-workspace
 ```
+
+Para inspecionar se o diretorio atual ja e um workspace Nexus:
+
+```bash
+python -m nexus status
+```
