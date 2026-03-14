@@ -58,3 +58,10 @@ Para criar e listar relacoes no workspace atual:
 python -m nexus relation create --from "Projeto X" --to "Projeto Y" --type depende_de
 python -m nexus relation list --from "Projeto X"
 ```
+
+Para criar e listar atividades no workspace atual:
+
+```bash
+python -m nexus activity create --title "Finish report" --cycle-id cycle-daily-2026-03-13
+python -m nexus activity list --cycle-id cycle-daily-2026-03-13
+```

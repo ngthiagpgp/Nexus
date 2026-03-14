@@ -4,6 +4,7 @@ from pathlib import Path
 
 import typer
 
+from nexus.activities import create_activity, list_activities
 from nexus.documents import create_document, list_documents
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.relations import create_relation, list_relations, relation_display_map
@@ -22,6 +23,7 @@ app = typer.Typer(
 entity_app = typer.Typer(help="Manage Nexus entities.")
 document_app = typer.Typer(help="Manage Nexus documents.")
 relation_app = typer.Typer(help="Manage Nexus relations.")
+activity_app = typer.Typer(help="Manage Nexus activities.")
 
 
 @app.callback()
@@ -32,6 +34,7 @@ def app_callback() -> None:
 app.add_typer(entity_app, name="entity")
 app.add_typer(document_app, name="document")
 app.add_typer(relation_app, name="relation")
+app.add_typer(activity_app, name="activity")
 
 
 @app.command("init")
@@ -310,6 +313,66 @@ def relation_list_command(
             f"{record.relation_type} | "
             f"{record.weight:.1f} | "
             f"{record.context or '-'}"
+        )
+
+
+@activity_app.command("create")
+def activity_create_command(
+    title: str = typer.Option(..., "--title", help="Activity title."),
+    cycle_id: str = typer.Option(
+        ...,
+        "--cycle-id",
+        help="Existing cycle identifier for this activity.",
+    ),
+) -> None:
+    """Create a new activity in the current Nexus workspace."""
+
+    try:
+        record = create_activity(
+            Path.cwd(),
+            title=title,
+            cycle_id=cycle_id,
+        )
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Activity created: {record.id}")
+    typer.echo(f"Title: {record.title}")
+    typer.echo(f"Cycle: {record.cycle_id}")
+    typer.echo(f"Status: {record.status}")
+    typer.echo(f"Priority: {record.priority}")
+
+
+@activity_app.command("list")
+def activity_list_command(
+    cycle_id: str | None = typer.Option(
+        None,
+        "--cycle-id",
+        help="Filter activities by cycle id.",
+    ),
+    status: str | None = typer.Option(
+        None,
+        "--status",
+        help="Filter activities by status.",
+    ),
+) -> None:
+    """List activities in the current Nexus workspace."""
+
+    try:
+        records = list_activities(Path.cwd(), cycle_id=cycle_id, status=status)
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not records:
+        typer.echo("No activities found.")
+        return
+
+    typer.echo("ID | Title | Cycle | Status | Priority")
+    for record in records:
+        typer.echo(
+            f"{record.id} | {record.title} | {record.cycle_id} | {record.status} | {record.priority}"
         )
 
 

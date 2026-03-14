@@ -494,6 +494,150 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
             self.assertIn("From entity is required and cannot be blank.", create_run.stderr)
 
+    def test_activity_create_persists_to_database_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.seed_cycle(workspace_root, "cycle-daily-2026-03-13")
+
+            create_run = self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            self.assertIn("Activity created:", create_run.stdout)
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                activity_row = connection.execute(
+                    """
+                    SELECT title, cycle_id, status, priority
+                    FROM activities
+                    WHERE title = 'Finish report'
+                    """
+                ).fetchone()
+                self.assertEqual(
+                    activity_row,
+                    ("Finish report", "cycle-daily-2026-03-13", "pending", 3),
+                )
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent
+                    FROM audit_log
+                    WHERE entity_type = 'activity'
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                    """
+                ).fetchone()
+                self.assertEqual(audit_row, ("create", "activity", "user"))
+            finally:
+                connection.close()
+
+    def test_activity_list_shows_created_activities_and_filters(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.seed_cycle(workspace_root, "cycle-daily-2026-03-13")
+            self.seed_cycle(workspace_root, "cycle-weekly-2026-W11", cycle_type="weekly")
+
+            self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Plan next week",
+                "--cycle-id",
+                "cycle-weekly-2026-W11",
+                cwd=workspace_root,
+            )
+
+            list_run = self.run_cli("activity", "list", cwd=workspace_root)
+            self.assertEqual(list_run.returncode, 0, list_run.stdout + list_run.stderr)
+            self.assertIn("ID | Title | Cycle | Status | Priority", list_run.stdout)
+            self.assertIn("Finish report | cycle-daily-2026-03-13 | pending | 3", list_run.stdout)
+            self.assertIn("Plan next week | cycle-weekly-2026-W11 | pending | 3", list_run.stdout)
+
+            filtered_run = self.run_cli(
+                "activity",
+                "list",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(filtered_run.returncode, 0, filtered_run.stdout + filtered_run.stderr)
+            self.assertIn("Finish report | cycle-daily-2026-03-13 | pending | 3", filtered_run.stdout)
+            self.assertNotIn("Plan next week | cycle-weekly-2026-W11 | pending | 3", filtered_run.stdout)
+
+    def test_activity_commands_fail_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outside_root = Path(temp_dir) / "outside"
+            outside_root.mkdir(parents=True, exist_ok=True)
+
+            create_run = self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=outside_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", create_run.stderr)
+
+            list_run = self.run_cli("activity", "list", cwd=outside_root)
+            self.assertEqual(list_run.returncode, 1, list_run.stdout + list_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", list_run.stderr)
+
+    def test_activity_create_rejects_blank_required_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.seed_cycle(workspace_root, "cycle-daily-2026-03-13")
+
+            create_run = self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "   ",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Activity title is required and cannot be blank.", create_run.stderr)
+
+    def test_activity_create_rejects_missing_cycle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "activity",
+                "create",
+                "--title",
+                "Finish report",
+                "--cycle-id",
+                "cycle-daily-2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Cycle not found: cycle-daily-2026-03-13", create_run.stderr)
+
     def run_cli(
         self, *args: str, cwd: Path | None = None
     ) -> subprocess.CompletedProcess[str]:
@@ -510,6 +654,49 @@ class NexusCliSmokeTest(unittest.TestCase):
             check=False,
             env=env,
         )
+
+    def seed_cycle(
+        self,
+        workspace_root: Path,
+        cycle_id: str,
+        *,
+        cycle_type: str = "daily",
+    ) -> None:
+        connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+        try:
+            connection.execute(
+                """
+                INSERT INTO cycles (
+                    id,
+                    type,
+                    start_date,
+                    end_date,
+                    status,
+                    description,
+                    created_by,
+                    created_at,
+                    modified_by,
+                    modified_at,
+                    id_workspace,
+                    id_cli
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?)
+                """,
+                [
+                    cycle_id,
+                    cycle_type,
+                    "2026-03-13 00:00:00",
+                    "2026-03-13 23:59:59",
+                    "active",
+                    f"Seeded {cycle_type} cycle for activity tests",
+                    "test",
+                    "test",
+                    "default",
+                    "local",
+                ],
+            )
+        finally:
+            connection.close()
 
 
 if __name__ == "__main__":
