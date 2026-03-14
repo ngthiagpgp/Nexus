@@ -32,6 +32,15 @@ class DocumentRecord:
     created_by: str
 
 
+@dataclass(frozen=True)
+class DocumentInspection:
+    record: DocumentRecord
+    absolute_path: Path
+    content_preview: str
+    modified_at: str
+    approved_at: str | None
+
+
 def create_document(
     workspace_root: Path,
     *,
@@ -229,6 +238,90 @@ def list_documents(
     ]
 
 
+def inspect_document(workspace_root: Path, *, selector: str) -> DocumentInspection:
+    workspace = require_workspace(workspace_root)
+    normalized_selector = validate_required_text("Document selector", selector)
+
+    with connect_workspace_database(workspace.database_path, read_only=True) as connection:
+        row = connection.execute(
+            """
+            SELECT
+                id,
+                title,
+                type,
+                cycle_id,
+                status,
+                path,
+                content_hash,
+                version,
+                created_at,
+                created_by,
+                modified_at,
+                approved_at
+            FROM documents
+            WHERE id = ?
+            """,
+            [normalized_selector],
+        ).fetchone()
+        if row is None:
+            row = connection.execute(
+                """
+                SELECT
+                    id,
+                    title,
+                    type,
+                    cycle_id,
+                    status,
+                    path,
+                    content_hash,
+                    version,
+                    created_at,
+                    created_by,
+                    modified_at,
+                    approved_at
+                FROM documents
+                WHERE title = ?
+                """,
+                [normalized_selector],
+            ).fetchone()
+
+    if row is None:
+        raise WorkspaceBootstrapError(f"Document not found: {normalized_selector}")
+
+    record = DocumentRecord(
+        id=row[0],
+        title=row[1],
+        type=row[2],
+        cycle_id=row[3],
+        status=row[4],
+        path=row[5],
+        content_hash=row[6],
+        version=row[7],
+        created_at=str(row[8]),
+        created_by=row[9],
+    )
+    absolute_path = workspace.workspace_root / record.path
+    if not absolute_path.exists():
+        raise WorkspaceBootstrapError(
+            f"Document backing file is missing: {absolute_path}"
+        )
+
+    try:
+        content = absolute_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise WorkspaceBootstrapError(
+            f"Failed to read document backing file: {absolute_path}: {exc}"
+        ) from exc
+
+    return DocumentInspection(
+        record=record,
+        absolute_path=absolute_path,
+        content_preview=build_content_preview(content),
+        modified_at=str(row[10]),
+        approved_at=str(row[11]) if row[11] is not None else None,
+    )
+
+
 def build_document_relative_path(document_type: str, title: str) -> Path:
     directory = Path("documents") / document_type
     filename = document_filename(document_type, title)
@@ -273,6 +366,20 @@ def default_title_for_type(document_type: str) -> str:
 
 def build_initial_markdown(title: str) -> str:
     return f"# {title}\n\n"
+
+
+def build_content_preview(content: str, *, max_lines: int = 8, max_chars: int = 400) -> str:
+    stripped = content.strip()
+    if not stripped:
+        return "(empty document)"
+
+    lines = stripped.splitlines()[:max_lines]
+    preview = "\n".join(lines).strip()
+    if len(preview) > max_chars:
+        return preview[: max_chars - 3].rstrip() + "..."
+    if len(stripped) > len(preview):
+        return preview.rstrip() + "\n..."
+    return preview
 
 
 def compute_content_hash(content: str) -> str:

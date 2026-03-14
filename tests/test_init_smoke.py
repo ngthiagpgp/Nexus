@@ -356,6 +356,81 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertIn("Daily 2026-03-13 | daily | draft", filtered_run.stdout)
             self.assertNotIn("Research Notes | note | draft", filtered_run.stdout)
 
+    def test_document_show_inspects_existing_document(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+
+            show_run = self.run_cli("document", "show", document_id, cwd=workspace_root)
+            self.assertEqual(show_run.returncode, 0, show_run.stdout + show_run.stderr)
+            self.assertIn("Document: Daily 2026-03-13", show_run.stdout)
+            self.assertIn(f"ID: {document_id}", show_run.stdout)
+            self.assertIn("Type: daily", show_run.stdout)
+            self.assertIn("Status: draft", show_run.stdout)
+            self.assertIn("Path: documents/daily/2026-03-13.md", show_run.stdout)
+            self.assertIn("Preview:", show_run.stdout)
+            self.assertIn("# Daily 2026-03-13", show_run.stdout)
+
+    def test_document_show_rejects_missing_document(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            show_run = self.run_cli("document", "show", "missing-doc", cwd=workspace_root)
+            self.assertEqual(show_run.returncode, 1, show_run.stdout + show_run.stderr)
+            self.assertIn("Document not found: missing-doc", show_run.stderr)
+
+    def test_document_show_rejects_missing_backing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+            (workspace_root / "documents" / "daily" / "2026-03-13.md").unlink()
+
+            show_run = self.run_cli("document", "show", document_id, cwd=workspace_root)
+            self.assertEqual(show_run.returncode, 1, show_run.stdout + show_run.stderr)
+            self.assertIn("Document backing file is missing:", show_run.stderr)
+
+    def test_document_show_fails_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outside_root = Path(temp_dir) / "outside"
+            outside_root.mkdir(parents=True, exist_ok=True)
+
+            show_run = self.run_cli("document", "show", "doc-123", cwd=outside_root)
+            self.assertEqual(show_run.returncode, 1, show_run.stdout + show_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", show_run.stderr)
+
     def test_document_commands_fail_outside_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             outside_root = Path(temp_dir) / "outside"

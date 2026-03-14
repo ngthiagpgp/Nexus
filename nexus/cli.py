@@ -7,7 +7,7 @@ import typer
 
 from nexus.activities import create_activity, list_activities
 from nexus.cycles import create_cycle, list_cycles
-from nexus.documents import create_document, list_documents
+from nexus.documents import create_document, inspect_document, list_documents
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.relations import create_relation, list_relations, relation_display_map
 from nexus.workspace import (
@@ -268,6 +268,33 @@ def document_list_command(
             for record in records
         ],
     )
+
+
+@document_app.command("show")
+def document_show_command(
+    selector: str = typer.Argument(
+        ...,
+        help="Document id or exact title.",
+    ),
+) -> None:
+    """Inspect one document from DB metadata plus the backing Markdown file."""
+
+    inspection = _run_or_exit(lambda: inspect_document(Path.cwd(), selector=selector))
+
+    typer.echo(f"Document: {inspection.record.title}")
+    typer.echo(f"ID: {inspection.record.id}")
+    typer.echo(f"Type: {inspection.record.type}")
+    typer.echo(f"Status: {inspection.record.status}")
+    typer.echo(f"Cycle: {inspection.record.cycle_id or '-'}")
+    typer.echo(f"Path: {inspection.record.path}")
+    typer.echo(f"Backing file: {inspection.absolute_path}")
+    typer.echo(f"Version: {inspection.record.version}")
+    typer.echo(f"Created: {inspection.record.created_at}")
+    typer.echo(f"Modified: {inspection.modified_at}")
+    if inspection.approved_at:
+        typer.echo(f"Approved: {inspection.approved_at}")
+    typer.echo("Preview:")
+    typer.echo(inspection.content_preview)
 
 
 @relation_app.command("create")
