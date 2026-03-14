@@ -41,7 +41,15 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn("/api/system/status", response.text)
             self.assertIn('id="entities-list"', response.text)
             self.assertIn('id="documents-list"', response.text)
-            self.assertIn('id="document-detail"', response.text)
+            self.assertIn('id="cycles-list"', response.text)
+            self.assertIn('id="activities-list"', response.text)
+            self.assertIn('id="cycle-detail"', response.text)
+            self.assertIn('id="activity-detail"', response.text)
+            self.assertIn('id="documents-status-filter"', response.text)
+            self.assertIn('id="cycles-status-filter"', response.text)
+            self.assertIn('id="activities-status-filter"', response.text)
+            self.assertIn("/api/cycles", response.text)
+            self.assertIn("/api/activities", response.text)
 
     def test_health_and_status_in_initialized_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
