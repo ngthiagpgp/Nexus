@@ -51,3 +51,10 @@ Para criar e listar documentos no workspace atual:
 python -m nexus document create --type daily --title "Daily 2026-03-13"
 python -m nexus document list --type daily
 ```
+
+Para criar e listar relacoes no workspace atual:
+
+```bash
+python -m nexus relation create --from "Projeto X" --to "Projeto Y" --type depende_de
+python -m nexus relation list --from "Projeto X"
+```

@@ -6,6 +6,7 @@ import typer
 
 from nexus.documents import create_document, list_documents
 from nexus.entities import create_entity, list_entities, validate_required_text
+from nexus.relations import create_relation, list_relations, relation_display_map
 from nexus.workspace import (
     SCHEMA_COMPATIBILITY_NOTE,
     WorkspaceBootstrapError,
@@ -20,6 +21,7 @@ app = typer.Typer(
 )
 entity_app = typer.Typer(help="Manage Nexus entities.")
 document_app = typer.Typer(help="Manage Nexus documents.")
+relation_app = typer.Typer(help="Manage Nexus relations.")
 
 
 @app.callback()
@@ -29,6 +31,7 @@ def app_callback() -> None:
 
 app.add_typer(entity_app, name="entity")
 app.add_typer(document_app, name="document")
+app.add_typer(relation_app, name="relation")
 
 
 @app.command("init")
@@ -219,6 +222,94 @@ def document_list_command(
     for record in records:
         typer.echo(
             f"{record.id} | {record.title} | {record.type} | {record.status} | {record.path}"
+        )
+
+
+@relation_app.command("create")
+def relation_create_command(
+    from_entity: str = typer.Option(
+        ...,
+        "--from",
+        help="Source entity id or exact name.",
+    ),
+    to_entity: str = typer.Option(
+        ...,
+        "--to",
+        help="Target entity id or exact name.",
+    ),
+    relation_type: str = typer.Option(
+        ...,
+        "--type",
+        help="Relation type, e.g. depende_de.",
+    ),
+    context: str | None = typer.Option(
+        None,
+        "--context",
+        help="Optional short context for the relation.",
+    ),
+) -> None:
+    """Create a new relation in the current Nexus workspace."""
+
+    try:
+        record = create_relation(
+            Path.cwd(),
+            from_entity=from_entity,
+            to_entity=to_entity,
+            relation_type=relation_type,
+            context=context,
+        )
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Relation created: {record.id}")
+    typer.echo(f"From: {record.entity_a_id}")
+    typer.echo(f"To: {record.entity_b_id}")
+    typer.echo(f"Type: {record.relation_type}")
+    typer.echo(f"Weight: {record.weight:.1f}")
+    if record.context:
+        typer.echo(f"Context: {record.context}")
+
+
+@relation_app.command("list")
+def relation_list_command(
+    from_entity: str | None = typer.Option(
+        None,
+        "--from",
+        help="Filter by source entity id or exact name.",
+    ),
+    relation_type: str | None = typer.Option(
+        None,
+        "--type",
+        help="Filter by relation type.",
+    ),
+) -> None:
+    """List relations in the current Nexus workspace."""
+
+    try:
+        records = list_relations(
+            Path.cwd(),
+            from_entity=from_entity,
+            relation_type=relation_type,
+        )
+    except WorkspaceBootstrapError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not records:
+        typer.echo("No relations found.")
+        return
+
+    display_names = relation_display_map(Path.cwd())
+    typer.echo("ID | From | To | Type | Weight | Context")
+    for record in records:
+        typer.echo(
+            f"{record.id} | "
+            f"{display_names.get(record.entity_a_id, record.entity_a_id)} | "
+            f"{display_names.get(record.entity_b_id, record.entity_b_id)} | "
+            f"{record.relation_type} | "
+            f"{record.weight:.1f} | "
+            f"{record.context or '-'}"
         )
 
 

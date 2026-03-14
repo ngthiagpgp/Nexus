@@ -287,6 +287,213 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
             self.assertIn("Document type is required and cannot be blank.", create_run.stderr)
 
+    def test_relation_create_persists_to_database_and_audit_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Projeto X",
+                "--type",
+                "project",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Projeto Y",
+                "--type",
+                "project",
+                cwd=workspace_root,
+            )
+
+            create_run = self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "Projeto X",
+                "--to",
+                "Projeto Y",
+                "--type",
+                "depende_de",
+                "--context",
+                "Projeto Y depende de Projeto X",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 0, create_run.stdout + create_run.stderr)
+            self.assertIn("Relation created:", create_run.stdout)
+
+            connection = duckdb.connect(str(workspace_root / "nexus.duckdb"))
+            try:
+                relation_row = connection.execute(
+                    """
+                    SELECT relation_type, weight, context
+                    FROM relations
+                    WHERE relation_type = 'depende_de'
+                    """
+                ).fetchone()
+                self.assertEqual(
+                    relation_row,
+                    ("depende_de", 0.5, "Projeto Y depende de Projeto X"),
+                )
+
+                audit_row = connection.execute(
+                    """
+                    SELECT action, entity_type, agent
+                    FROM audit_log
+                    WHERE entity_type = 'relation'
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                    """
+                ).fetchone()
+                self.assertEqual(audit_row, ("create", "relation", "user"))
+            finally:
+                connection.close()
+
+    def test_relation_list_shows_created_relations_and_filters(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Projeto X",
+                "--type",
+                "project",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Projeto Y",
+                "--type",
+                "project",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Alice",
+                "--type",
+                "person",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "Projeto X",
+                "--to",
+                "Projeto Y",
+                "--type",
+                "depende_de",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "Alice",
+                "--to",
+                "Projeto X",
+                "--type",
+                "trabalha_em",
+                cwd=workspace_root,
+            )
+
+            list_run = self.run_cli("relation", "list", cwd=workspace_root)
+            self.assertEqual(list_run.returncode, 0, list_run.stdout + list_run.stderr)
+            self.assertIn("ID | From | To | Type | Weight | Context", list_run.stdout)
+            self.assertIn("Projeto X | Projeto Y | depende_de | 0.5 | -", list_run.stdout)
+            self.assertIn("Alice | Projeto X | trabalha_em | 0.5 | -", list_run.stdout)
+
+            filtered_run = self.run_cli(
+                "relation",
+                "list",
+                "--from",
+                "Projeto X",
+                cwd=workspace_root,
+            )
+            self.assertEqual(filtered_run.returncode, 0, filtered_run.stdout + filtered_run.stderr)
+            self.assertIn("Projeto X | Projeto Y | depende_de", filtered_run.stdout)
+            self.assertNotIn("Alice | Projeto X | trabalha_em", filtered_run.stdout)
+
+    def test_relation_commands_fail_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outside_root = Path(temp_dir) / "outside"
+            outside_root.mkdir(parents=True, exist_ok=True)
+
+            create_run = self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "Projeto X",
+                "--to",
+                "Projeto Y",
+                "--type",
+                "depende_de",
+                cwd=outside_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", create_run.stderr)
+
+            list_run = self.run_cli("relation", "list", cwd=outside_root)
+            self.assertEqual(list_run.returncode, 1, list_run.stdout + list_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", list_run.stderr)
+
+    def test_relation_create_rejects_missing_entities(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Projeto X",
+                "--type",
+                "project",
+                cwd=workspace_root,
+            )
+
+            create_run = self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "Projeto X",
+                "--to",
+                "Projeto Y",
+                "--type",
+                "depende_de",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("Entity not found: Projeto Y", create_run.stderr)
+
+    def test_relation_create_rejects_blank_required_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            create_run = self.run_cli(
+                "relation",
+                "create",
+                "--from",
+                "   ",
+                "--to",
+                "Projeto Y",
+                "--type",
+                "depende_de",
+                cwd=workspace_root,
+            )
+            self.assertEqual(create_run.returncode, 1, create_run.stdout + create_run.stderr)
+            self.assertIn("From entity is required and cannot be blank.", create_run.stderr)
+
     def run_cli(
         self, *args: str, cwd: Path | None = None
     ) -> subprocess.CompletedProcess[str]:
