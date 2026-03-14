@@ -12,6 +12,8 @@ from nexus.documents import (
     inspect_document,
     list_documents,
     update_document_status,
+    verify_document,
+    verify_documents,
 )
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.relations import create_relation, list_relations, relation_display_map
@@ -334,6 +336,84 @@ def document_set_status_command(
     typer.echo(f"Version: {record.version}")
     if record.approved_at:
         typer.echo(f"Approved: {record.approved_at}")
+
+
+@document_app.command("verify")
+def document_verify_command(
+    selector: str | None = typer.Argument(
+        None,
+        help="Document id or exact title.",
+    ),
+    verify_all: bool = typer.Option(
+        False,
+        "--all",
+        help="Verify all document records in the current workspace.",
+    ),
+) -> None:
+    """Verify document integrity against the current workspace filesystem."""
+
+    if verify_all:
+        if selector is not None:
+            typer.echo("Error: Provide either a document selector or --all, not both.", err=True)
+            raise typer.Exit(code=1)
+        results = _run_or_exit(lambda: verify_documents(Path.cwd()))
+        if not results:
+            typer.echo("No documents found.")
+            return
+        _print_table(
+            ["ID", "Title", "Status", "Integrity", "File", "Hash", "Issues"],
+            [
+                [
+                    result.document_id,
+                    result.title,
+                    result.status,
+                    result.integrity_state,
+                    "present" if result.backing_file_exists else "missing",
+                    (
+                        "match"
+                        if result.content_hash_matches is True
+                        else "mismatch"
+                        if result.content_hash_matches is False
+                        else "n/a"
+                    ),
+                    ", ".join(result.issues) or "-",
+                ]
+                for result in results
+            ],
+        )
+        return
+
+    if selector is None:
+        typer.echo("Error: Provide a document selector or use --all.", err=True)
+        raise typer.Exit(code=1)
+
+    result = _run_or_exit(
+        lambda: verify_document(
+            Path.cwd(),
+            selector=selector,
+            allow_title_lookup=True,
+        )
+    )
+
+    typer.echo(f"Document integrity: {result.title}")
+    typer.echo(f"ID: {result.document_id}")
+    typer.echo(f"Status: {result.status}")
+    typer.echo(f"Integrity: {result.integrity_state}")
+    typer.echo(f"Path: {result.path}")
+    typer.echo(f"Expected path: {result.expected_path}")
+    typer.echo(
+        f"Backing file: {result.absolute_path} "
+        f"({'present' if result.backing_file_exists else 'missing'})"
+    )
+    hash_status = (
+        "match"
+        if result.content_hash_matches is True
+        else "mismatch"
+        if result.content_hash_matches is False
+        else "not available"
+    )
+    typer.echo(f"Content hash: {hash_status}")
+    typer.echo(f"Issues: {', '.join(result.issues) or 'none'}")
 
 
 @relation_app.command("create")

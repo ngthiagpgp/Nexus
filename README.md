@@ -52,6 +52,7 @@ python -m nexus document create --type daily --title "Daily 2026-03-13"
 python -m nexus document list --type daily
 python -m nexus document show "Daily 2026-03-13"
 python -m nexus document set-status "Daily 2026-03-13" --status approved
+python -m nexus document verify "Daily 2026-03-13"
 ```
 
 Para criar e listar relacoes no workspace atual:

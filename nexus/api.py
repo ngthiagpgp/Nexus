@@ -12,10 +12,13 @@ from nexus.activities import ActivityRecord, get_activity, list_activities, upda
 from nexus.cockpit import render_cockpit_page
 from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import (
+    DocumentIntegrityResult,
     DocumentInspection,
     inspect_document,
     list_documents,
     update_document_status,
+    verify_document,
+    verify_documents,
 )
 from nexus.entities import EntityRecord, get_entity, list_entities
 from nexus.relations import RelationRecord, list_relations
@@ -149,6 +152,25 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
             )
         )
         return {"status": "ok", "data": [serialize_document_list_item(record) for record in records]}
+
+    @app.get(f"{API_PREFIX}/document-integrity")
+    def document_integrity_list() -> dict[str, object]:
+        records = api_call(lambda: verify_documents(resolve_workspace_root()))
+        return {
+            "status": "ok",
+            "data": [serialize_document_integrity(record) for record in records],
+        }
+
+    @app.get(f"{API_PREFIX}/document-integrity/{{document_id}}")
+    def document_integrity_read(document_id: str) -> dict[str, object]:
+        record = api_call(
+            lambda: verify_document(
+                resolve_workspace_root(),
+                selector=document_id,
+                allow_title_lookup=False,
+            )
+        )
+        return {"status": "ok", "data": serialize_document_integrity(record)}
 
     @app.get(f"{API_PREFIX}/documents/{{document_id}}")
     def document_read(document_id: str) -> dict[str, object]:
@@ -291,6 +313,12 @@ def serialize_document_inspection(inspection: DocumentInspection) -> dict[str, A
             "approved_at": inspection.approved_at,
         }
     )
+    return data
+
+
+def serialize_document_integrity(record: DocumentIntegrityResult) -> dict[str, Any]:
+    data = asdict(record)
+    data["issues"] = list(record.issues)
     return data
 
 

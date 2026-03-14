@@ -478,6 +478,7 @@ def render_cockpit_page() -> str:
         status: "/api/system/status",
         entities: "/api/entities",
         documents: "/api/documents",
+        documentIntegrity: "/api/document-integrity",
         cycles: "/api/cycles",
         activities: "/api/activities"
       };
@@ -486,6 +487,7 @@ def render_cockpit_page() -> str:
         status: null,
         entities: [],
         documents: [],
+        documentIntegrity: {},
         cycles: [],
         activities: [],
         activeView: "cycles-view",
@@ -528,6 +530,28 @@ def render_cockpit_page() -> str:
       function setHtml(id, value) {
         const node = document.getElementById(id);
         if (node) node.innerHTML = value;
+      }
+
+      function indexDocumentIntegrity(records) {
+        return Object.fromEntries(records.map((record) => [record.document_id, record]));
+      }
+
+      function getDocumentIntegrity(documentId) {
+        return state.documentIntegrity[documentId] || null;
+      }
+
+      function documentIntegrityBadgeMarkup(documentId) {
+        const integrity = getDocumentIntegrity(documentId);
+        if (!integrity) {
+          return '<span class="badge">integrity unknown</span>';
+        }
+        const badgeClass =
+          integrity.integrity_state === "ok"
+            ? "success"
+            : integrity.integrity_state === "warning"
+            ? "warning"
+            : "danger";
+        return `<span class="badge ${badgeClass}">integrity ${escapeHtml(integrity.integrity_state)}</span>`;
       }
 
       function activateView(viewId) {
@@ -755,6 +779,7 @@ def render_cockpit_page() -> str:
             <button type="button" data-document-id="${escapeAttribute(item.id)}">
               <div class="resource-title">${escapeHtml(item.title)}</div>
               <div class="resource-meta">${escapeHtml(item.type)} | ${escapeHtml(item.status)} | ${escapeHtml(item.path)} | cycle ${escapeHtml(item.cycle_id || "-")}</div>
+              <div class="compact-badges">${documentIntegrityBadgeMarkup(item.id)}</div>
             </button>
           </li>
         `).join("");
@@ -887,14 +912,16 @@ def render_cockpit_page() -> str:
       }
 
       async function refreshOperationalData() {
-        const [status, documents, cycles, activities] = await Promise.all([
+        const [status, documents, documentIntegrity, cycles, activities] = await Promise.all([
           fetchJson(api.status),
           fetchJson(api.documents),
+          fetchJson(api.documentIntegrity),
           fetchJson(api.cycles),
           fetchJson(api.activities)
         ]);
         renderWorkspaceStatus(status);
         state.documents = documents;
+        state.documentIntegrity = indexDocumentIntegrity(documentIntegrity);
         state.cycles = cycles;
         state.activities = activities;
         populateCycleFilterOptions();
@@ -956,8 +983,17 @@ def render_cockpit_page() -> str:
         setText("document-status-feedback", "");
         preview.classList.remove("error-state");
         preview.textContent = "Loading document...";
+        let integrity = getDocumentIntegrity(documentId);
         try {
+          integrity = await fetchJson(`${api.documentIntegrity}/${encodeURIComponent(documentId)}`);
+          state.documentIntegrity[documentId] = integrity;
           const doc = await fetchJson(`/api/documents/${encodeURIComponent(documentId)}`);
+          const integrityBadgeClass =
+            integrity.integrity_state === "ok"
+              ? "success"
+              : integrity.integrity_state === "warning"
+              ? "warning"
+              : "danger";
           setHtml("document-meta-grid", renderMetaGrid([
             ["Title", doc.title],
             ["Type", doc.type],
@@ -967,15 +1003,18 @@ def render_cockpit_page() -> str:
             ["Cycle", doc.cycle_id || "-"],
             ["Created", doc.created_at],
             ["Modified", doc.modified_at],
-            ["Approved", doc.approved_at || "-"]
+            ["Approved", doc.approved_at || "-"],
+            ["Integrity", integrity.integrity_state]
           ]));
           setHtml(
             "document-flags",
             [
               `<span class="badge">${escapeHtml(doc.type)}</span>`,
               `<span class="badge ${documentStatusBadgeClass(doc.status)}">${escapeHtml(doc.status)}</span>`,
+              `<span class="badge ${integrityBadgeClass}">integrity ${escapeHtml(integrity.integrity_state)}</span>`,
               doc.cycle_id ? `<span class="badge">cycle ${escapeHtml(doc.cycle_id)}</span>` : "",
               doc.approved_at ? `<span class="badge">approved ${escapeHtml(doc.approved_at)}</span>` : "",
+              integrity.issues.length ? `<span class="badge ${integrityBadgeClass}">${escapeHtml(integrity.issues.join(", "))}</span>` : "",
               `<span class="badge">version ${escapeHtml(doc.version)}</span>`
             ].join("")
           );
@@ -989,11 +1028,35 @@ def render_cockpit_page() -> str:
           bindDynamicActions();
           preview.textContent = doc.content_preview || "(empty document)";
         } catch (error) {
+          if (!integrity) {
+            try {
+              integrity = await fetchJson(`${api.documentIntegrity}/${encodeURIComponent(documentId)}`);
+              state.documentIntegrity[documentId] = integrity;
+            } catch {
+              integrity = null;
+            }
+          }
+          const integrityBadgeClass =
+            integrity?.integrity_state === "warning"
+              ? "warning"
+              : integrity?.integrity_state === "ok"
+              ? "success"
+              : "danger";
           setHtml("document-meta-grid", renderMetaGrid([
-            ["Document id", documentId],
-            ["State", "Unavailable"]
+            ["Document id", integrity?.document_id || documentId],
+            ["Title", integrity?.title || "-"],
+            ["Status", integrity?.status || "Unavailable"],
+            ["Path", integrity?.path || "-"],
+            ["Expected path", integrity?.expected_path || "-"],
+            ["Integrity", integrity?.integrity_state || "error"]
           ]));
-          setHtml("document-flags", '<span class="badge danger">backing file issue</span>');
+          setHtml(
+            "document-flags",
+            [
+              integrity ? `<span class="badge ${integrityBadgeClass}">integrity ${escapeHtml(integrity.integrity_state)}</span>` : "",
+              integrity?.issues?.length ? `<span class="badge ${integrityBadgeClass}">${escapeHtml(integrity.issues.join(", "))}</span>` : '<span class="badge danger">backing file issue</span>'
+            ].join("")
+          );
           setHtml("document-status-controls", "");
           setHtml("document-actions", "");
           preview.classList.add("error-state");
@@ -1064,6 +1127,7 @@ def render_cockpit_page() -> str:
                 <button type="button" data-linked-document-id="${escapeAttribute(item.id)}">
                   <div class="resource-title">${escapeHtml(item.title)}</div>
                   <div class="resource-meta">${escapeHtml(item.type)} | ${escapeHtml(item.status)} | ${escapeHtml(item.path)}</div>
+                  <div class="compact-badges">${documentIntegrityBadgeMarkup(item.id)}</div>
                 </button>
               </li>
             `).join("");
@@ -1177,15 +1241,17 @@ def render_cockpit_page() -> str:
             return;
           }
 
-          const [entities, documents, cycles, activities] = await Promise.all([
+          const [entities, documents, documentIntegrity, cycles, activities] = await Promise.all([
             fetchJson(api.entities),
             fetchJson(api.documents),
+            fetchJson(api.documentIntegrity),
             fetchJson(api.cycles),
             fetchJson(api.activities)
           ]);
 
           state.entities = entities;
           state.documents = documents;
+          state.documentIntegrity = indexDocumentIntegrity(documentIntegrity);
           state.cycles = cycles;
           state.activities = activities;
           populateCycleFilterOptions();

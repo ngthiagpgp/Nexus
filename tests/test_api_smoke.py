@@ -59,6 +59,7 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn("/api/cycles", response.text)
             self.assertIn("/api/activities", response.text)
             self.assertIn("/api/documents", response.text)
+            self.assertIn("/api/document-integrity", response.text)
 
     def test_health_and_status_in_initialized_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -179,6 +180,92 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(response.status_code, 409)
             self.assertEqual(response.json()["status"], "error")
             self.assertIn("Document backing file is missing:", response.json()["message"])
+
+    def test_document_integrity_list_and_read_report_ok_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            list_response = client.get("/api/document-integrity")
+            self.assertEqual(list_response.status_code, 200)
+            list_payload = list_response.json()
+            self.assertEqual(list_payload["status"], "ok")
+            self.assertEqual(len(list_payload["data"]), 1)
+            self.assertEqual(list_payload["data"][0]["document_id"], document.id)
+            self.assertEqual(list_payload["data"][0]["integrity_state"], "ok")
+
+            read_response = client.get(f"/api/document-integrity/{document.id}")
+            self.assertEqual(read_response.status_code, 200)
+            read_payload = read_response.json()
+            self.assertEqual(read_payload["status"], "ok")
+            self.assertTrue(read_payload["data"]["backing_file_exists"])
+            self.assertTrue(read_payload["data"]["path_matches_expected"])
+            self.assertTrue(read_payload["data"]["content_hash_matches"])
+            self.assertEqual(read_payload["data"]["issues"], [])
+
+    def test_document_integrity_read_reports_missing_backing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            (workspace_root / document.path).unlink()
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.get(f"/api/document-integrity/{document.id}")
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["integrity_state"], "error")
+            self.assertFalse(payload["data"]["backing_file_exists"])
+            self.assertIsNone(payload["data"]["content_hash_matches"])
+            self.assertIn("missing_backing_file", payload["data"]["issues"])
+
+    def test_document_integrity_read_reports_hash_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            document = create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            (workspace_root / document.path).write_text(
+                "# Daily 2026-03-13\n\nChanged\n",
+                encoding="utf-8",
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.get(f"/api/document-integrity/{document.id}")
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["integrity_state"], "error")
+            self.assertFalse(payload["data"]["content_hash_matches"])
+            self.assertIn("content_hash_mismatch", payload["data"]["issues"])
+
+    def test_document_integrity_read_returns_404_for_missing_record(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.get("/api/document-integrity/missing-document")
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Document not found: missing-document", response.json()["message"])
 
     def test_document_status_update_endpoint_updates_record_and_audit_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -490,6 +577,14 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertEqual(document_response.json()["status"], "error")
             self.assertIn("Current directory is not a Nexus workspace", document_response.json()["message"])
 
+            document_integrity_response = client.get("/api/document-integrity")
+            self.assertEqual(document_integrity_response.status_code, 409)
+            self.assertEqual(document_integrity_response.json()["status"], "error")
+            self.assertIn(
+                "Current directory is not a Nexus workspace",
+                document_integrity_response.json()["message"],
+            )
+
             document_update_response = client.patch(
                 "/api/documents/document-123",
                 json={"status": "approved"},
@@ -499,6 +594,14 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn(
                 "Current directory is not a Nexus workspace",
                 document_update_response.json()["message"],
+            )
+
+            document_integrity_read_response = client.get("/api/document-integrity/document-123")
+            self.assertEqual(document_integrity_read_response.status_code, 409)
+            self.assertEqual(document_integrity_read_response.json()["status"], "error")
+            self.assertIn(
+                "Current directory is not a Nexus workspace",
+                document_integrity_read_response.json()["message"],
             )
 
             relation_response = client.get("/api/relations")

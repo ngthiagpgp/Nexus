@@ -422,6 +422,120 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertEqual(show_run.returncode, 1, show_run.stdout + show_run.stderr)
             self.assertIn("Document backing file is missing:", show_run.stderr)
 
+    def test_document_verify_reports_valid_integrity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+
+            verify_run = self.run_cli(
+                "document",
+                "verify",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            self.assertEqual(verify_run.returncode, 0, verify_run.stdout + verify_run.stderr)
+            self.assertIn("Document integrity: Daily 2026-03-13", verify_run.stdout)
+            self.assertIn("Integrity: ok", verify_run.stdout)
+            self.assertIn("Content hash: match", verify_run.stdout)
+            self.assertIn("Issues: none", verify_run.stdout)
+
+    def test_document_verify_reports_missing_backing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+            (workspace_root / "documents" / "daily" / "2026-03-13.md").unlink()
+
+            verify_run = self.run_cli("document", "verify", document_id, cwd=workspace_root)
+            self.assertEqual(verify_run.returncode, 0, verify_run.stdout + verify_run.stderr)
+            self.assertIn("Integrity: error", verify_run.stdout)
+            self.assertIn("Content hash: not available", verify_run.stdout)
+            self.assertIn("Issues: missing_backing_file", verify_run.stdout)
+
+    def test_document_verify_reports_hash_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            create_run = self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+            document_id = next(
+                line.partition(":")[2].strip()
+                for line in create_run.stdout.splitlines()
+                if line.startswith("Document created:")
+            )
+            (workspace_root / "documents" / "daily" / "2026-03-13.md").write_text(
+                "# Daily 2026-03-13\n\nChanged\n",
+                encoding="utf-8",
+            )
+
+            verify_run = self.run_cli("document", "verify", document_id, cwd=workspace_root)
+            self.assertEqual(verify_run.returncode, 0, verify_run.stdout + verify_run.stderr)
+            self.assertIn("Integrity: error", verify_run.stdout)
+            self.assertIn("Content hash: mismatch", verify_run.stdout)
+            self.assertIn("Issues: content_hash_mismatch", verify_run.stdout)
+
+    def test_document_verify_rejects_missing_document(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            verify_run = self.run_cli(
+                "document",
+                "verify",
+                "missing-document",
+                cwd=workspace_root,
+            )
+            self.assertEqual(verify_run.returncode, 1, verify_run.stdout + verify_run.stderr)
+            self.assertIn("Document not found: missing-document", verify_run.stderr)
+
+    def test_document_verify_all_lists_integrity_states(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+
+            verify_run = self.run_cli("document", "verify", "--all", cwd=workspace_root)
+            self.assertEqual(verify_run.returncode, 0, verify_run.stdout + verify_run.stderr)
+            self.assertIn("ID | Title | Status | Integrity | File | Hash | Issues", verify_run.stdout)
+            self.assertIn("Daily 2026-03-13 | draft | ok | present | match | -", verify_run.stdout)
+
     def test_document_set_status_updates_database_and_audit_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "workspace"
@@ -584,6 +698,15 @@ class NexusCliSmokeTest(unittest.TestCase):
             )
             self.assertEqual(update_run.returncode, 1, update_run.stdout + update_run.stderr)
             self.assertIn("Current directory is not a Nexus workspace", update_run.stderr)
+
+            verify_run = self.run_cli(
+                "document",
+                "verify",
+                "doc-123",
+                cwd=outside_root,
+            )
+            self.assertEqual(verify_run.returncode, 1, verify_run.stdout + verify_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", verify_run.stderr)
 
     def test_document_create_rejects_blank_required_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

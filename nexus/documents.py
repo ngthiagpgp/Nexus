@@ -52,6 +52,25 @@ class DocumentInspection:
     approved_at: str | None
 
 
+@dataclass(frozen=True)
+class DocumentIntegrityResult:
+    document_id: str
+    title: str
+    type: str
+    status: str
+    path: str
+    expected_path: str
+    absolute_path: str
+    db_record_exists: bool
+    backing_file_exists: bool
+    path_matches_expected: bool
+    content_hash_matches: bool | None
+    integrity_state: str
+    issues: list[str]
+    recorded_content_hash: str
+    current_content_hash: str | None
+
+
 def create_document(
     workspace_root: Path,
     *,
@@ -283,6 +302,37 @@ def inspect_document(workspace_root: Path, *, selector: str) -> DocumentInspecti
     )
 
 
+def verify_document(
+    workspace_root: Path,
+    *,
+    selector: str,
+    allow_title_lookup: bool = True,
+) -> DocumentIntegrityResult:
+    workspace = require_workspace(workspace_root)
+    normalized_selector = validate_required_text("Document selector", selector)
+
+    with connect_workspace_database(workspace.database_path, read_only=True) as connection:
+        row = fetch_document_row(
+            connection,
+            normalized_selector,
+            allow_title_lookup=allow_title_lookup,
+        )
+
+    return build_document_integrity_result(
+        document_record_from_row(row),
+        workspace_root=workspace.workspace_root,
+    )
+
+
+def verify_documents(workspace_root: Path) -> list[DocumentIntegrityResult]:
+    workspace = require_workspace(workspace_root)
+    records = list_documents(workspace.workspace_root)
+    return [
+        build_document_integrity_result(record, workspace_root=workspace.workspace_root)
+        for record in records
+    ]
+
+
 def update_document_status(
     workspace_root: Path,
     *,
@@ -465,6 +515,67 @@ def bump_major_version(version: str) -> str:
             f"Document version is not a supported major.minor value: {raw_version}"
         ) from exc
     return f"{major_value + 1}.0"
+
+
+def build_document_integrity_result(
+    record: DocumentRecord,
+    *,
+    workspace_root: Path,
+) -> DocumentIntegrityResult:
+    expected_path = build_document_relative_path(record.type, record.title).as_posix()
+    absolute_path = workspace_root / record.path
+    issues: list[str] = []
+    backing_file_exists = absolute_path.exists()
+    path_matches_expected = record.path == expected_path
+    content_hash_matches: bool | None = None
+    current_content_hash: str | None = None
+
+    if not path_matches_expected:
+        issues.append("path_mismatch")
+
+    if not backing_file_exists:
+        issues.append("missing_backing_file")
+    else:
+        try:
+            content = absolute_path.read_text(encoding="utf-8")
+        except OSError:
+            issues.append("backing_file_unreadable")
+        else:
+            current_content_hash = compute_content_hash(content)
+            content_hash_matches = current_content_hash == record.content_hash
+            if not content_hash_matches:
+                issues.append("content_hash_mismatch")
+
+    integrity_state = classify_document_integrity_issues(issues)
+
+    return DocumentIntegrityResult(
+        document_id=record.id,
+        title=record.title,
+        type=record.type,
+        status=record.status,
+        path=record.path,
+        expected_path=expected_path,
+        absolute_path=str(absolute_path),
+        db_record_exists=True,
+        backing_file_exists=backing_file_exists,
+        path_matches_expected=path_matches_expected,
+        content_hash_matches=content_hash_matches,
+        integrity_state=integrity_state,
+        issues=issues,
+        recorded_content_hash=record.content_hash,
+        current_content_hash=current_content_hash,
+    )
+
+
+def classify_document_integrity_issues(issues: Sequence[str]) -> str:
+    if not issues:
+        return "ok"
+    if any(
+        issue in {"missing_backing_file", "backing_file_unreadable", "content_hash_mismatch"}
+        for issue in issues
+    ):
+        return "error"
+    return "warning"
 
 
 def fetch_document_row(
