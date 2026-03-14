@@ -11,3 +11,7 @@ Workspace inicial do Nexus MVP com artefatos de especificacao e planejamento.
 - tornar o workspace versionavel com `git`
 - preparar publicacao em repositorio GitHub
 - registrar um rastro minimo de mudancas estruturais
+
+
+git remote set-url origin :git@github.com:ngthiagpgp/Nexus.git
+git push -u origin main
