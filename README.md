@@ -12,6 +12,22 @@ Workspace inicial do Nexus MVP com artefatos de especificacao e planejamento.
 - preparar publicacao em repositorio GitHub
 - registrar um rastro minimo de mudancas estruturais
 
+## Bootstrap local
 
-git remote set-url origin :git@github.com:ngthiagpgp/Nexus.git
-git push -u origin main
+Para expor o comando `nexus` localmente:
+
+```bash
+python -m pip install -e .
+```
+
+Para inicializar um workspace Nexus:
+
+```bash
+nexus init ./sandbox-workspace
+```
+
+Alternativamente, sem instalar o script:
+
+```bash
+python -m nexus init ./sandbox-workspace
+```
