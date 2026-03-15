@@ -8,6 +8,10 @@ def render_cockpit_page() -> str:
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nexus Cockpit</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%238db6ff'/%3E%3Cstop offset='100%25' stop-color='%239786ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='%23091119'/%3E%3Cpath d='M17 45V19h6l18 18V19h6v26h-6L23 27v18z' fill='url(%23g)'/%3E%3C/svg%3E"
+    />
     <style>{_style()}</style>
   </head>
   <body>
@@ -397,6 +401,56 @@ button, input, select { font: inherit; }
   gap: 14px;
 }
 
+.overview-grid {
+  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 0.82fr));
+  gap: 14px;
+}
+
+.overview-hero,
+.overview-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(12, 19, 28, 0.92), rgba(9, 15, 23, 0.88));
+}
+
+.overview-hero {
+  background:
+    radial-gradient(circle at top right, rgba(151, 134, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 33, 0.96), rgba(9, 15, 23, 0.92));
+}
+
+.overview-kicker {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.overview-title {
+  margin-top: 10px;
+  font-size: 1.54rem;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.overview-copy {
+  margin-top: 10px;
+  color: var(--text-soft);
+  line-height: 1.58;
+}
+
+.overview-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.overview-card .card-secondary,
+.overview-card .quiet-copy {
+  margin-top: 8px;
+}
+
 .map-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.92fr) 228px;
@@ -416,6 +470,54 @@ button, input, select { font: inherit; }
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.02),
     0 20px 54px rgba(0, 0, 0, 0.28);
+}
+
+.graph-toolbar {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 3;
+  display: inline-flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(141, 182, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(8, 13, 20, 0.76);
+  backdrop-filter: blur(12px);
+}
+
+.graph-tool-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(141, 182, 255, 0.08);
+  background: rgba(12, 19, 28, 0.66);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.graph-tool-button:hover {
+  color: var(--text);
+  border-color: rgba(141, 182, 255, 0.24);
+}
+
+.graph-tool-button.active {
+  color: var(--accent-strong);
+  border-color: rgba(141, 182, 255, 0.3);
+  background: rgba(141, 182, 255, 0.12);
+}
+
+.graph-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.graph-world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transition: transform 140ms ease;
 }
 
 .graph-stage::before,
@@ -448,6 +550,7 @@ button, input, select { font: inherit; }
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
 .map-stage-overlay {
@@ -492,16 +595,60 @@ button, input, select { font: inherit; }
   margin-top: 10px;
 }
 
+.hover-probe {
+  position: absolute;
+  z-index: 4;
+  max-width: 250px;
+  padding: 12px 13px;
+  border: 1px solid rgba(141, 182, 255, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(10, 16, 24, 0.88), rgba(7, 12, 18, 0.84));
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.hover-probe[hidden] { display: none !important; }
+
+.hover-probe-title {
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.hover-probe-copy {
+  margin-top: 7px;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .graph-link {
   stroke: rgba(141, 182, 255, 0.24);
   stroke-width: 1.8;
   stroke-linecap: round;
   fill: none;
   filter: drop-shadow(0 0 8px rgba(141, 182, 255, 0.12));
+  transition: opacity 120ms ease, stroke-width 120ms ease;
 }
 
 .graph-link.risk { stroke: rgba(255, 154, 147, 0.4); stroke-dasharray: 6 6; }
 .graph-link.support { stroke: rgba(240, 195, 122, 0.34); }
+.graph-link.requires { stroke: rgba(108, 181, 255, 0.34); stroke-dasharray: 10 6; }
+.graph-link.reference { stroke: rgba(127, 145, 163, 0.28); }
+.graph-link.ownership { stroke: rgba(139, 203, 159, 0.28); }
+.graph-link.active { stroke-width: 2.7; opacity: 1; }
+.graph-link.muted { opacity: 0.22; }
+
+.graph-link-label {
+  fill: var(--text-faint);
+  font-size: 2.3px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+.graph-link-label.active { opacity: 0.92; }
 
 .graph-node {
   position: absolute;
@@ -524,6 +671,13 @@ button, input, select { font: inherit; }
   transform: translate(-50%, -50%) translateY(-2px);
   border-color: rgba(141, 182, 255, 0.28);
 }
+
+.graph-node.focused {
+  border-color: rgba(141, 182, 255, 0.38);
+  box-shadow: 0 0 0 1px rgba(141, 182, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.32);
+}
+
+.graph-node.muted { opacity: 0.34; }
 
 .graph-node.primary {
   width: 246px;
@@ -563,6 +717,18 @@ button, input, select { font: inherit; }
   color: var(--text-muted);
   font-size: 0.81rem;
   line-height: 1.42;
+}
+
+.graph-node-state {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  background: rgba(141, 182, 255, 0.08);
+  border: 1px solid rgba(141, 182, 255, 0.08);
 }
 
 .map-aside,
@@ -643,13 +809,13 @@ button, input, select { font: inherit; }
 }
 
 .inspect-grid {
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 1.34fr 0.66fr;
   align-items: start;
   gap: 12px;
 }
 
 .inspect-focus {
-  padding: 18px;
+  padding: 20px 22px;
   background:
     linear-gradient(180deg, rgba(15, 23, 33, 0.96), rgba(9, 15, 23, 0.98));
 }
@@ -686,7 +852,7 @@ button, input, select { font: inherit; }
   margin-top: 12px;
   color: var(--text-soft);
   line-height: 1.62;
-  max-width: 58ch;
+  max-width: 66ch;
 }
 
 .inspect-section {
@@ -721,6 +887,18 @@ button, input, select { font: inherit; }
   line-height: 1.6;
 }
 
+.inspect-surface {
+  display: grid;
+  gap: 14px;
+}
+
+.inspect-reading-surface {
+  padding: 18px;
+  border: 1px solid rgba(114, 141, 173, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(8, 14, 21, 0.74), rgba(6, 11, 17, 0.88));
+}
+
 .preview {
   padding: 18px 18px 20px;
   min-height: 340px;
@@ -753,6 +931,22 @@ button, input, select { font: inherit; }
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: rgba(9, 16, 24, 0.48);
+}
+
+.flow-emphasis {
+  position: relative;
+  padding-left: 12px;
+}
+
+.flow-emphasis::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(141, 182, 255, 0.34);
 }
 
 .detail-stack-label {
@@ -840,6 +1034,19 @@ button, input, select { font: inherit; }
   max-width: 72ch;
 }
 
+.audit-group-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.audit-group-copy {
+  margin-top: 6px;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 #audit-snapshot .detail-callout {
   background: rgba(10, 16, 23, 0.4);
 }
@@ -918,6 +1125,7 @@ button, input, select { font: inherit; }
     grid-template-columns: 1fr;
   }
   .inspect-grid,
+  .overview-grid,
   .map-layout,
   .flow-grid,
   .cycle-context-bar {
@@ -992,6 +1200,7 @@ def _body() -> str:
   </section>
 
   <nav id="main-nav" class="surface main-nav" aria-label="Primary cockpit views">
+    <button class="nav-button" type="button" data-view="overview">OVERVIEW</button>
     <button class="nav-button active" type="button" data-view="map">MAP</button>
     <button class="nav-button" type="button" data-view="flow">FLOW</button>
     <button class="nav-button" type="button" data-view="inspect">INSPECT</button>
@@ -1019,6 +1228,18 @@ def _body() -> str:
     </aside>
 
     <section class="surface view-surface">
+      <section id="overview-view" class="view-panel" hidden>
+        <div class="view-head">
+          <div class="view-head-copy">
+            <h2 class="section-title">OVERVIEW</h2>
+            <p class="section-copy">
+              Scan the current operational frame, surface the primary tension, and step directly into the live map.
+            </p>
+          </div>
+        </div>
+        <div id="overview-grid" class="view-body overview-grid"></div>
+      </section>
+
       <section id="map-view" class="view-panel">
         <div class="view-head">
           <div class="view-head-copy">
@@ -1030,7 +1251,16 @@ def _body() -> str:
           </div>
         </div>
         <div class="view-body map-layout">
-          <section id="graph-stage" class="surface graph-stage"></section>
+          <section id="graph-stage" class="surface graph-stage">
+            <div class="graph-viewport"><div id="graph-world" class="graph-world"></div></div>
+            <div id="hover-probe" class="hover-probe" hidden></div>
+            <div class="graph-toolbar">
+              <button class="graph-tool-button" type="button" data-map-zoom="out" aria-label="Zoom out">−</button>
+              <button class="graph-tool-button" type="button" data-map-zoom="in" aria-label="Zoom in">+</button>
+              <button class="graph-tool-button" type="button" data-map-isolate aria-label="Isolate focus">◎</button>
+              <button class="graph-tool-button" type="button" data-map-reset aria-label="Reset view">↺</button>
+            </div>
+          </section>
           <aside class="map-aside">
             <article class="surface inspect-card">
               <h3>Read the scene</h3>
@@ -1209,6 +1439,13 @@ const state = {
   activities: [],
   audit: [],
   focusedCycleId: null,
+  focusedNodeId: null,
+  hoveredNodeId: null,
+  isolatedNodeId: null,
+  mapScale: 1,
+  mapOffset: { x: 0, y: 0 },
+  dragState: null,
+  mapModel: null,
   selected: { type: "cycle", id: null },
   documentDetails: {},
   pendingMutation: null
@@ -1345,6 +1582,10 @@ function currentSelection() {
   return cycleById(state.selected.id || state.focusedCycleId);
 }
 
+function nodeKey(type, id) {
+  return `${type}:${id}`;
+}
+
 function summarizeCycle(cycle) {
   const documents = relatedDocuments(cycle.id);
   const integrityIssues = documents.filter((doc) => {
@@ -1383,6 +1624,7 @@ function pickFocusedCycle() {
 
 function selectObject(type, id) {
   state.selected = { type, id };
+  state.focusedNodeId = nodeKey(type, id);
   if (type === "cycle") {
     state.focusedCycleId = id;
   }
@@ -1394,7 +1636,7 @@ function activateView(view) {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === view);
   });
-  ["map", "flow", "inspect", "audit"].forEach((name) => {
+  ["overview", "map", "flow", "inspect", "audit"].forEach((name) => {
     const panel = document.getElementById(`${name}-view`);
     if (panel) {
       panel.hidden = name !== view;
@@ -1444,7 +1686,7 @@ function renderWorkspaceBadge() {
   }
   setHtml(
     "workspace-badge",
-    `<strong>${escapeHtml(status.workspace_name || "Nexus workspace")}</strong><div class="card-secondary">Schema ${escapeHtml(status.schema_version || "-")} | DB ${status.db_present ? "present" : "missing"}</div>`
+    `<strong>${escapeHtml(status.workspace_name || "Nexus workspace")}</strong><div class="card-secondary">${status.db_present ? "Local state ready" : "Local state missing"} • schema ${escapeHtml(status.schema_version || "-")}</div>`
   );
 }
 
@@ -1545,16 +1787,21 @@ function documentCardSummary(document) {
 }
 
 function describeAuditEntry(entry) {
-  const entity = titleCase(entry.entity_type);
-  const action =
-    entry.action === "create"
-      ? "entered the workspace"
-      : entry.action === "update"
-      ? "changed state"
-      : entry.action === "reconcile"
-      ? "was reconciled"
-      : entry.action;
-  return `${entity} ${action}. ${entry.reason || "No reason recorded."}`;
+  const actor = entry.agent || "system";
+  const objectLabel = auditObjectLabel(entry);
+  if (entry.entity_type === "document" && entry.action === "reconcile") {
+    return `${actor} reconciled ${objectLabel} so the evidence record could be trusted again.`;
+  }
+  if (entry.entity_type === "document" && entry.action === "update") {
+    return `${actor} changed the lifecycle state of ${objectLabel}, shifting what evidence is institutionally valid now.`;
+  }
+  if (entry.entity_type === "activity" && entry.action === "update") {
+    return `${actor} changed ${objectLabel}, altering the pressure pattern inside the focused cycle.`;
+  }
+  if (entry.action === "create") {
+    return `${actor} introduced ${objectLabel} into the workspace, widening the current operational picture.`;
+  }
+  return `${actor} updated ${objectLabel}. ${entry.reason || "No explicit reason was recorded."}`;
 }
 
 function auditObjectLabel(entry) {
@@ -1622,6 +1869,118 @@ function operatorGuidance(cycle) {
     return `${cycleLabel(cycle)} is ready to move. Start with pending activities and keep evidence close at hand.`;
   }
   return `${cycleLabel(cycle)} is stable. Use inspection and audit to reconstruct how the cycle evolved.`;
+}
+
+function dominantIntegrityIssue(cycle) {
+  if (!cycle) return null;
+  return relatedDocuments(cycle.id)
+    .map((document) => ({ document, integrity: integrityFor(document.id) }))
+    .find(({ integrity }) => integrity && integrity.integrity_state !== "ok") || null;
+}
+
+function nextOperationalFocus(cycle) {
+  if (!cycle) return null;
+  return (
+    relatedActivities(cycle.id).find((item) => item.status === "blocked") ||
+    relatedActivities(cycle.id).find((item) => item.status === "pending") ||
+    relatedActivities(cycle.id).find((item) => item.status === "in_progress") ||
+    null
+  );
+}
+
+function renderOverviewView() {
+  const cycle = pickFocusedCycle();
+  if (!cycle) {
+    setHtml("overview-grid", '<div class="empty-state">Seed the workspace to generate an operational frame.</div>');
+    return;
+  }
+  const summary = summarizeCycle(cycle);
+  const issue = dominantIntegrityIssue(cycle);
+  const focus = nextOperationalFocus(cycle);
+  const issueMarkup = issue
+    ? `<div class="badge-row"><span class="badge danger">${escapeHtml(statusLabel(issue.integrity.integrity_state))}</span><span class="badge warning">${escapeHtml(issue.document.title)}</span></div><div class="card-secondary">${escapeHtml(documentNarrative(issue.document))}</div>`
+    : `<div class="badge-row"><span class="badge success">Evidence steady</span></div><div class="card-secondary">No document is currently drifting away from the operational record.</div>`;
+  const focusMarkup = focus
+    ? `<div class="badge-row"><span class="badge ${statusBadgeClass(focus.status)}">${escapeHtml(statusLabel(focus.status))}</span></div><div class="card-title">${escapeHtml(focus.title)}</div><div class="card-secondary">${escapeHtml(activityNarrative(focus))}</div>`
+    : `<div class="card-secondary">No immediate work item is asking for intervention.</div>`;
+  setHtml(
+    "overview-grid",
+    `
+      <article class="overview-hero">
+        <div class="overview-kicker">Current operating frame</div>
+        <div class="overview-title">${escapeHtml(cycleLabel(cycle))}</div>
+        <div class="overview-copy">${escapeHtml(cycleNarrative(cycle))}</div>
+        <div class="badge-row">
+          <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+          <span class="badge ${statusBadgeClass(summary.pressure === "Critical" ? "blocked" : summary.pressure === "Elevated" ? "pending" : "completed")}">${escapeHtml(summary.pressure)}</span>
+          <span class="badge ${statusBadgeClass(summary.evidence === "Fragile" ? "warning" : summary.evidence === "Degraded" ? "error" : "completed")}">${escapeHtml(summary.evidence)}</span>
+        </div>
+        <div class="action-row">
+          <button class="inline-button primary" type="button" data-view="map">Enter MAP</button>
+          <button class="inline-button" type="button" data-view="inspect">Open judgment surface</button>
+        </div>
+      </article>
+      <article class="overview-card">
+        <h3>Primary evidence signal</h3>
+        ${issueMarkup}
+      </article>
+      <article class="overview-card">
+        <h3>Immediate operational focus</h3>
+        ${focusMarkup}
+      </article>
+    `
+  );
+}
+
+function auditContextLabel(entry) {
+  const entity = titleCase(entry.entity_type);
+  const action =
+    entry.action === "create"
+      ? "Created"
+      : entry.action === "update"
+      ? "State changed"
+      : entry.action === "reconcile"
+      ? "Reconciled"
+      : titleCase(entry.action || "Event");
+  return `${entity} • ${action}`;
+}
+
+function cycleIdForAuditEntry(entry) {
+  if (entry.entity_type === "cycle") return entry.entity_id;
+  if (entry.entity_type === "activity") return activityById(entry.entity_id)?.cycle_id || null;
+  if (entry.entity_type === "document") return documentById(entry.entity_id)?.cycle_id || null;
+  return null;
+}
+
+function groupAuditEntries(entries) {
+  const groups = new Map();
+  entries.forEach((entry) => {
+    let spec;
+    if (entry.entity_type === "document" && ["update", "reconcile"].includes(entry.action)) {
+      spec = {
+        key: "evidence",
+        title: "Evidence drift or reconcile",
+        copy: "Supporting material changed trust state, drifted, or was brought back into alignment."
+      };
+    } else if (entry.action === "update") {
+      spec = {
+        key: "state",
+        title: "State changed",
+        copy: "Operational status shifts changed what the cycle could do next."
+      };
+    } else {
+      spec = {
+        key: "work",
+        title: "Work created or linked",
+        copy: "Objects entered the workspace or became part of the current operational frame."
+      };
+    }
+    if (!groups.has(spec.key)) {
+      groups.set(spec.key, { spec, entries: [] });
+    }
+    groups.get(spec.key).entries.push(entry);
+  });
+  return Array.from(groups.values());
 }
 
 function renderOntology() {
@@ -1730,10 +2089,12 @@ function graphNodeMarkup(node) {
       style="left:${node.x}%; top:${node.y}%"
       type="button"
       data-select="${escapeHtml(node.kind)}:${escapeHtml(node.id)}"
+      data-node-key="${escapeHtml(node.key)}"
+      data-node-summary="${escapeHtml(node.summary)}"
     >
       <div class="card-kicker">${escapeHtml(node.kicker)}</div>
       <div class="graph-node-title">${escapeHtml(node.title)}</div>
-      <div class="graph-node-meta">${escapeHtml(node.meta)}</div>
+      <div class="graph-node-state">${escapeHtml(node.stateLabel)}</div>
     </button>
   `;
 }
@@ -1752,31 +2113,52 @@ function graphLinkPath(from, to) {
   return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
 }
 
+function relationTone(type) {
+  if (type === "blocks") return "risk";
+  if (type === "supports") return "support";
+  if (type === "requires") return "requires";
+  if (["owns", "owner_of"].includes(type)) return "ownership";
+  return "reference";
+}
+
+function relationLabel(type) {
+  return titleCase(type || "linked");
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function buildMapModel(cycle) {
   const activities = relatedActivities(cycle.id);
   const documents = relatedDocuments(cycle.id);
   const otherCycles = state.cycles.filter((item) => item.id !== cycle.id).slice(0, 3);
   const entities = state.entities.slice(0, 4);
   const riskNodes = [];
+  const summary = summarizeCycle(cycle);
   if (cycle.blocked_count > 0) {
     riskNodes.push({
       kind: "risk",
       id: `${cycle.id}-blocked`,
+      key: nodeKey("risk", `${cycle.id}-blocked`),
       kicker: "Risk",
       title: "Blocked work pressure",
-      meta: `${cycle.blocked_count} blocked activities`,
+      stateLabel: `${cycle.blocked_count} blocked`,
+      summary: "Blocked work is constraining the cycle and should be treated as immediate operational pressure.",
       x: 20,
       y: 18,
       selected: false
     });
   }
-  if (summarizeCycle(cycle).integrityIssues > 0) {
+  if (summary.integrityIssues > 0) {
     riskNodes.push({
       kind: "risk",
       id: `${cycle.id}-evidence`,
+      key: nodeKey("risk", `${cycle.id}-evidence`),
       kicker: "Risk",
       title: "Evidence drift",
-      meta: "Supporting documents need attention",
+      stateLabel: summary.integrityIssues > 1 ? "degraded" : "fragile",
+      summary: "Supporting evidence is drifting away from the stored record and can invalidate action.",
       x: 80,
       y: 18,
       selected: false
@@ -1787,9 +2169,11 @@ function buildMapModel(cycle) {
     {
       kind: "cycle",
       id: cycle.id,
+      key: nodeKey("cycle", cycle.id),
       kicker: "Cycle",
       title: cycleLabel(cycle),
-      meta: `${statusLabel(cycle.status)} | ${cycle.activity_count} activities`,
+      stateLabel: statusLabel(cycle.status),
+      summary: cycleNarrative(cycle),
       x: 51,
       y: 52,
       primary: true,
@@ -1798,9 +2182,11 @@ function buildMapModel(cycle) {
     ...otherCycles.map((item, index) => ({
       kind: "cycle",
       id: item.id,
+      key: nodeKey("cycle", item.id),
       kicker: "Adjacent cycle",
       title: cycleLabel(item),
-      meta: `${statusLabel(item.status)} | ${item.activity_count} activities`,
+      stateLabel: statusLabel(item.status),
+      summary: cycleNarrative(item),
       x: [18, 50, 82][index] || 18 + index * 22,
       y: 16,
       selected: state.selected.type === "cycle" && state.selected.id === item.id
@@ -1808,9 +2194,11 @@ function buildMapModel(cycle) {
     ...activities.map((item, index) => ({
       kind: "activity",
       id: item.id,
+      key: nodeKey("activity", item.id),
       kicker: "Activity",
       title: item.title,
-      meta: `${statusLabel(item.status)} | ${titleCase(item.priority === 1 ? "urgent" : item.priority === 2 ? "high" : item.priority === 4 ? "low" : "normal")}`,
+      stateLabel: statusLabel(item.status),
+      summary: activityNarrative(item),
       x: 17,
       y: 28 + index * (activities.length > 1 ? 18 : 0),
       selected: state.selected.type === "activity" && state.selected.id === item.id
@@ -1818,9 +2206,11 @@ function buildMapModel(cycle) {
     ...documents.map((item, index) => ({
       kind: "document",
       id: item.id,
+      key: nodeKey("document", item.id),
       kicker: "Document",
       title: item.title,
-      meta: `${documentTypeLabel(item.type)} | ${statusLabel(item.status)}`,
+      stateLabel: statusLabel(item.status),
+      summary: documentNarrative(item),
       x: 84,
       y: 26 + index * (documents.length > 1 ? 18 : 0),
       selected: state.selected.type === "document" && state.selected.id === item.id
@@ -1828,9 +2218,11 @@ function buildMapModel(cycle) {
     ...entities.map((item, index) => ({
       kind: "entity",
       id: item.id,
+      key: nodeKey("entity", item.id),
       kicker: "Entity",
       title: item.name,
-      meta: titleCase(item.type),
+      stateLabel: titleCase(item.type),
+      summary: `${item.name} remains part of the structural context around the focused cycle.`,
       x: 18 + index * 20,
       y: 88,
       selected: false
@@ -1840,37 +2232,215 @@ function buildMapModel(cycle) {
 
   const links = [];
   nodes.filter((node) => node.kind === "activity").forEach((node) => {
-    links.push({ from: cycle.id, to: node.id, tone: node.meta.includes("Blocked") ? "risk" : "default" });
+    links.push({
+      id: `${cycle.id}:${node.id}:activity`,
+      from: nodeKey("cycle", cycle.id),
+      to: node.key,
+      type: node.stateLabel === "Blocked" ? "blocks" : "impacts",
+      tone: node.stateLabel === "Blocked" ? "risk" : "reference"
+    });
   });
   nodes.filter((node) => node.kind === "document").forEach((node) => {
-    links.push({ from: cycle.id, to: node.id, tone: "support" });
+    links.push({
+      id: `${cycle.id}:${node.id}:document`,
+      from: nodeKey("cycle", cycle.id),
+      to: node.key,
+      type: "supports",
+      tone: "support"
+    });
   });
   nodes.filter((node) => node.kind === "entity").forEach((node) => {
-    links.push({ from: cycle.id, to: node.id, tone: "default" });
+    links.push({
+      id: `${cycle.id}:${node.id}:entity`,
+      from: nodeKey("cycle", cycle.id),
+      to: node.key,
+      type: "owns",
+      tone: "ownership"
+    });
   });
   riskNodes.forEach((node) => {
-    links.push({ from: cycle.id, to: node.id, tone: "risk" });
+    links.push({
+      id: `${cycle.id}:${node.id}:risk`,
+      from: nodeKey("cycle", cycle.id),
+      to: node.key,
+      type: "blocks",
+      tone: "risk"
+    });
+  });
+  activities.forEach((activity) => {
+    const supportingDocument = supportingDocumentForActivity(activity);
+    if (!supportingDocument) return;
+    links.push({
+      id: `${activity.id}:${supportingDocument.id}:support`,
+      from: nodeKey("activity", activity.id),
+      to: nodeKey("document", supportingDocument.id),
+      type: activity.status === "blocked" ? "requires" : "supports",
+      tone: activity.status === "blocked" ? "requires" : "support"
+    });
+  });
+  state.relations.forEach((relation) => {
+    const from = nodeKey("entity", relation.entity_a_id);
+    const to = nodeKey("entity", relation.entity_b_id);
+    if (!nodes.some((node) => node.key === from) || !nodes.some((node) => node.key === to)) {
+      return;
+    }
+    links.push({
+      id: relation.id,
+      from,
+      to,
+      type: relation.type,
+      tone: relationTone(relation.type)
+    });
   });
   return { nodes, links };
+}
+
+function activeMapNodeKey() {
+  return state.hoveredNodeId || state.focusedNodeId || (state.selected.id ? nodeKey(state.selected.type, state.selected.id) : null);
+}
+
+function visibleMapNodeKeys(model, activeKey) {
+  if (!state.isolatedNodeId) {
+    return new Set(model.nodes.map((node) => node.key));
+  }
+  const visible = new Set([state.isolatedNodeId]);
+  model.links.forEach((link) => {
+    if (link.from === state.isolatedNodeId) visible.add(link.to);
+    if (link.to === state.isolatedNodeId) visible.add(link.from);
+  });
+  if (activeKey) {
+    visible.add(activeKey);
+  }
+  return visible;
+}
+
+function renderHoverProbe() {
+  const probe = document.getElementById("hover-probe");
+  const stage = document.getElementById("graph-stage");
+  const key = state.hoveredNodeId;
+  if (!probe || !stage || !key) {
+    if (probe) probe.hidden = true;
+    return;
+  }
+  const target = stage.querySelector(`[data-node-key="${CSS.escape(key)}"]`);
+  if (!target) {
+    probe.hidden = true;
+    return;
+  }
+  const rect = target.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+  const title = target.querySelector(".graph-node-title")?.textContent || "Focused object";
+  probe.hidden = false;
+  probe.innerHTML = `<div class="hover-probe-title">${escapeHtml(title)}</div><div class="hover-probe-copy">${escapeHtml(target.dataset.nodeSummary || "")}</div>`;
+  const left = clamp(rect.left - stageRect.left + rect.width + 12, 18, Math.max(18, stageRect.width - 280));
+  const top = clamp(rect.top - stageRect.top - 8, 18, Math.max(18, stageRect.height - 120));
+  probe.style.left = `${left}px`;
+  probe.style.top = `${top}px`;
+}
+
+function applyMapTransform() {
+  const world = document.getElementById("graph-world");
+  if (!world) return;
+  world.style.transform = `translate(${state.mapOffset.x}px, ${state.mapOffset.y}px) scale(${state.mapScale})`;
+  renderHoverProbe();
+}
+
+function zoomMap(delta) {
+  state.mapScale = clamp(Number((state.mapScale + delta).toFixed(2)), 0.76, 1.9);
+  applyMapTransform();
+  syncGraphAttention();
+}
+
+function resetMapView() {
+  state.mapScale = 1;
+  state.mapOffset = { x: 0, y: 0 };
+  state.isolatedNodeId = null;
+  state.hoveredNodeId = null;
+  renderMapView();
+}
+
+function toggleMapIsolation() {
+  const activeKey = state.focusedNodeId || activeMapNodeKey();
+  if (!activeKey) return;
+  state.isolatedNodeId = state.isolatedNodeId === activeKey ? null : activeKey;
+  syncGraphAttention();
+}
+
+function syncGraphAttention() {
+  const model = state.mapModel;
+  const stage = document.getElementById("graph-stage");
+  if (!model || !stage) return;
+  const activeKey = activeMapNodeKey();
+  const visibleKeys = visibleMapNodeKeys(model, activeKey);
+  stage.querySelectorAll(".graph-node").forEach((element) => {
+    const key = element.dataset.nodeKey;
+    const hidden = key && !visibleKeys.has(key);
+    element.hidden = hidden;
+    element.classList.toggle("focused", Boolean(key && activeKey && key === activeKey));
+    element.classList.toggle("muted", Boolean(key && activeKey && key !== activeKey && !hidden));
+  });
+  stage.querySelectorAll(".graph-link").forEach((element) => {
+    const from = element.dataset.fromKey;
+    const to = element.dataset.toKey;
+    const hidden = !visibleKeys.has(from) || !visibleKeys.has(to);
+    element.hidden = hidden;
+    const active = Boolean(activeKey && (from === activeKey || to === activeKey));
+    element.classList.toggle("active", active);
+    element.classList.toggle("muted", !active && !hidden && Boolean(activeKey));
+  });
+  stage.querySelectorAll(".graph-link-label").forEach((element) => {
+    const from = element.dataset.fromKey;
+    const to = element.dataset.toKey;
+    const hidden = !visibleKeys.has(from) || !visibleKeys.has(to);
+    element.hidden = hidden;
+    const active = Boolean(activeKey && (from === activeKey || to === activeKey));
+    element.classList.toggle("active", active);
+  });
+  renderHoverProbe();
 }
 
 function renderMapView() {
   const cycle = pickFocusedCycle();
   if (!cycle) {
+    state.mapModel = null;
     setHtml("graph-stage", '<div class="empty-state" style="margin:18px">No cycle is available yet.</div>');
     setText("map-guide-copy", "Initialize and seed the workspace to populate the map.");
     setText("map-cycle-narrative", "Cycle context will appear here once the workspace contains operational data.");
     return;
   }
   const model = buildMapModel(cycle);
+  state.mapModel = model;
   const summary = summarizeCycle(cycle);
-  const positions = Object.fromEntries(model.nodes.map((node) => [node.id, node]));
+  const positions = Object.fromEntries(model.nodes.map((node) => [node.key, node]));
+  const activeKey = activeMapNodeKey();
+  const visibleKeys = visibleMapNodeKeys(model, activeKey);
   const links = model.links
     .map((link) => {
       const from = positions[link.from];
       const to = positions[link.to];
       if (!from || !to) return "";
-      return `<path class="graph-link ${link.tone === "risk" ? "risk" : link.tone === "support" ? "support" : ""}" d="${graphLinkPath(from, to)}"></path>`;
+      const active = activeKey && (link.from === activeKey || link.to === activeKey);
+      const hidden = !visibleKeys.has(link.from) || !visibleKeys.has(link.to);
+      const midX = (from.x + to.x) / 2;
+      const midY = (from.y + to.y) / 2;
+      return `
+        <path
+          class="graph-link ${escapeHtml(link.tone)} ${active ? "active" : activeKey ? "muted" : ""}"
+          data-from-key="${escapeHtml(link.from)}"
+          data-to-key="${escapeHtml(link.to)}"
+          ${hidden ? "hidden" : ""}
+          d="${graphLinkPath(from, to)}"
+        ></path>
+        <text
+          class="graph-link-label ${active ? "active" : ""}"
+          data-from-key="${escapeHtml(link.from)}"
+          data-to-key="${escapeHtml(link.to)}"
+          ${hidden ? "hidden" : ""}
+          x="${midX}"
+          y="${midY}"
+          text-anchor="middle"
+        >${escapeHtml(relationLabel(link.type))}</text>
+      `;
     })
     .join("");
   setHtml(
@@ -1883,11 +2453,22 @@ function renderMapView() {
         <div class="map-stage-metrics">
           <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
           <span class="badge ${statusBadgeClass(summary.pressure === "Critical" ? "blocked" : summary.pressure === "Elevated" ? "pending" : "completed")}">${escapeHtml(summary.pressure)}</span>
-          <span class="badge ${statusBadgeClass(summary.evidence === "Fragile" ? "warning" : summary.evidence === "Compromised" ? "error" : "completed")}">${escapeHtml(summary.evidence)}</span>
+          <span class="badge ${statusBadgeClass(summary.evidence === "Fragile" ? "warning" : summary.evidence === "Degraded" ? "error" : "completed")}">${escapeHtml(summary.evidence)}</span>
         </div>
       </div>
-      <svg class="graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">${links}</svg>
-      ${model.nodes.map(graphNodeMarkup).join("")}
+      <div class="graph-viewport">
+        <div id="graph-world" class="graph-world">
+          <svg class="graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">${links}</svg>
+          ${model.nodes.map(graphNodeMarkup).join("")}
+        </div>
+      </div>
+      <div id="hover-probe" class="hover-probe" hidden></div>
+      <div class="graph-toolbar">
+        <button class="graph-tool-button" type="button" data-map-zoom="out" aria-label="Zoom out">−</button>
+        <button class="graph-tool-button" type="button" data-map-zoom="in" aria-label="Zoom in">+</button>
+        <button class="graph-tool-button ${state.isolatedNodeId ? "active" : ""}" type="button" data-map-isolate aria-label="Isolate focus">◎</button>
+        <button class="graph-tool-button" type="button" data-map-reset aria-label="Reset view">↺</button>
+      </div>
     `
   );
   setHtml(
@@ -1902,11 +2483,13 @@ function renderMapView() {
   );
   setText("map-guide-copy", "Start at the cycle. Read outward into pressure, support, structure, and risk.");
   setText("map-cycle-narrative", cycleNarrative(cycle));
+  applyMapTransform();
+  syncGraphAttention();
 }
 
 function activityCardMarkup(activity, emphasize = false) {
   return `
-    <div class="activity-card ${state.selected.type === "activity" && state.selected.id === activity.id ? "active" : ""}">
+    <div class="activity-card ${state.selected.type === "activity" && state.selected.id === activity.id ? "active" : ""} ${emphasize ? "flow-emphasis" : ""}">
       <button type="button" data-select-activity="${escapeHtml(activity.id)}">
         <div class="card-kicker">Activity</div>
         <div class="card-title">${escapeHtml(activity.title)}</div>
@@ -2046,14 +2629,18 @@ function renderInspectContext(selection) {
   if (state.selected.type === "activity") {
     setHtml(
       "inspect-context",
-      renderMetaGrid([
-        ["Activity", selection.title],
-        ["Cycle", cycleLabel(cycleById(selection.cycle_id))],
-        ["State", statusLabel(selection.status)],
-        ["Priority", selection.priority <= 2 ? "High" : selection.priority >= 4 ? "Low" : "Normal"],
-        ["Reading", activityNarrative(selection)],
-        ["Created", formatDateTime(selection.created_at)]
-      ])
+      `
+        <div class="inspect-surface">
+          <div class="inspect-reading-surface">${escapeHtml(activityNarrative(selection))}</div>
+          ${renderMetaGrid([
+            ["Activity", selection.title],
+            ["Cycle", cycleLabel(cycleById(selection.cycle_id))],
+            ["State", statusLabel(selection.status)],
+            ["Priority", selection.priority <= 2 ? "High" : selection.priority >= 4 ? "Low" : "Normal"],
+            ["Created", formatDateTime(selection.created_at)]
+          ])}
+        </div>
+      `
     );
     return;
   }
@@ -2061,28 +2648,37 @@ function renderInspectContext(selection) {
     const integrity = integrityFor(selection.id);
     setHtml(
       "inspect-context",
-      renderMetaGrid([
-        ["Document", selection.title],
-        ["Type", documentTypeLabel(selection.type)],
-        ["Lifecycle", statusLabel(selection.status)],
-        ["Cycle", selection.cycle_id ? cycleLabel(cycleById(selection.cycle_id)) : "General support material"],
-        ["Integrity", integrity ? statusLabel(integrity.integrity_state) : "Unknown"],
-        ["Reading", documentNarrative(selection)]
-      ])
+      `
+        <div class="inspect-surface">
+          <div class="inspect-reading-surface">${escapeHtml(documentNarrative(selection))}</div>
+          ${renderMetaGrid([
+            ["Document", selection.title],
+            ["Type", documentTypeLabel(selection.type)],
+            ["Lifecycle", statusLabel(selection.status)],
+            ["Cycle", selection.cycle_id ? cycleLabel(cycleById(selection.cycle_id)) : "General support material"],
+            ["Integrity", integrity ? statusLabel(integrity.integrity_state) : "Unknown"]
+          ])}
+        </div>
+      `
     );
     return;
   }
   const summary = summarizeCycle(selection);
   setHtml(
     "inspect-context",
-    renderMetaGrid([
-      ["Cycle", cycleLabel(selection)],
-      ["State", statusLabel(selection.status)],
-      ["Activities", String(selection.activity_count)],
-      ["Supporting documents", String(summary.documents.length)],
-      ["Pressure", summary.pressure],
-      ["Risk", summary.risk]
-    ])
+    `
+      <div class="inspect-surface">
+        <div class="inspect-reading-surface">${escapeHtml(cycleNarrative(selection))}</div>
+        ${renderMetaGrid([
+          ["Cycle", cycleLabel(selection)],
+          ["State", statusLabel(selection.status)],
+          ["Activities", String(selection.activity_count)],
+          ["Supporting documents", String(summary.documents.length)],
+          ["Pressure", summary.pressure],
+          ["Risk", summary.risk]
+        ])}
+      </div>
+    `
   );
 }
 
@@ -2098,20 +2694,22 @@ async function renderInspectEvidence(selection) {
     setHtml(
       "inspect-evidence",
       `
-        <div class="detail-callout">
-          <div class="card-kicker">Document evidence</div>
-          <div class="card-title">${escapeHtml(selection.title)}</div>
-          <div class="card-secondary">${escapeHtml(documentNarrative(selection))}</div>
-          <div class="badge-row">
-            <span class="badge ${statusBadgeClass(selection.status)}">${escapeHtml(statusLabel(selection.status))}</span>
-            ${
-              integrity
-                ? `<span class="badge ${statusBadgeClass(integrity.integrity_state)}">${escapeHtml(statusLabel(integrity.integrity_state))}</span>`
-                : ""
-            }
+        <div class="inspect-surface">
+          <div class="detail-callout">
+            <div class="card-kicker">Document evidence</div>
+            <div class="card-title">${escapeHtml(selection.title)}</div>
+            <div class="card-secondary">${escapeHtml(documentNarrative(selection))}</div>
+            <div class="badge-row">
+              <span class="badge ${statusBadgeClass(selection.status)}">${escapeHtml(statusLabel(selection.status))}</span>
+              ${
+                integrity
+                  ? `<span class="badge ${statusBadgeClass(integrity.integrity_state)}">${escapeHtml(statusLabel(integrity.integrity_state))}</span>`
+                  : ""
+              }
+            </div>
           </div>
+          <div class="${previewClass}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
         </div>
-        <div class="${previewClass}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
       `
     );
     return;
@@ -2126,12 +2724,14 @@ async function renderInspectEvidence(selection) {
     setHtml(
       "inspect-evidence",
       `
-        <div class="detail-callout">
-          <div class="card-kicker">Supporting evidence</div>
-          <div class="card-title">${escapeHtml(document.title)}</div>
-          <div class="card-secondary">${escapeHtml(documentCardSummary(document))}</div>
+        <div class="inspect-surface">
+          <div class="detail-callout flow-emphasis">
+            <div class="card-kicker">Supporting evidence</div>
+            <div class="card-title">${escapeHtml(document.title)}</div>
+            <div class="card-secondary">${escapeHtml(documentCardSummary(document))}</div>
+          </div>
+          <div class="${details?.error ? "preview error" : "preview"}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
         </div>
-        <div class="${details?.error ? "preview error" : "preview"}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
       `
     );
     return;
@@ -2182,12 +2782,14 @@ function renderInspectGovernance(selection) {
     setHtml(
       "inspect-governance",
       `
-        <div class="detail-callout">
-          <div class="card-kicker">Controlled status transition</div>
-          <div class="card-secondary">Activity status updates stay explicit and auditable across CLI, API, and cockpit.</div>
-          <div class="action-row">${activityStatusControls(selection)}</div>
+        <div class="inspect-surface">
+          <div class="detail-callout">
+            <div class="card-kicker">Controlled status transition</div>
+            <div class="card-secondary">Operational state changes remain explicit, traceable, and immediately visible.</div>
+            <div class="action-row">${activityStatusControls(selection)}</div>
+          </div>
+          ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this activity.</div>'}
         </div>
-        ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this activity.</div>'}
       `
     );
     setHtml(
@@ -2206,14 +2808,16 @@ function renderInspectGovernance(selection) {
     setHtml(
       "inspect-governance",
       `
-        <div class="detail-callout">
-          <div class="card-kicker">Lifecycle and reconciliation</div>
-          <div class="card-secondary">Document legitimacy remains explicit. Lifecycle and reconcile actions are available only when the current state allows them.</div>
-          <div class="action-row">${documentStatusControls(selection)}
-            <button class="inline-button ${canReconcile(integrity) ? "primary" : ""}" type="button" data-reconcile-document="${escapeHtml(selection.id)}" ${canReconcile(integrity) && !state.pendingMutation ? "" : "disabled"}>Reconcile metadata</button>
+        <div class="inspect-surface">
+          <div class="detail-callout">
+            <div class="card-kicker">Lifecycle and reconciliation</div>
+            <div class="card-secondary">Keep the document legitimate before you let it carry operational consequence.</div>
+            <div class="action-row">${documentStatusControls(selection)}
+              <button class="inline-button ${canReconcile(integrity) ? "primary" : ""}" type="button" data-reconcile-document="${escapeHtml(selection.id)}" ${canReconcile(integrity) && !state.pendingMutation ? "" : "disabled"}>Reconcile metadata</button>
+            </div>
           </div>
+          ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this document.</div>'}
         </div>
-        ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this document.</div>'}
       `
     );
     setHtml(
@@ -2232,11 +2836,13 @@ function renderInspectGovernance(selection) {
   setHtml(
     "inspect-governance",
     `
-      <div class="detail-callout">
-        <div class="card-kicker">Cycle governance</div>
-        <div class="card-secondary">Cycles anchor the shared operational context. Use audit and supporting evidence to judge whether the cycle remains institutionally sound.</div>
+      <div class="inspect-surface">
+        <div class="detail-callout">
+          <div class="card-kicker">Cycle governance</div>
+          <div class="card-secondary">Judge whether the cycle still has enough evidence, legitimacy, and room to move safely.</div>
+        </div>
+        ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this cycle.</div>'}
       </div>
-      ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this cycle.</div>'}
     `
   );
   setHtml(
@@ -2304,14 +2910,20 @@ function renderAuditView() {
     setHtml("audit-snapshot", '<div class="empty-state">No recent audit activity.</div>');
     return;
   }
-  const groups = groupAuditEntries(state.audit);
+  const focusedCycleId = state.focusedCycleId;
+  const narrowed = focusedCycleId
+    ? state.audit.filter((entry) => cycleIdForAuditEntry(entry) === focusedCycleId)
+    : state.audit;
+  const entries = narrowed.length >= 4 ? narrowed : state.audit;
+  const groups = groupAuditEntries(entries);
   setHtml(
     "audit-timeline",
     groups
       .map(
-        ([dateLabel, entries]) => `
+        ({ spec, entries }) => `
           <section class="surface audit-group">
-            <div class="audit-date">${escapeHtml(dateLabel)}</div>
+            <div class="audit-group-title">${escapeHtml(spec.title)}</div>
+            <div class="audit-group-copy">${escapeHtml(spec.copy)}</div>
             ${entries
               .map(
                 (entry) => `
@@ -2335,7 +2947,7 @@ function renderAuditView() {
   );
   setHtml(
     "audit-snapshot",
-    state.audit.slice(0, 4).map(renderAuditSnippet).join("")
+    entries.slice(0, 4).map(renderAuditSnippet).join("")
   );
 }
 
@@ -2391,6 +3003,7 @@ async function refreshWorkspace(preserveSelection = true) {
   if (!state.selected.id && state.focusedCycleId) {
     state.selected = { type: "cycle", id: state.focusedCycleId };
   }
+  state.focusedNodeId = state.selected.id ? nodeKey(state.selected.type, state.selected.id) : null;
   await renderEverything();
   setReadiness(
     "Workspace ready",
@@ -2401,6 +3014,7 @@ async function refreshWorkspace(preserveSelection = true) {
 }
 
 function renderEmptyWorkspace() {
+  setHtml("overview-grid", '<div class="empty-state">Workspace not initialized.</div>');
   setHtml("cycle-index", '<li class="empty-state">No cycles are available.</li>');
   setHtml("ontology-list", '<div class="empty-state">No local structural context yet.</div>');
   setHtml("workspace-pulse", '<div class="empty-state">Workspace pulse will appear after initialization.</div>');
@@ -2418,6 +3032,7 @@ function renderEmptyWorkspace() {
 }
 
 async function renderEverything() {
+  renderOverviewView();
   renderOntology();
   renderWorkspacePulse();
   renderCycleIndex();
@@ -2484,6 +3099,11 @@ function bindEvents() {
   });
 
   document.addEventListener("click", async (event) => {
+    const viewButton = event.target.closest("[data-view]");
+    if (viewButton && !viewButton.closest("#main-nav")) {
+      activateView(viewButton.dataset.view);
+      return;
+    }
     const cycleButton = event.target.closest("[data-select-cycle]");
     if (cycleButton) {
       selectObject("cycle", cycleButton.dataset.selectCycle);
@@ -2531,6 +3151,65 @@ function bindEvents() {
       await reconcileDocument(reconcileButton.dataset.reconcileDocument);
       return;
     }
+    const zoomButton = event.target.closest("[data-map-zoom]");
+    if (zoomButton) {
+      zoomMap(zoomButton.dataset.mapZoom === "in" ? 0.14 : -0.14);
+      return;
+    }
+    const isolateButton = event.target.closest("[data-map-isolate]");
+    if (isolateButton) {
+      toggleMapIsolation();
+      return;
+    }
+    const resetButton = event.target.closest("[data-map-reset]");
+    if (resetButton) {
+      resetMapView();
+    }
+  });
+
+  document.addEventListener("mouseover", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (!node) return;
+    if (event.relatedTarget && node.contains(event.relatedTarget)) return;
+    state.hoveredNodeId = node.dataset.nodeKey || null;
+    syncGraphAttention();
+  });
+
+  document.addEventListener("mouseout", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (!node) return;
+    if (event.relatedTarget && node.contains(event.relatedTarget)) return;
+    state.hoveredNodeId = null;
+    syncGraphAttention();
+  });
+
+  document.addEventListener("mousemove", (event) => {
+    if (!state.dragState) return;
+    state.mapOffset = {
+      x: state.dragState.originOffset.x + (event.clientX - state.dragState.startX),
+      y: state.dragState.originOffset.y + (event.clientY - state.dragState.startY)
+    };
+    applyMapTransform();
+  });
+
+  document.addEventListener("mouseup", () => {
+    state.dragState = null;
+  });
+
+  document.getElementById("graph-stage")?.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    zoomMap(event.deltaY < 0 ? 0.08 : -0.08);
+  }, { passive: false });
+
+  document.getElementById("graph-stage")?.addEventListener("mousedown", (event) => {
+    if (event.target.closest(".graph-node, .graph-toolbar, .map-stage-overlay, .hover-probe")) {
+      return;
+    }
+    state.dragState = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originOffset: { ...state.mapOffset }
+    };
   });
 
   document.getElementById("flow-status-filter")?.addEventListener("change", () => renderFlowView());
