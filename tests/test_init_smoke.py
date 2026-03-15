@@ -156,6 +156,73 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertIn("Demo seed already present:", second_run.stdout)
             self.assertIn("cycles 1", second_run.stdout)
 
+    def test_demo_seed_rich_creates_operationally_dense_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            init_run = self.run_cli("init", str(workspace_root))
+            self.assertEqual(init_run.returncode, 0, init_run.stdout + init_run.stderr)
+
+            seed_run = self.run_cli("demo-seed-rich", cwd=workspace_root)
+            self.assertEqual(seed_run.returncode, 0, seed_run.stdout + seed_run.stderr)
+            self.assertIn("Rich demo seed ready:", seed_run.stdout)
+            self.assertIn("cycles 4", seed_run.stdout)
+            self.assertIn("activities 10", seed_run.stdout)
+            self.assertIn("entities 7", seed_run.stdout)
+            self.assertIn("documents 9", seed_run.stdout)
+            self.assertIn("relations 7", seed_run.stdout)
+
+            status_run = self.run_cli("status", cwd=workspace_root)
+            self.assertEqual(status_run.returncode, 0, status_run.stdout + status_run.stderr)
+            self.assertIn("  Entities: 7", status_run.stdout)
+            self.assertIn("  Documents: 9 (draft 3, approved 4, archived 2)", status_run.stdout)
+            self.assertIn("  Relations: 7", status_run.stdout)
+            self.assertIn("  Cycles: 4 (active 2, completed 1, archived 1)", status_run.stdout)
+            self.assertIn("  Activities: 10", status_run.stdout)
+            self.assertIn(
+                "  Activity statuses: pending 3, in_progress 2, completed 4, blocked 1",
+                status_run.stdout,
+            )
+
+            client = TestClient(create_app(workspace_root=workspace_root))
+            api_status = client.get("/api/system/status")
+            self.assertEqual(api_status.status_code, 200)
+            payload = api_status.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(payload["data"]["counts"]["cycles"], 4)
+            self.assertEqual(payload["data"]["counts"]["activities"], 10)
+
+            integrity_response = client.get("/api/document-integrity")
+            self.assertEqual(integrity_response.status_code, 200)
+            integrity_payload = integrity_response.json()
+            self.assertEqual(integrity_payload["status"], "ok")
+            self.assertTrue(
+                any(
+                    item["title"] == "Operator Handoff Memo"
+                    and item["integrity_state"] == "error"
+                    and "content_hash_mismatch" in item["issues"]
+                    for item in integrity_payload["data"]
+                )
+            )
+
+            audit_response = client.get("/api/audit-log", params={"limit": 50})
+            self.assertEqual(audit_response.status_code, 200)
+            audit_payload = audit_response.json()
+            self.assertEqual(audit_payload["status"], "ok")
+            self.assertGreaterEqual(len(audit_payload["data"]), 25)
+
+    def test_demo_seed_rich_is_safe_to_rerun_after_marker_is_set(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+
+            first_run = self.run_cli("demo-seed-rich", cwd=workspace_root)
+            self.assertEqual(first_run.returncode, 0, first_run.stdout + first_run.stderr)
+
+            second_run = self.run_cli("demo-seed-rich", cwd=workspace_root)
+            self.assertEqual(second_run.returncode, 0, second_run.stdout + second_run.stderr)
+            self.assertIn("Rich demo seed already present:", second_run.stdout)
+            self.assertIn("cycles 4", second_run.stdout)
+
     def test_nexus_audit_lists_recent_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "workspace"

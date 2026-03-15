@@ -8,7 +8,8 @@ It validates:
 
 - installation
 - workspace bootstrap
-- demo seeding
+- technical demo seeding
+- rich demo seeding
 - local serve flow
 - cockpit access
 - workspace status visibility
@@ -65,7 +66,7 @@ Failure signals:
 - database file is missing
 - config file is missing
 
-## 3. Seed demo data
+## 3. Seed technical demo data
 
 Run:
 
@@ -87,7 +88,47 @@ Failure signals:
 - command exits non-zero
 - counts are missing or obviously incomplete
 
-## 4. Check workspace status
+Use this seed for:
+
+- smoke checks
+- regression checks
+- low-noise validation
+
+## 4. Seed rich demo data in a fresh workspace
+
+Run this in a separate fresh workspace when you want the cockpit to feel operationally dense:
+
+```bash
+python -m nexus init ./sandbox-workspace-rich
+cd ./sandbox-workspace-rich
+python -m nexus demo-seed-rich
+```
+
+Expected:
+
+- output includes `Rich demo seed ready` or `Rich demo seed already present`
+- counts include at least:
+  - `cycles 4`
+  - `activities 10`
+  - `entities 7`
+  - `documents 9`
+- the seeded workspace includes active, completed, and archived cycles
+- at least one document integrity issue is visible later in the cockpit
+
+Failure signals:
+
+- command exits non-zero
+- counts remain close to the small technical seed
+- cockpit later shows a nearly empty or overly perfect scenario
+
+Use this seed for:
+
+- human evaluation
+- demos
+- screenshot capture
+- checking whether the cockpit helps a reviewer reason about tension, blockage, and document drift
+
+## 5. Check workspace status
 
 Run:
 
@@ -108,7 +149,7 @@ Failure signals:
 - counts are all zero after demo seed
 - missing path warnings for core workspace files
 
-## 5. Inspect audit trail
+## 6. Inspect audit trail
 
 Run:
 
@@ -128,7 +169,7 @@ Failure signals:
 - no table output in a seeded workspace
 - obvious missing audit rows after successful seed
 
-## 6. Serve the local MVP
+## 7. Serve the local MVP
 
 Run:
 
@@ -149,7 +190,7 @@ Failure signals:
 - port bind failure
 - workspace validation failure inside a valid workspace
 
-## 7. Open the cockpit
+## 8. Open the cockpit
 
 Open:
 
@@ -163,6 +204,11 @@ Expected:
 - workspace status is visible
 - counts for entities, documents, relations, cycles, and activities are visible
 - cycles, activities, documents, and audit panel all render data
+- in the rich seed workspace, the cockpit shows:
+  - more than one cycle state
+  - a blocked activity
+  - at least one draft and one archived document
+  - at least one document with an integrity problem
 
 Failure signals:
 
@@ -171,7 +217,7 @@ Failure signals:
 - counts missing despite seeded workspace
 - audit panel stays empty in a seeded workspace
 
-## 8. Verify the local API directly
+## 9. Verify the local API directly
 
 Open in browser or curl:
 

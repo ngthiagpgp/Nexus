@@ -15,6 +15,7 @@ from nexus.core.workspace import (
 )
 from nexus.cycles import create_cycle, list_cycles
 from nexus.demo_seed import seed_demo_workspace
+from nexus.demo_seed_rich import seed_rich_demo_workspace
 from nexus.documents import (
     create_document,
     inspect_document,
@@ -208,6 +209,26 @@ def demo_seed_command() -> None:
         typer.echo(f"Demo seed ready: {result.workspace_root}")
     else:
         typer.echo(f"Demo seed already present: {result.workspace_root}")
+    typer.echo(
+        "Counts: "
+        f"cycles {result.cycle_count}, "
+        f"activities {result.activity_count}, "
+        f"entities {result.entity_count}, "
+        f"documents {result.document_count}, "
+        f"relations {result.relation_count}"
+    )
+
+
+@app.command("demo-seed-rich")
+def demo_seed_rich_command() -> None:
+    """Create a richer demonstration dataset in the current Nexus workspace."""
+
+    result = _run_or_exit(lambda: seed_rich_demo_workspace(Path.cwd()))
+
+    if result.created:
+        typer.echo(f"Rich demo seed ready: {result.workspace_root}")
+    else:
+        typer.echo(f"Rich demo seed already present: {result.workspace_root}")
     typer.echo(
         "Counts: "
         f"cycles {result.cycle_count}, "

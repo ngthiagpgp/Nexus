@@ -11,6 +11,7 @@ The current MVP already supports:
 
 - workspace bootstrap with `nexus init`
 - demo workspace seeding with `nexus demo-seed`
+- richer human-demo seeding with `nexus demo-seed-rich`
 - local API + cockpit with `nexus serve`
 - CLI/API/cockpit inspection for entities, documents, cycles, activities, relations, and audit trail
 - controlled status updates for activities and documents
@@ -49,6 +50,12 @@ cd ./sandbox-workspace
 python -m nexus demo-seed
 ```
 
+For a denser human-evaluation scenario in a fresh workspace, use:
+
+```bash
+python -m nexus demo-seed-rich
+```
+
 3. Start the local API and cockpit:
 
 ```bash
@@ -73,10 +80,16 @@ python -m nexus audit --limit 20
 ```bash
 python -m nexus init ./sandbox-workspace
 python -m nexus demo-seed
+python -m nexus demo-seed-rich
 python -m nexus serve
 python -m nexus status
 python -m nexus audit --limit 20
 ```
+
+## Seed modes
+
+- Use `python -m nexus demo-seed` for fast smoke validation and reliable low-noise regression checks.
+- Use `python -m nexus demo-seed-rich` in a fresh workspace when you want a more operationally expressive cockpit for human demos and UI evaluation.
 
 ## Cockpit and API
 
