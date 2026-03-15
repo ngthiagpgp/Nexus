@@ -2,2076 +2,2227 @@ from __future__ import annotations
 
 
 def render_cockpit_page() -> str:
-    return """<!DOCTYPE html>
+    return f"""<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nexus Cockpit</title>
-    <style>
-      :root {
-        color-scheme: dark;
-        --page: #0d1117;
-        --page-accent: #121a24;
-        --panel: #141b23;
-        --panel-soft: #10161d;
-        --panel-muted: #18212b;
-        --panel-elevated: #1b2632;
-        --border: #263241;
-        --border-soft: #1f2935;
-        --text: #e8eef5;
-        --text-soft: #c4d0dc;
-        --muted: #8c9bab;
-        --accent: #7ca6ff;
-        --accent-soft: rgba(124, 166, 255, 0.14);
-        --accent-strong: #cfe0ff;
-        --success-soft: rgba(63, 185, 80, 0.16);
-        --warning-soft: rgba(210, 153, 34, 0.16);
-        --danger-soft: rgba(248, 81, 73, 0.16);
-        --danger: #ff8f87;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
-        color: var(--text);
-        background:
-          radial-gradient(circle at top left, rgba(124, 166, 255, 0.12), transparent 24%),
-          radial-gradient(circle at top right, rgba(90, 144, 255, 0.06), transparent 20%),
-          linear-gradient(180deg, #0c1116 0%, #111821 100%);
-      }
-      main {
-        max-width: 1320px;
-        margin: 0 auto;
-        padding: 24px;
-      }
-      h1, h2, h3, h4, p { margin: 0; }
-      h4 {
-        font-size: 0.95rem;
-        color: var(--muted);
-        margin-bottom: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-      .hero {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: end;
-        margin-bottom: 20px;
-      }
-      .subtitle {
-        color: var(--muted);
-        margin-top: 8px;
-        max-width: 720px;
-        line-height: 1.5;
-      }
-      .panel {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 0 14px 36px rgba(2, 8, 20, 0.34);
-      }
-      .grid {
-        display: grid;
-        gap: 16px;
-      }
-      .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        margin-bottom: 20px;
-      }
-      .stat-card {
-        background: linear-gradient(180deg, rgba(124, 166, 255, 0.12) 0%, rgba(20, 27, 35, 0.96) 100%);
-        border: 1px solid rgba(124, 166, 255, 0.22);
-        border-radius: 16px;
-        padding: 14px;
-      }
-      .stat-card strong {
-        display: block;
-        margin-top: 8px;
-        font-size: 1.75rem;
-        color: var(--accent-strong);
-      }
-      .status-strip {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        color: var(--muted);
-        font-size: 0.95rem;
-        margin-top: 12px;
-      }
-      .readiness-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 20px;
-      }
-      .readiness-panel strong {
-        font-size: 1.02rem;
-      }
-      .readiness-panel.loading {
-        border-color: rgba(124, 166, 255, 0.28);
-        background: linear-gradient(180deg, rgba(124, 166, 255, 0.1) 0%, rgba(18, 26, 36, 0.96) 100%);
-      }
-      .readiness-panel.ready {
-        border-color: rgba(63, 185, 80, 0.28);
-        background: linear-gradient(180deg, rgba(63, 185, 80, 0.08) 0%, rgba(18, 26, 36, 0.96) 100%);
-      }
-      .readiness-panel.warning {
-        border-color: rgba(210, 153, 34, 0.3);
-        background: linear-gradient(180deg, rgba(210, 153, 34, 0.08) 0%, rgba(18, 26, 36, 0.96) 100%);
-      }
-      .readiness-panel.error {
-        border-color: rgba(248, 81, 73, 0.3);
-        background: linear-gradient(180deg, rgba(248, 81, 73, 0.08) 0%, rgba(18, 26, 36, 0.96) 100%);
-      }
-      .overview-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-bottom: 20px;
-      }
-      .cockpit-flow {
-        grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.15fr) minmax(360px, 1fr);
-        align-items: start;
-      }
-      .secondary-grid {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-        margin-top: 20px;
-        align-items: start;
-      }
-      .stack {
-        display: grid;
-        gap: 16px;
-      }
-      .tab-button,
-      .inline-button {
-        appearance: none;
-        border: 1px solid var(--border);
-        background: var(--panel-muted);
-        color: var(--muted);
-        border-radius: 999px;
-        padding: 8px 14px;
-        font: inherit;
-        cursor: pointer;
-      }
-      .tab-button.active,
-      .inline-button.primary {
-        color: var(--accent-strong);
-        background: var(--accent-soft);
-        border-color: rgba(124, 166, 255, 0.32);
-      }
-      .inline-button {
-        padding: 7px 12px;
-      }
-      .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 12px;
-      }
-      .toolbar input,
-      .toolbar select {
-        appearance: none;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 10px 12px;
-        background: var(--panel-soft);
-        color: var(--text);
-        font: inherit;
-        min-width: 150px;
-      }
-      .focus-banner {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        margin-top: 14px;
-        padding: 14px;
-        border-radius: 14px;
-        background: linear-gradient(90deg, rgba(124, 166, 255, 0.12) 0%, rgba(20, 27, 35, 0.96) 100%);
-        border: 1px solid rgba(124, 166, 255, 0.22);
-      }
-      .focus-banner strong {
-        display: block;
-        margin-bottom: 4px;
-      }
-      .view {
-        margin-top: 16px;
-      }
-      .view.active {
-        display: block;
-      }
-      .resource-list,
-      .detail-list {
-        list-style: none;
-        padding: 0;
-        margin: 14px 0 0;
-        display: grid;
-        gap: 10px;
-      }
-      .resource-item {
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 12px;
-        background: var(--panel-muted);
-      }
-      .resource-item.selected {
-        border-color: rgba(124, 166, 255, 0.34);
-        background: linear-gradient(180deg, rgba(124, 166, 255, 0.16) 0%, rgba(27, 38, 50, 0.94) 100%);
-      }
-      .selected {
-        border-color: rgba(124, 166, 255, 0.34) !important;
-        background: linear-gradient(180deg, rgba(124, 166, 255, 0.16) 0%, rgba(27, 38, 50, 0.94) 100%) !important;
-      }
-      .resource-item button {
-        appearance: none;
-        border: 0;
-        background: none;
-        color: inherit;
-        width: 100%;
-        text-align: left;
-        padding: 0;
-        cursor: pointer;
-      }
-      .resource-item button:hover .resource-title {
-        color: var(--accent);
-      }
-      .resource-title {
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-      .resource-subtle {
-        color: var(--muted);
-        font-size: 0.82rem;
-        margin-top: 8px;
-      }
-      .resource-meta,
-      .label {
-        color: var(--muted);
-        font-size: 0.92rem;
-      }
-      .selection-panel {
-        background: linear-gradient(180deg, rgba(21, 29, 38, 0.98) 0%, rgba(16, 22, 29, 0.98) 100%);
-      }
-      .section-copy {
-        margin-top: 6px;
-        color: var(--muted);
-        line-height: 1.45;
-      }
-      .selection-summary {
-        margin-top: 10px;
-        color: var(--text-soft);
-        line-height: 1.55;
-      }
-      .detail-card {
-        margin-top: 14px;
-        padding: 14px;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: var(--panel-muted);
-        transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
-      }
-      .detail-card.primary-focus {
-        border-color: rgba(124, 166, 255, 0.34);
-        background: linear-gradient(180deg, rgba(124, 166, 255, 0.12) 0%, rgba(24, 33, 43, 0.98) 100%);
-        box-shadow: 0 16px 34px rgba(3, 10, 20, 0.24);
-      }
-      .detail-card.secondary-focus {
-        opacity: 0.86;
-        background: linear-gradient(180deg, rgba(24, 33, 43, 0.82) 0%, rgba(17, 24, 31, 0.92) 100%);
-      }
-      .detail-role {
-        color: var(--muted);
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 10px;
-      }
-      .narrative-block {
-        margin-top: 12px;
-        padding: 14px;
-        border-radius: 14px;
-        border: 1px solid var(--border-soft);
-        background: rgba(9, 14, 20, 0.34);
-        color: var(--text-soft);
-        line-height: 1.6;
-      }
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-top: 14px;
-      }
-      .detail-grid div {
-        border: 1px solid var(--border-soft);
-        border-radius: 12px;
-        padding: 10px;
-        background: rgba(10, 16, 23, 0.55);
-      }
-      .detail-grid strong {
-        display: block;
-        margin-top: 4px;
-        color: var(--text);
-      }
-      .detail-section {
-        margin-top: 14px;
-      }
-      .detail-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
-      }
-      .detail-actions button[disabled] {
-        opacity: 0.55;
-        cursor: default;
-      }
-      .detail-preview {
-        margin-top: 14px;
-        padding: 14px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: rgba(7, 11, 16, 0.82);
-        color: #d6e1ed;
-        white-space: pre-wrap;
-        font-family: "Cascadia Code", Consolas, monospace;
-        font-size: 0.9rem;
-        line-height: 1.55;
-        min-height: 300px;
-      }
-      .detail-preview.error-state {
-        background: var(--danger-soft);
-        color: var(--danger);
-        font-family: inherit;
-      }
-      .document-header {
-        border: 1px solid var(--border-soft);
-        border-radius: 14px;
-        padding: 14px;
-        background: rgba(10, 16, 23, 0.55);
-      }
-      .document-header strong {
-        display: block;
-        font-size: 1.08rem;
-      }
-      .document-path {
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 0.92rem;
-        word-break: break-word;
-      }
-      .status-group-list {
-        list-style: none;
-        padding: 0;
-        margin: 14px 0 0;
-        display: grid;
-        gap: 12px;
-      }
-      .status-group-card {
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 12px;
-        background: rgba(10, 16, 23, 0.52);
-      }
-      .status-group-card h4 {
-        margin-bottom: 10px;
-      }
-      .status-group-items {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: grid;
-        gap: 8px;
-      }
-      .status-group-items li {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--panel-muted);
-        padding: 10px;
-      }
-      .status-group-items button {
-        appearance: none;
-        border: 0;
-        background: none;
-        color: inherit;
-        width: 100%;
-        text-align: left;
-        padding: 0;
-        cursor: pointer;
-      }
-      .audit-panel {
-        padding: 0;
-        overflow: hidden;
-      }
-      .audit-panel summary {
-        list-style: none;
-        cursor: pointer;
-        padding: 18px;
-        font-weight: 600;
-      }
-      .audit-panel summary::-webkit-details-marker {
-        display: none;
-      }
-      .audit-panel .audit-body {
-        padding: 0 18px 18px;
-      }
-      .audit-entry {
-        display: grid;
-        gap: 8px;
-      }
-      .audit-entry-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: start;
-      }
-      .audit-title {
-        font-weight: 600;
-        color: var(--text-soft);
-      }
-      .audit-time {
-        color: var(--muted);
-        font-size: 0.84rem;
-        white-space: nowrap;
-      }
-      .audit-reason {
-        color: var(--text-soft);
-        line-height: 1.45;
-      }
-      .compact-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
-      }
-      .badge {
-        border-radius: 999px;
-        padding: 6px 10px;
-        font-size: 0.88rem;
-        background: var(--accent-soft);
-        color: var(--accent-strong);
-      }
-      .badge.success {
-        background: var(--success-soft);
-        color: #9dd7ac;
-      }
-      .badge.warning {
-        background: var(--warning-soft);
-        color: #f1c56d;
-      }
-      .badge.danger {
-        background: var(--danger-soft);
-        color: var(--danger);
-      }
-      .quiet-details {
-        margin-top: 12px;
-        border: 1px solid var(--border-soft);
-        border-radius: 12px;
-        background: rgba(9, 14, 20, 0.24);
-      }
-      .quiet-details summary {
-        cursor: pointer;
-        padding: 10px 12px;
-        color: var(--muted);
-        font-size: 0.9rem;
-        list-style: none;
-      }
-      .quiet-details summary::-webkit-details-marker {
-        display: none;
-      }
-      .technical-list {
-        display: grid;
-        gap: 8px;
-        padding: 0 12px 12px;
-      }
-      .technical-row {
-        display: grid;
-        gap: 4px;
-      }
-      .technical-label {
-        color: var(--muted);
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-      .technical-value {
-        color: var(--text-soft);
-        font-size: 0.88rem;
-        word-break: break-word;
-      }
-      .inline-note {
-        margin-top: 10px;
-        color: var(--muted);
-        font-size: 0.92rem;
-      }
-      .error {
-        color: var(--danger);
-      }
-      .empty {
-        color: var(--muted);
-        border: 1px dashed var(--border);
-        border-radius: 12px;
-        padding: 14px;
-        margin-top: 14px;
-        background: rgba(10, 16, 23, 0.45);
-      }
-      [hidden] { display: none !important; }
-      @media (max-width: 960px) {
-        .hero { align-items: start; flex-direction: column; }
-        .overview-grid,
-        .cockpit-flow,
-        .secondary-grid { grid-template-columns: 1fr; }
-        .detail-grid { grid-template-columns: 1fr; }
-        .focus-banner { flex-direction: column; align-items: start; }
-      }
-    </style>
+    <style>{_style()}</style>
   </head>
   <body>
-    <main>
-      <section class="hero">
-        <div>
-          <h1>Nexus Cockpit</h1>
-          <p class="subtitle">
-            A calm supervision surface for reading active cycles, the work moving inside them, and the supporting documents that deserve trust checks.
-          </p>
-        </div>
-        <div id="workspace-badge" class="panel" aria-live="polite">Checking workspace...</div>
-      </section>
-
-      <section id="page-readiness" class="panel readiness-panel loading" aria-live="polite">
-        <strong id="page-readiness-title">Preparing cockpit...</strong>
-        <div class="inline-note" id="page-readiness-detail">
-          Loading workspace status and local operational surfaces.
-        </div>
-      </section>
-
-      <div id="cockpit-surfaces" hidden>
-      <section class="grid overview-grid">
-        <article class="panel">
-          <h2>Workspace</h2>
-          <div class="status-strip" id="workspace-summary"></div>
-          <div class="inline-note" id="workspace-notes"></div>
-          <details class="quiet-details" id="workspace-technical">
-            <summary>Technical workspace details</summary>
-            <div class="technical-list" id="workspace-technical-list"></div>
-          </details>
-        </article>
-
-        <article class="panel">
-          <h2>Operational Focus</h2>
-          <p class="section-copy">Cycles organize operational work, activities, and supporting documents.</p>
-          <div class="status-strip" id="operations-summary"></div>
-          <div class="focus-banner" id="cycle-focus-banner">
-            <div>
-              <strong>Cycle focus not set</strong>
-              <div class="resource-meta" id="cycle-focus-meta">
-                Select a cycle to drive the activity and document inspection surface.
-              </div>
-            </div>
-            <button class="inline-button" id="clear-cycle-focus" type="button" hidden>Clear focus</button>
-          </div>
-        </article>
-      </section>
-
-      <section class="grid stats-grid" id="summary-grid" aria-live="polite">
-        <article class="stat-card"><span class="label">Entities</span><strong id="count-entities">-</strong></article>
-        <article class="stat-card"><span class="label">Documents</span><strong id="count-documents">-</strong></article>
-        <article class="stat-card"><span class="label">Relations</span><strong id="count-relations">-</strong></article>
-        <article class="stat-card"><span class="label">Cycles</span><strong id="count-cycles">-</strong></article>
-        <article class="stat-card"><span class="label">Activities</span><strong id="count-activities">-</strong></article>
-      </section>
-
-      <section class="grid cockpit-flow">
-        <article class="panel">
-          <h2>Current Work Cycles</h2>
-          <p class="section-copy">
-            Start here. Pick the cycle that frames the current operational work, then inspect its activities and supporting documents.
-          </p>
-          <section class="view active" id="cycles-view">
-            <div class="toolbar">
-              <input id="cycles-filter" type="search" placeholder="Filter by cycle window or role" />
-              <select id="cycles-status-filter">
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-            <ul class="resource-list" id="cycles-list">
-              <li class="resource-meta">Loading cycles...</li>
-            </ul>
-          </section>
-
-          <section class="detail-card" id="cycle-detail">
-            <h3>Cycle Overview</h3>
-            <div class="empty" id="cycle-empty">No cycle selected.</div>
-            <div id="cycle-content" hidden>
-              <div class="narrative-block" id="cycle-story"></div>
-              <div class="detail-grid" id="cycle-meta-grid"></div>
-              <div class="compact-badges" id="cycle-breakdown"></div>
-              <div class="detail-section">
-                <h4>Activities in This Cycle</h4>
-                <ul class="resource-list" id="cycle-activities"></ul>
-              </div>
-              <div class="detail-section">
-                <h4>Supporting Documents</h4>
-                <ul class="resource-list" id="cycle-documents"></ul>
-              </div>
-              <div id="cycle-technical"></div>
-            </div>
-          </section>
-        </article>
-
-        <article class="panel">
-          <h2>Cycle to Activity Flow</h2>
-          <p class="section-copy" id="activity-panel-hint">
-            Focus a cycle to see the activities that need attention and the documents that support them.
-          </p>
-
-          <section class="view" id="activities-view">
-            <h3>Activities in Selected Cycle</h3>
-            <div class="toolbar">
-              <input id="activities-filter" type="search" placeholder="Filter by title or cycle" />
-              <select id="activities-cycle-filter">
-                <option value="">All cycles</option>
-              </select>
-              <select id="activities-status-filter">
-                <option value="">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="in_progress">In progress</option>
-                <option value="completed">Completed</option>
-                <option value="blocked">Blocked</option>
-              </select>
-            </div>
-            <div class="compact-badges" id="activities-breakdown"></div>
-            <ul class="status-group-list" id="activities-list">
-              <li class="resource-meta">Loading activities...</li>
-            </ul>
-          </section>
-
-          <section class="view" id="documents-view">
-            <h3>Supporting Documents</h3>
-            <p class="section-copy" id="documents-panel-hint">
-              Documents stay visually secondary here so the work path remains cycle first, then activity, then supporting material.
-            </p>
-            <div class="toolbar">
-              <input id="documents-filter" type="search" placeholder="Filter by title or path" />
-              <select id="documents-cycle-filter">
-                <option value="">All cycles</option>
-              </select>
-              <select id="documents-status-filter">
-                <option value="">All statuses</option>
-                <option value="draft">Draft</option>
-                <option value="approved">Approved</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-            <ul class="resource-list" id="documents-list">
-              <li class="resource-meta">Loading documents...</li>
-            </ul>
-          </section>
-        </article>
-
-        <aside class="stack">
-          <article class="panel selection-panel">
-            <h2>Selected Detail</h2>
-            <div class="selection-summary" id="selection-summary">
-              Activity focus stays primary until you open a supporting document for deeper reading.
-            </div>
-            <p class="inline-note" id="selection-hint">
-              Inspect the selected activity first. Open a document when you need the narrative or lifecycle context behind the work.
-            </p>
-
-            <section class="detail-card" id="activity-detail">
-              <div class="detail-role" id="activity-role">Primary focus</div>
-              <h3>Selected Activity</h3>
-              <div class="empty" id="activity-empty">No activity selected.</div>
-              <div id="activity-content" hidden>
-                <div class="narrative-block" id="activity-summary"></div>
-                <div class="detail-grid" id="activity-meta-grid"></div>
-                <div class="compact-badges" id="activity-flags"></div>
-                <div class="detail-actions" id="activity-status-controls"></div>
-                <div class="detail-actions" id="activity-actions"></div>
-                <div class="inline-note" id="activity-status-feedback"></div>
-                <div id="activity-technical"></div>
-              </div>
-            </section>
-
-            <section class="detail-card" id="document-detail">
-              <div class="detail-role" id="document-role">Supporting document</div>
-              <h3>Selected Document</h3>
-              <div class="empty" id="document-empty">No document selected.</div>
-              <div id="document-content" hidden>
-                <div class="document-header" id="document-header"></div>
-                <div class="compact-badges" id="document-flags"></div>
-                <div class="detail-grid" id="document-meta-grid"></div>
-                <div class="detail-actions" id="document-status-controls"></div>
-                <div class="detail-actions" id="document-actions"></div>
-                <div class="inline-note" id="document-status-feedback"></div>
-                <div id="document-technical"></div>
-                <div class="detail-section">
-                  <h4>Content Preview</h4>
-                  <div class="detail-preview" id="document-preview"></div>
-                </div>
-              </div>
-            </section>
-          </article>
-        </aside>
-      </section>
-
-      <section class="grid secondary-grid">
-        <article class="panel">
-          <h2>Reference Entities</h2>
-          <p class="section-copy">Entities remain available as context, but they should not compete with the active cycle flow on the main surface.</p>
-          <section class="view" id="entities-view">
-            <div class="toolbar">
-              <input id="entities-filter" type="search" placeholder="Filter by name, type, or context" />
-            </div>
-            <ul class="resource-list" id="entities-list">
-              <li class="resource-meta">Loading entities...</li>
-            </ul>
-          </section>
-        </article>
-
-        <details class="panel audit-panel" id="audit-panel">
-          <summary>Recent Audit Trace</summary>
-          <div class="audit-body">
-            <p class="inline-note">
-              Auditability stays available for supervision, but this panel is tuned for quiet reading rather than raw operational noise.
-            </p>
-            <ul class="resource-list" id="audit-log-list">
-              <li class="resource-meta">Loading audit trail...</li>
-            </ul>
-          </div>
-        </details>
-      </section>
-      </div>
-    </main>
-
-    <script>
-      const api = {
-        status: "/api/system/status",
-        auditLog: "/api/audit-log",
-        entities: "/api/entities",
-        documents: "/api/documents",
-        documentIntegrity: "/api/document-integrity",
-        documentReconcile: "/api/documents",
-        cycles: "/api/cycles",
-        activities: "/api/activities"
-      };
-
-      const state = {
-        status: null,
-        entities: [],
-        documents: [],
-        documentIntegrity: {},
-        auditLog: [],
-        cycles: [],
-        activities: [],
-        activeView: "cycles-view",
-        focusedCycleId: null,
-        selectedDocumentId: null,
-        selectedCycleId: null,
-        selectedActivityId: null,
-        detailFocus: "activity",
-        pendingActivityMutation: null,
-        pendingDocumentMutation: null,
-        pendingReconcileDocumentId: null
-      };
-
-      async function fetchJson(url) {
-        const response = await fetch(url, { headers: { "Accept": "application/json" } });
-        const payload = await response.json();
-        if (!response.ok || payload.status !== "ok") {
-          throw new Error(payload.message || "Unexpected API error");
-        }
-        return payload.data;
-      }
-
-      async function patchJson(url, payload) {
-        const response = await fetch(url, {
-          method: "PATCH",
-          headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        if (!response.ok || data.status !== "ok") {
-          throw new Error(data.message || "Unexpected API error");
-        }
-        return data.data;
-      }
-
-      async function postJson(url) {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Accept": "application/json"
-          }
-        });
-        const data = await response.json();
-        if (!response.ok || data.status !== "ok") {
-          throw new Error(data.message || "Unexpected API error");
-        }
-        return data.data;
-      }
-
-      function setText(id, value) {
-        const node = document.getElementById(id);
-        if (node) node.textContent = value;
-      }
-
-      function setHtml(id, value) {
-        const node = document.getElementById(id);
-        if (node) node.innerHTML = value;
-      }
-
-      function indexDocumentIntegrity(records) {
-        return Object.fromEntries(records.map((record) => [record.document_id, record]));
-      }
-
-      function getDocumentIntegrity(documentId) {
-        return state.documentIntegrity[documentId] || null;
-      }
-
-      function titleCase(value) {
-        return String(value || "")
-          .split(/[_\\s-]+/)
-          .filter(Boolean)
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join(" ");
-      }
-
-      function formatStatusLabel(status) {
-        const labels = {
-          draft: "Draft",
-          approved: "Approved",
-          archived: "Archived",
-          pending: "Pending",
-          in_progress: "In progress",
-          completed: "Completed",
-          blocked: "Blocked",
-          active: "Active"
-        };
-        return labels[status] || titleCase(status);
-      }
-
-      function formatCycleTypeLabel(type) {
-        const labels = {
-          daily: "Daily cycle",
-          weekly: "Weekly cycle",
-          monthly: "Monthly cycle"
-        };
-        return labels[type] || `${titleCase(type)} cycle`;
-      }
-
-      function formatDocumentTypeLabel(type) {
-        const labels = {
-          daily: "Daily note",
-          weekly: "Weekly note",
-          monthly: "Monthly note",
-          note: "Supporting note",
-          report: "Report"
-        };
-        return labels[type] || titleCase(type);
-      }
-
-      function formatPriorityLabel(priority) {
-        const labels = {
-          1: "Urgent priority",
-          2: "High priority",
-          3: "Normal priority",
-          4: "Low priority"
-        };
-        return labels[priority] || `Priority ${priority}`;
-      }
-
-      function formatDate(value) {
-        if (!value || value === "-") {
-          return "-";
-        }
-        if (/^\\d{4}-\\d{2}-\\d{2}$/.test(String(value))) {
-          return new Intl.DateTimeFormat(undefined, {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            timeZone: "UTC"
-          }).format(new Date(`${value}T00:00:00Z`));
-        }
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-          return String(value);
-        }
-        return new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }).format(date);
-      }
-
-      function formatDateTime(value) {
-        if (!value || value === "-") {
-          return "-";
-        }
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-          return String(value);
-        }
-        return new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit"
-        }).format(date);
-      }
-
-      function findCycle(cycleId) {
-        return state.cycles.find((cycle) => cycle.id === cycleId) || null;
-      }
-
-      function formatCycleWindow(cycle) {
-        if (!cycle) return "Cycle window unavailable";
-        if (cycle.end_date) {
-          return `${formatDate(cycle.start_date)} to ${formatDate(cycle.end_date)}`;
-        }
-        return `Starts ${formatDate(cycle.start_date)}`;
-      }
-
-      function formatCycleLabel(cycle) {
-        if (!cycle) return "Cycle";
-        return formatCycleTypeLabel(cycle.type);
-      }
-
-      function formatCycleReference(cycleId) {
-        const cycle = findCycle(cycleId);
-        if (!cycle) {
-          return cycleId || "Unlinked cycle";
-        }
-        return `${formatCycleLabel(cycle)} · ${formatCycleWindow(cycle)}`;
-      }
-
-      function renderTechnicalDetails(summary, entries) {
-        const rows = entries.filter(([, value]) => value !== null && value !== undefined && value !== "");
-        if (!rows.length) {
-          return "";
-        }
-        return `
-          <details class="quiet-details">
-            <summary>${escapeHtml(summary)}</summary>
-            <div class="technical-list">
-              ${rows.map(([label, value]) => `
-                <div class="technical-row">
-                  <div class="technical-label">${escapeHtml(label)}</div>
-                  <div class="technical-value">${escapeHtml(value)}</div>
-                </div>
-              `).join("")}
-            </div>
-          </details>
-        `;
-      }
-
-      function setDetailFocus(focus) {
-        state.detailFocus = focus;
-        const activityCard = document.getElementById("activity-detail");
-        const documentCard = document.getElementById("document-detail");
-        const activityRole = document.getElementById("activity-role");
-        const documentRole = document.getElementById("document-role");
-        const selectionSummary = document.getElementById("selection-summary");
-        const selectionHint = document.getElementById("selection-hint");
-        const activityPrimary = focus !== "document";
-
-        activityCard.classList.toggle("primary-focus", activityPrimary);
-        activityCard.classList.toggle("secondary-focus", !activityPrimary);
-        documentCard.classList.toggle("primary-focus", !activityPrimary);
-        documentCard.classList.toggle("secondary-focus", activityPrimary);
-
-        activityRole.textContent = activityPrimary ? "Primary focus" : "Related activity";
-        documentRole.textContent = activityPrimary ? "Supporting document" : "Primary focus";
-
-        if (activityPrimary) {
-          selectionSummary.textContent = "The work item stays in front. Supporting material remains available without competing for the main reading path.";
-          selectionHint.textContent = "Read the selected activity first, then open the supporting document only when you need evidence, lifecycle context, or integrity confirmation.";
-        } else {
-          selectionSummary.textContent = "The supporting document is now in focus. The related activity remains visible as the operational reason this material matters.";
-          selectionHint.textContent = "Use the selected document to inspect evidence, status, and integrity, then return to the activity when you are ready to act.";
-        }
-      }
-
-      function documentIntegrityBadgeMarkup(documentId) {
-        const integrity = getDocumentIntegrity(documentId);
-        if (!integrity) {
-          return '<span class="badge">integrity unknown</span>';
-        }
-        const badgeClass =
-          integrity.integrity_state === "ok"
-            ? "success"
-            : integrity.integrity_state === "warning"
-            ? "warning"
-            : "danger";
-        return `<span class="badge ${badgeClass}">integrity ${escapeHtml(integrity.integrity_state)}</span>`;
-      }
-
-      function renderAuditLog() {
-        const list = document.getElementById("audit-log-list");
-        if (!state.auditLog.length) {
-          list.innerHTML = '<li class="empty">No audit entries recorded yet.</li>';
-          return;
-        }
-
-        list.innerHTML = state.auditLog.map((entry) => `
-          <li class="resource-item">
-            <div class="audit-entry">
-              <div class="audit-entry-header">
-                <div class="audit-title">${escapeHtml(describeAuditEntry(entry))}</div>
-                <div class="audit-time">${escapeHtml(formatDateTime(entry.timestamp))}</div>
-              </div>
-              <div class="audit-reason">${escapeHtml(entry.reason || "No reason recorded")}</div>
-              ${renderTechnicalDetails("Technical trace", [
-                ["Action", entry.action],
-                ["Object type", entry.entity_type],
-                ["Object id", entry.entity_id || "-"],
-                ["Agent", entry.agent || "-"],
-                ["Timestamp", entry.timestamp]
-              ])}
-            </div>
-          </li>
-        `).join("");
-      }
-
-      function describeAuditEntry(entry) {
-        const actionMap = {
-          create: "Created",
-          update: "Updated",
-          reconcile: "Reconciled"
-        };
-        const typeMap = {
-          activity: "activity",
-          document: "document",
-          cycle: "cycle",
-          relation: "relation",
-          entity: "entity"
-        };
-        const action = actionMap[entry.action] || titleCase(entry.action);
-        const objectType = typeMap[entry.entity_type] || entry.entity_type;
-        return `${action} ${objectType}`;
-      }
-
-      function activateView(viewId) {
-        state.activeView = viewId;
-        document.querySelectorAll(".tab-button").forEach((button) => {
-          button.classList.toggle("active", button.dataset.view === viewId);
-        });
-        document.querySelectorAll(".view").forEach((view) => {
-          view.classList.toggle("active", view.id === viewId);
-        });
-      }
-
-      function setReadiness(title, detail, tone, revealSurfaces) {
-        const panel = document.getElementById("page-readiness");
-        panel.className = `panel readiness-panel ${tone}`;
-        setText("page-readiness-title", title);
-        setText("page-readiness-detail", detail);
-        document.getElementById("cockpit-surfaces").hidden = !revealSurfaces;
-      }
-
-      function bindFilters() {
-        [
-          "entities-filter",
-          "documents-filter",
-          "documents-cycle-filter",
-          "documents-status-filter",
-          "cycles-filter",
-          "cycles-status-filter",
-          "activities-filter",
-          "activities-cycle-filter",
-          "activities-status-filter"
-        ].forEach((id) => {
-          const node = document.getElementById(id);
-          if (node) {
-            node.addEventListener("input", renderAllLists);
-            node.addEventListener("change", renderAllLists);
-          }
-        });
-      }
-
-      function bindUiActions() {
-        document.addEventListener("click", async (event) => {
-          const button = event.target.closest("button");
-          if (!button) {
-            return;
-          }
-
-          if (button.dataset.view) {
-            activateView(button.dataset.view);
-            return;
-          }
-
-          if (button.id === "clear-cycle-focus") {
-            clearCycleFocus();
-            return;
-          }
-
-          if (button.dataset.setActivityStatus && !button.disabled) {
-            await updateActivityStatus(
-              button.dataset.activityId,
-              button.dataset.setActivityStatus
-            );
-            return;
-          }
-
-          if (button.dataset.setDocumentStatus && !button.disabled) {
-            await updateDocumentStatus(
-              button.dataset.documentId,
-              button.dataset.setDocumentStatus
-            );
-            return;
-          }
-
-          if (button.dataset.reconcileDocument && !button.disabled) {
-            await reconcileDocument(button.dataset.reconcileDocument);
-            return;
-          }
-
-          if (button.dataset.focusCycleId) {
-            focusCycle(button.dataset.focusCycleId);
-            activateView("cycles-view");
-            return;
-          }
-
-          if (button.dataset.cycleId) {
-            focusCycle(button.dataset.cycleId);
-            activateView("cycles-view");
-            return;
-          }
-
-          if (button.dataset.linkedActivityId) {
-            await loadActivity(button.dataset.linkedActivityId);
-            return;
-          }
-
-          if (button.dataset.linkedDocumentId) {
-            await loadDocument(button.dataset.linkedDocumentId);
-            return;
-          }
-
-          if (button.dataset.activityId) {
-            await loadActivity(button.dataset.activityId);
-            return;
-          }
-
-          if (button.dataset.documentId) {
-            await loadDocument(button.dataset.documentId);
-          }
-        });
-      }
-
-      function populateCycleFilterOptions() {
-        const options = ['<option value="">All cycles</option>']
-          .concat(
-            state.cycles.map((cycle) => (
-              `<option value="${escapeAttribute(cycle.id)}">${escapeHtml(formatCycleLabel(cycle))} · ${escapeHtml(formatCycleWindow(cycle))}</option>`
-            ))
-          )
-          .join("");
-        setHtml("activities-cycle-filter", options);
-        setHtml("documents-cycle-filter", options);
-      }
-
-      function getFocusedCycle() {
-        return state.cycles.find((cycle) => cycle.id === state.focusedCycleId) || null;
-      }
-
-      function getCycleDocuments(cycleId) {
-        return state.documents.filter((item) => item.cycle_id === cycleId);
-      }
-
-      function getEffectiveFilterValue(controlId) {
-        const node = document.getElementById(controlId);
-        if (!node) return "";
-        return node.value || state.focusedCycleId || "";
-      }
-
-      function focusCycle(cycleId) {
-        state.focusedCycleId = cycleId || null;
-        updateCycleFocusBanner();
-        renderAllLists();
-        if (cycleId) {
-          loadCycle(cycleId);
-        }
-      }
-
-      function clearCycleFocus() {
-        state.focusedCycleId = null;
-        updateCycleFocusBanner();
-        renderAllLists();
-      }
-
-      function updateCycleFocusBanner() {
-        const cycle = getFocusedCycle();
-        const activityHint = document.getElementById("activity-panel-hint");
-        const documentHint = document.getElementById("documents-panel-hint");
-        if (!cycle) {
-          setHtml(
-            "cycle-focus-banner",
-            `
-              <div>
-                <strong>Cycle focus not set</strong>
-                <div class="resource-meta" id="cycle-focus-meta">
-                  Select a cycle to drive the activity and document inspection surface.
-                </div>
-              </div>
-              <button class="inline-button" id="clear-cycle-focus" type="button" hidden>Clear focus</button>
-            `
-          );
-          if (activityHint) {
-            activityHint.textContent = "Focus a cycle to see the activities that need attention and the documents that support them.";
-          }
-          if (documentHint) {
-            documentHint.textContent = "Documents stay visually secondary here so the work path remains cycle first, then activity, then supporting material.";
-          }
-          return;
-        }
-
-        const relatedDocuments = getCycleDocuments(cycle.id);
-
-        setHtml(
-          "cycle-focus-banner",
-          `
-            <div>
-              <strong>${escapeHtml(formatCycleLabel(cycle))}</strong>
-              <div class="resource-meta" id="cycle-focus-meta">
-                ${escapeHtml(formatCycleWindow(cycle))} · ${escapeHtml(formatStatusLabel(cycle.status))} · ${escapeHtml(cycle.activity_count)} activities · ${escapeHtml(relatedDocuments.length)} supporting documents
-              </div>
-            </div>
-            <button class="inline-button primary" id="clear-cycle-focus" type="button">Clear focus</button>
-          `
-        );
-        if (activityHint) {
-          activityHint.textContent = `Showing work inside the focused ${formatCycleTypeLabel(cycle.type).toLowerCase()}. Use this surface to see what is blocked, moving, or complete before opening supporting material.`;
-        }
-        if (documentHint) {
-          documentHint.textContent = `Showing documents linked to this cycle. Treat them as support material for the selected work rather than as a separate stream of attention.`;
-        }
-      }
-
-      function renderWorkspaceStatus(data) {
-        state.status = data;
-        setText("count-entities", String(data.counts?.entities ?? 0));
-        setText("count-documents", String(data.counts?.documents ?? 0));
-        setText("count-relations", String(data.counts?.relations ?? 0));
-        setText("count-cycles", String(data.counts?.cycles ?? 0));
-        setText("count-activities", String(data.counts?.activities ?? 0));
-
-        const badge = document.getElementById("workspace-badge");
-        badge.textContent = data.is_workspace
-          ? `${data.workspace_name || "Workspace"} ready`
-          : "Workspace not initialized";
-
-        setHtml(
-          "workspace-summary",
-          [
-            data.db_present ? "Local state connected" : "Local state missing",
-            "Markdown support material available",
-            `${escapeHtml(data.counts?.cycles ?? 0)} cycles under supervision`
-          ].map((item) => `<span>${item}</span>`).join("")
-        );
-
-        setHtml(
-          "workspace-notes",
-          data.notes?.length
-            ? data.notes.map((note) => `<div>${escapeHtml(note)}</div>`).join("")
-            : "The current workspace is ready for cycle-first supervision."
-        );
-        setHtml(
-          "workspace-technical-list",
-          [
-            ["Workspace root", data.workspace_root],
-            ["Schema version", data.schema_version || "unknown"],
-            ["Database path", data.paths?.database_path || "-"],
-            ["Documents dir", data.paths?.documents_dir || "-"],
-            ["Marker dir", data.paths?.marker_dir || "-"]
-          ].map(([label, value]) => `
-            <div class="technical-row">
-              <div class="technical-label">${escapeHtml(label)}</div>
-              <div class="technical-value">${escapeHtml(value)}</div>
-            </div>
-          `).join("")
-        );
-
-        const activity = data.activity_summary || {};
-        setHtml(
-          "operations-summary",
-          [
-            `${data.counts?.active_cycles ?? 0} active cycles`,
-            `${data.counts?.draft_documents ?? 0} draft documents`,
-            `${data.counts?.approved_documents ?? 0} approved documents`,
-            `${activity.pending ?? 0} pending activities`,
-            `${activity.in_progress ?? 0} in progress`,
-            `${activity.blocked ?? 0} blocked`
-          ].map((item) => `<span>${item}</span>`).join("")
-        );
-      }
-
-      function renderAllLists() {
-        renderEntities();
-        renderDocuments();
-        renderCycles();
-        renderActivities();
-      }
-
-      function renderEntities() {
-        const filterValue = document.getElementById("entities-filter").value.trim().toLowerCase();
-        const list = document.getElementById("entities-list");
-        const filtered = state.entities.filter((item) => {
-          const haystack = `${item.name} ${item.type} ${item.context || ""}`.toLowerCase();
-          return !filterValue || haystack.includes(filterValue);
-        });
-        if (!filtered.length) {
-          list.innerHTML = '<li class="empty">No entities match the current filter.</li>';
-          return;
-        }
-        list.innerHTML = filtered.map((item) => `
-          <li class="resource-item">
-            <div class="resource-title">${escapeHtml(item.name)}</div>
-            <div class="resource-meta">${escapeHtml(item.type)} | ${escapeHtml(item.context || "-")}</div>
-          </li>
-        `).join("");
-      }
-
-      function renderDocuments() {
-        const filterValue = document.getElementById("documents-filter").value.trim().toLowerCase();
-        const statusValue = document.getElementById("documents-status-filter").value;
-        const cycleValue = getEffectiveFilterValue("documents-cycle-filter");
-        const list = document.getElementById("documents-list");
-        const filtered = state.documents.filter((item) => {
-          const haystack = `${item.title} ${item.path} ${item.cycle_id || ""}`.toLowerCase();
-          const matchesFilter = !filterValue || haystack.includes(filterValue);
-          const matchesStatus = !statusValue || item.status === statusValue;
-          const matchesCycle = !cycleValue || item.cycle_id === cycleValue;
-          return matchesFilter && matchesStatus && matchesCycle;
-        });
-        if (!filtered.length) {
-          list.innerHTML = '<li class="empty">No documents match the current filter.</li>';
-          return;
-        }
-        list.innerHTML = filtered.map((item) => `
-          <li class="resource-item ${item.id === state.selectedDocumentId ? "selected" : ""}">
-            <button type="button" data-document-id="${escapeAttribute(item.id)}">
-              <div class="resource-title">${escapeHtml(item.title)}</div>
-              <div class="resource-meta">${escapeHtml(formatDocumentTypeLabel(item.type))} · ${escapeHtml(formatStatusLabel(item.status))}</div>
-              <div class="resource-meta">${escapeHtml(item.cycle_id ? formatCycleReference(item.cycle_id) : "General support material")}</div>
-              <div class="compact-badges">${documentIntegrityBadgeMarkup(item.id)}</div>
-            </button>
-          </li>
-        `).join("");
-      }
-
-      function renderCycles() {
-        const filterValue = document.getElementById("cycles-filter").value.trim().toLowerCase();
-        const statusValue = document.getElementById("cycles-status-filter").value;
-        const list = document.getElementById("cycles-list");
-        const filtered = state.cycles.filter((item) => {
-          const haystack = `${item.id} ${item.type}`.toLowerCase();
-          const matchesFilter = !filterValue || haystack.includes(filterValue);
-          const matchesStatus = !statusValue || item.status === statusValue;
-          return matchesFilter && matchesStatus;
-        });
-        if (!filtered.length) {
-          list.innerHTML = '<li class="empty">No cycles match the current filter.</li>';
-          return;
-        }
-        list.innerHTML = filtered.map((item) => `
-          <li class="resource-item ${item.id === state.focusedCycleId ? "selected" : ""}">
-            <button type="button" data-cycle-id="${escapeAttribute(item.id)}">
-              <div class="resource-title">${escapeHtml(formatCycleLabel(item))}</div>
-              <div class="resource-meta">${escapeHtml(formatCycleWindow(item))} · ${escapeHtml(formatStatusLabel(item.status))}</div>
-              <div class="resource-meta">${escapeHtml(item.activity_count)} activities · ${escapeHtml(item.pending_count)} pending · ${escapeHtml(item.in_progress_count)} in progress · ${escapeHtml(item.completed_count)} completed</div>
-              <div class="compact-badges">
-                ${item.id === state.focusedCycleId ? '<span class="badge">focus</span>' : ""}
-                ${item.blocked_count ? `<span class="badge danger">blocked ${escapeHtml(item.blocked_count)}</span>` : ""}
-              </div>
-            </button>
-          </li>
-        `).join("");
-      }
-
-      function renderActivities() {
-        const filterValue = document.getElementById("activities-filter").value.trim().toLowerCase();
-        const statusValue = document.getElementById("activities-status-filter").value;
-        const cycleValue = getEffectiveFilterValue("activities-cycle-filter");
-        const list = document.getElementById("activities-list");
-        const filtered = state.activities.filter((item) => {
-          const haystack = `${item.title} ${item.cycle_id} ${item.cycle_type || ""}`.toLowerCase();
-          const matchesFilter = !filterValue || haystack.includes(filterValue);
-          const matchesStatus = !statusValue || item.status === statusValue;
-          const matchesCycle = !cycleValue || item.cycle_id === cycleValue;
-          return matchesFilter && matchesStatus && matchesCycle;
-        });
-        const breakdown = summarizeActivities(filtered);
-        setHtml(
-          "activities-breakdown",
-          [
-            `<span class="badge warning">pending ${escapeHtml(breakdown.pending)}</span>`,
-            `<span class="badge">in progress ${escapeHtml(breakdown.in_progress)}</span>`,
-            `<span class="badge success">completed ${escapeHtml(breakdown.completed)}</span>`,
-            breakdown.blocked ? `<span class="badge danger">blocked ${escapeHtml(breakdown.blocked)}</span>` : ""
-          ].join("")
-        );
-        if (!filtered.length) {
-          list.innerHTML = '<li class="empty">No activities match the current filter.</li>';
-          return;
-        }
-        const orderedStatuses = ["blocked", "in_progress", "pending", "completed"];
-        const labels = {
-          pending: "Pending",
-          in_progress: "In Progress",
-          completed: "Completed",
-          blocked: "Blocked"
-        };
-        list.innerHTML = orderedStatuses
-          .filter((status) => filtered.some((item) => item.status === status))
-          .map((status) => `
-            <li class="status-group-card">
-              <h4>${escapeHtml(labels[status])}</h4>
-              <ul class="status-group-items">
-                ${filtered
-                  .filter((item) => item.status === status)
-                  .map((item) => `
-                    <li class="${item.id === state.selectedActivityId ? "selected" : ""}">
-                      <button type="button" data-activity-id="${escapeAttribute(item.id)}">
-                        <div class="resource-title">${escapeHtml(item.title)}</div>
-                        <div class="resource-meta">${escapeHtml(formatPriorityLabel(item.priority))} · ${escapeHtml(formatCycleReference(item.cycle_id))}</div>
-                      </button>
-                    </li>
-                  `)
-                  .join("")}
-              </ul>
-            </li>
-          `)
-          .join("");
-      }
-
-      function summarizeActivities(activities) {
-        const summary = { pending: 0, in_progress: 0, completed: 0, blocked: 0 };
-        activities.forEach((activity) => {
-          if (Object.prototype.hasOwnProperty.call(summary, activity.status)) {
-            summary[activity.status] += 1;
-          }
-        });
-        return summary;
-      }
-
-      function renderActivityStatusControls(activity) {
-        const controls = document.getElementById("activity-status-controls");
-        const statuses = ["pending", "in_progress", "completed", "blocked"];
-        controls.innerHTML = statuses.map((status) => `
-          <button
-            class="inline-button ${activity.status === status ? "primary" : ""}"
-            type="button"
-            data-activity-id="${escapeAttribute(activity.id)}"
-            data-set-activity-status="${escapeAttribute(status)}"
-            ${activity.status === status ? "disabled" : ""}
-          >
-            ${escapeHtml(formatStatusLabel(status))}
-          </button>
-        `).join("");
-      }
-
-      function documentStatusBadgeClass(status) {
-        if (status === "draft") return "warning";
-        if (status === "approved") return "success";
-        if (status === "archived") return "danger";
-        return "";
-      }
-
-      function renderDocumentStatusControls(documentRecord) {
-        const controls = document.getElementById("document-status-controls");
-        const allowedTransitions = {
-          draft: ["approved"],
-          approved: ["archived"],
-          archived: []
-        };
-        const targets = [documentRecord.status].concat(allowedTransitions[documentRecord.status] || []);
-        controls.innerHTML = targets.map((status) => `
-          <button
-            class="inline-button ${documentRecord.status === status ? "primary" : ""}"
-            type="button"
-            data-document-id="${escapeAttribute(documentRecord.id)}"
-            data-set-document-status="${escapeAttribute(status)}"
-            ${documentRecord.status === status ? "disabled" : ""}
-          >
-            ${escapeHtml(formatStatusLabel(status))}
-          </button>
-        `).join("");
-      }
-
-      function canOfferDocumentReconcile(integrity) {
-        return Boolean(
-          integrity &&
-          integrity.backing_file_exists &&
-          (
-            integrity.content_hash_matches === false ||
-            (integrity.path_matches_expected === false && integrity.expected_path_exists)
-          )
-        );
-      }
-
-      async function refreshOperationalData() {
-        const [status, auditLog, documents, documentIntegrity, cycles, activities] = await Promise.all([
-          fetchJson(api.status),
-          fetchJson(`${api.auditLog}?limit=6`),
-          fetchJson(api.documents),
-          fetchJson(api.documentIntegrity),
-          fetchJson(api.cycles),
-          fetchJson(api.activities)
-        ]);
-        renderWorkspaceStatus(status);
-        state.auditLog = auditLog;
-        renderAuditLog();
-        state.documents = documents;
-        state.documentIntegrity = indexDocumentIntegrity(documentIntegrity);
-        state.cycles = cycles;
-        state.activities = activities;
-        populateCycleFilterOptions();
-        renderAllLists();
-      }
-
-      async function updateActivityStatus(activityId, status) {
-        const feedback = document.getElementById("activity-status-feedback");
-        const currentView = state.activeView;
-        const mutationKey = `${activityId}:${status}`;
-        if (state.pendingActivityMutation === mutationKey) {
-          return;
-        }
-        state.pendingActivityMutation = mutationKey;
-        feedback.textContent = "Updating activity status...";
-        feedback.classList.remove("error");
-        try {
-          const updated = await patchJson(`/api/activities/${encodeURIComponent(activityId)}`, { status });
-          await refreshOperationalData();
-          await loadActivity(updated.id);
-          if (state.focusedCycleId) {
-            await loadCycle(state.focusedCycleId);
-          }
-          activateView(currentView);
-          feedback.textContent = `Status updated to ${updated.status}.`;
-        } catch (error) {
-          feedback.textContent = error.message;
-          feedback.classList.add("error");
-        } finally {
-          state.pendingActivityMutation = null;
-        }
-      }
-
-      async function updateDocumentStatus(documentId, status) {
-        const feedback = document.getElementById("document-status-feedback");
-        const currentView = state.activeView;
-        const mutationKey = `${documentId}:${status}`;
-        if (state.pendingDocumentMutation === mutationKey) {
-          return;
-        }
-        state.pendingDocumentMutation = mutationKey;
-        feedback.textContent = "Updating document status...";
-        feedback.classList.remove("error");
-        try {
-          const updated = await patchJson(`/api/documents/${encodeURIComponent(documentId)}`, { status });
-          await refreshOperationalData();
-          await loadDocument(updated.id);
-          if (state.focusedCycleId) {
-            await loadCycle(state.focusedCycleId);
-          }
-          activateView(currentView);
-          feedback.textContent = `Status updated to ${updated.status}.`;
-        } catch (error) {
-          feedback.textContent = error.message;
-          feedback.classList.add("error");
-        } finally {
-          state.pendingDocumentMutation = null;
-        }
-      }
-
-      async function reconcileDocument(documentId) {
-        const feedback = document.getElementById("document-status-feedback");
-        const currentView = state.activeView;
-        if (state.pendingReconcileDocumentId === documentId) {
-          return;
-        }
-        state.pendingReconcileDocumentId = documentId;
-        feedback.textContent = "Reconciling document metadata...";
-        feedback.classList.remove("error");
-        try {
-          const updated = await postJson(`${api.documentReconcile}/${encodeURIComponent(documentId)}/reconcile`);
-          await refreshOperationalData();
-          await loadDocument(updated.record.id);
-          if (state.focusedCycleId) {
-            await loadCycle(state.focusedCycleId);
-          }
-          activateView(currentView);
-          feedback.textContent = updated.reconciled_fields.length
-            ? `Reconciled: ${updated.reconciled_fields.join(", ")}.`
-            : "Document metadata was already aligned.";
-        } catch (error) {
-          feedback.textContent = error.message;
-          feedback.classList.add("error");
-        } finally {
-          state.pendingReconcileDocumentId = null;
-        }
-      }
-
-      async function loadDocument(documentId, options = {}) {
-        const { preserveFocus = false, activateDocumentView = true } = options;
-        state.selectedDocumentId = documentId;
-        if (activateDocumentView) {
-          activateView("documents-view");
-        }
-        if (!preserveFocus) {
-          setDetailFocus("document");
-        }
-        const empty = document.getElementById("document-empty");
-        const content = document.getElementById("document-content");
-        const preview = document.getElementById("document-preview");
-        const header = document.getElementById("document-header");
-        empty.hidden = true;
-        content.hidden = false;
-        setHtml("document-header", "");
-        setHtml("document-meta-grid", "");
-        setHtml("document-flags", "");
-        setHtml("document-status-controls", "");
-        setHtml("document-actions", "");
-        setHtml("document-technical", "");
-        setText("document-status-feedback", "");
-        preview.classList.remove("error-state");
-        preview.textContent = "Loading document...";
-        let integrity = getDocumentIntegrity(documentId);
-        try {
-          integrity = await fetchJson(`${api.documentIntegrity}/${encodeURIComponent(documentId)}`);
-          state.documentIntegrity[documentId] = integrity;
-          const doc = await fetchJson(`/api/documents/${encodeURIComponent(documentId)}`);
-          const integrityBadgeClass =
-            integrity.integrity_state === "ok"
-              ? "success"
-              : integrity.integrity_state === "warning"
-              ? "warning"
-              : "danger";
-          const linkedCycle = findCycle(doc.cycle_id);
-          header.innerHTML = `
-            <strong>${escapeHtml(doc.title)}</strong>
-            <div class="inline-note">
-              ${escapeHtml(formatDocumentTypeLabel(doc.type))} · ${escapeHtml(formatStatusLabel(doc.status))} · ${escapeHtml(doc.cycle_id ? formatCycleReference(doc.cycle_id) : "General support material")}
-            </div>
-          `;
-          setHtml("document-meta-grid", renderMetaGrid([
-            ["State", formatStatusLabel(doc.status)],
-            ["Document kind", formatDocumentTypeLabel(doc.type)],
-            ["Cycle context", doc.cycle_id ? formatCycleReference(doc.cycle_id) : "General support material"],
-            ["Integrity", formatStatusLabel(integrity.integrity_state)],
-            ["Approval", doc.approved_at ? `Approved ${formatDateTime(doc.approved_at)}` : "Not approved yet"],
-            ["Reading status", integrity.integrity_state === "ok" ? "Trusted for reading" : "Needs attention"]
-          ]));
-          setHtml(
-            "document-flags",
-            [
-              `<span class="badge">${escapeHtml(formatDocumentTypeLabel(doc.type))}</span>`,
-              `<span class="badge ${documentStatusBadgeClass(doc.status)}">${escapeHtml(formatStatusLabel(doc.status))}</span>`,
-              `<span class="badge ${integrityBadgeClass}">integrity ${escapeHtml(formatStatusLabel(integrity.integrity_state))}</span>`,
-              linkedCycle ? `<span class="badge">${escapeHtml(formatCycleLabel(linkedCycle))}</span>` : "",
-              integrity.issues.length ? `<span class="badge ${integrityBadgeClass}">${escapeHtml(integrity.issues.join(", "))}</span>` : "",
-              doc.approved_at ? `<span class="badge">approved</span>` : ""
-            ].join("")
-          );
-          renderDocumentStatusControls(doc);
-          const reconcileAvailable = canOfferDocumentReconcile(integrity);
-          setHtml(
-            "document-actions",
-            [
-              doc.cycle_id
-                ? `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(doc.cycle_id)}">Focus cycle ${escapeHtml(doc.cycle_id)}</button>`
-                : "",
-              `<button class="inline-button ${reconcileAvailable ? "primary" : ""}" type="button" data-reconcile-document="${escapeAttribute(doc.id)}" ${reconcileAvailable ? "" : "disabled"}>
-                Reconcile metadata
-              </button>`
-            ].join("")
-          );
-          setText(
-            "document-status-feedback",
-            reconcileAvailable
-              ? "Safe reconcile is available for the current file metadata drift."
-              : "Document metadata is aligned. Reconcile becomes available only when safe drift is detected."
-          );
-          setHtml(
-            "document-technical",
-            renderTechnicalDetails("Technical document details", [
-              ["Document id", doc.id],
-              ["Stored path", doc.path],
-              ["Expected path", integrity.expected_path || "-"],
-              ["Version", doc.version],
-              ["Created at", doc.created_at],
-              ["Modified at", doc.modified_at],
-              ["Approved at", doc.approved_at || "-"]
-            ])
-          );
-          preview.textContent = doc.content_preview || "(empty document)";
-        } catch (error) {
-          if (!integrity) {
-            try {
-              integrity = await fetchJson(`${api.documentIntegrity}/${encodeURIComponent(documentId)}`);
-              state.documentIntegrity[documentId] = integrity;
-            } catch {
-              integrity = null;
-            }
-          }
-          const integrityBadgeClass =
-            integrity?.integrity_state === "warning"
-              ? "warning"
-              : integrity?.integrity_state === "ok"
-              ? "success"
-              : "danger";
-          header.innerHTML = `
-            <strong>${escapeHtml(integrity?.title || "Document unavailable")}</strong>
-            <div class="inline-note">
-              ${escapeHtml(formatStatusLabel(integrity?.status || "Unavailable"))} · integrity ${escapeHtml(formatStatusLabel(integrity?.integrity_state || "error"))}
-            </div>
-          `;
-          setHtml("document-meta-grid", renderMetaGrid([
-            ["State", integrity?.status ? formatStatusLabel(integrity.status) : "Unavailable"],
-            ["Integrity", formatStatusLabel(integrity?.integrity_state || "error")],
-            ["Reading status", "Needs operator attention"]
-          ]));
-          setHtml(
-            "document-flags",
-            [
-              integrity ? `<span class="badge ${integrityBadgeClass}">integrity ${escapeHtml(formatStatusLabel(integrity.integrity_state))}</span>` : "",
-              integrity?.issues?.length ? `<span class="badge ${integrityBadgeClass}">${escapeHtml(integrity.issues.join(", "))}</span>` : '<span class="badge danger">backing file issue</span>'
-            ].join("")
-          );
-          setHtml("document-status-controls", "");
-          setHtml(
-            "document-actions",
-            integrity
-              ? `<button class="inline-button ${canOfferDocumentReconcile(integrity) ? "primary" : ""}" type="button" data-reconcile-document="${escapeAttribute(integrity.document_id)}" ${canOfferDocumentReconcile(integrity) ? "" : "disabled"}>
-                  Reconcile metadata
-                </button>`
-              : ""
-          );
-          setText(
-            "document-status-feedback",
-            integrity && canOfferDocumentReconcile(integrity)
-              ? "Safe reconcile is available for the current file metadata drift."
-              : "Reconcile is unavailable until the backing file can be resolved safely."
-          );
-          setHtml(
-            "document-technical",
-            renderTechnicalDetails("Technical document details", [
-              ["Document id", integrity?.document_id || documentId],
-              ["Stored path", integrity?.path || "-"],
-              ["Expected path", integrity?.expected_path || "-"],
-              ["Absolute path", integrity?.absolute_path || "-"]
-            ])
-          );
-          preview.classList.add("error-state");
-          preview.textContent = `Document inspection failed. ${error.message}`;
-        }
-      }
-
-      async function loadCycle(cycleId) {
-        state.selectedCycleId = cycleId;
-        state.focusedCycleId = cycleId;
-        updateCycleFocusBanner();
-        const empty = document.getElementById("cycle-empty");
-        const content = document.getElementById("cycle-content");
-        empty.hidden = true;
-        content.hidden = false;
-        setHtml("cycle-story", "");
-        setHtml("cycle-meta-grid", "");
-        setHtml("cycle-breakdown", "");
-        setHtml("cycle-activities", '<li class="resource-meta">Loading cycle activities...</li>');
-        setHtml("cycle-documents", '<li class="resource-meta">Loading related documents...</li>');
-        setHtml("cycle-technical", "");
-        try {
-          const [cycle, activities] = await Promise.all([
-            fetchJson(`/api/cycles/${encodeURIComponent(cycleId)}`),
-            fetchJson(`/api/activities?cycle_id=${encodeURIComponent(cycleId)}`)
-          ]);
-          const relatedDocuments = getCycleDocuments(cycleId);
-          setHtml(
-            "cycle-story",
-            `${escapeHtml(formatCycleLabel(cycle))} is ${escapeHtml(formatStatusLabel(cycle.status).toLowerCase())} and anchors ${escapeHtml(cycle.activity_count)} activities with ${escapeHtml(relatedDocuments.length)} supporting documents. ${escapeHtml(cycle.description || "Use it as the main frame for understanding what matters now.")}`
-          );
-          setHtml("cycle-meta-grid", renderMetaGrid([
-            ["Cycle", formatCycleLabel(cycle)],
-            ["Window", formatCycleWindow(cycle)],
-            ["State", formatStatusLabel(cycle.status)],
-            ["Activities", String(cycle.activity_count)],
-            ["Supporting documents", String(relatedDocuments.length)],
-            ["Blocked work", cycle.blocked_count ? `${cycle.blocked_count} blocked` : "No blocked work"]
-          ]));
-          setHtml(
-            "cycle-breakdown",
-            [
-              `<span class="badge">${escapeHtml(formatStatusLabel(cycle.status))}</span>`,
-              `<span class="badge">activities ${escapeHtml(cycle.activity_count)}</span>`,
-              `<span class="badge warning">pending ${escapeHtml(cycle.pending_count)}</span>`,
-              `<span class="badge">in progress ${escapeHtml(cycle.in_progress_count)}</span>`,
-              `<span class="badge success">completed ${escapeHtml(cycle.completed_count)}</span>`,
-              cycle.blocked_count ? `<span class="badge danger">blocked ${escapeHtml(cycle.blocked_count)}</span>` : "",
-              `<span class="badge">documents ${escapeHtml(relatedDocuments.length)}</span>`
-            ].join("")
-          );
-          setHtml(
-            "cycle-technical",
-            renderTechnicalDetails("Technical cycle details", [
-              ["Cycle id", cycle.id],
-              ["Type", cycle.type],
-              ["Start date", cycle.start_date],
-              ["End date", cycle.end_date || "-"],
-              ["Created at", cycle.created_at]
-            ])
-          );
-          const activitiesList = document.getElementById("cycle-activities");
-          if (!activities.length) {
-            activitiesList.innerHTML = '<li class="empty">No activities linked to this cycle.</li>';
-          } else {
-            activitiesList.innerHTML = activities.map((item) => `
-              <li class="resource-item">
-                <button type="button" data-linked-activity-id="${escapeAttribute(item.id)}">
-                  <div class="resource-title">${escapeHtml(item.title)}</div>
-                  <div class="resource-meta">${escapeHtml(formatStatusLabel(item.status))} · ${escapeHtml(formatPriorityLabel(item.priority))}</div>
-                </button>
-              </li>
-            `).join("");
-          }
-          const documentsList = document.getElementById("cycle-documents");
-          if (!relatedDocuments.length) {
-            documentsList.innerHTML = '<li class="empty">No documents currently linked to this cycle.</li>';
-          } else {
-            documentsList.innerHTML = relatedDocuments.map((item) => `
-              <li class="resource-item">
-                <button type="button" data-linked-document-id="${escapeAttribute(item.id)}">
-                  <div class="resource-title">${escapeHtml(item.title)}</div>
-                  <div class="resource-meta">${escapeHtml(formatDocumentTypeLabel(item.type))} · ${escapeHtml(formatStatusLabel(item.status))}</div>
-                  <div class="compact-badges">${documentIntegrityBadgeMarkup(item.id)}</div>
-                </button>
-              </li>
-            `).join("");
-          }
-          if (
-            activities.length &&
-            !activities.some((item) => item.id === state.selectedActivityId)
-          ) {
-            await loadActivity(activities[0].id);
-          }
-          if (
-            relatedDocuments.length &&
-            !relatedDocuments.some((item) => item.id === state.selectedDocumentId)
-          ) {
-            await loadDocument(relatedDocuments[0].id, { preserveFocus: true, activateDocumentView: false });
-          }
-          renderAllLists();
-        } catch (error) {
-          setHtml("cycle-story", "This cycle could not be read from the local workspace.");
-          setHtml("cycle-meta-grid", renderMetaGrid([
-            ["Cycle", cycleId],
-            ["State", "Unavailable"]
-          ]));
-          setHtml("cycle-breakdown", '<span class="badge danger">cycle load failed</span>');
-          setHtml("cycle-activities", `<li class="empty error">${escapeHtml(error.message)}</li>`);
-          setHtml("cycle-documents", '<li class="empty">Related documents could not be resolved.</li>');
-        }
-      }
-
-      async function loadActivity(activityId, options = {}) {
-        const { preserveFocus = false, activateActivityView = true } = options;
-        state.selectedActivityId = activityId;
-        if (activateActivityView) {
-          activateView("activities-view");
-        }
-        if (!preserveFocus) {
-          setDetailFocus("activity");
-        }
-        const empty = document.getElementById("activity-empty");
-        const content = document.getElementById("activity-content");
-        empty.hidden = true;
-        content.hidden = false;
-        setHtml("activity-summary", "");
-        setHtml("activity-meta-grid", "");
-        setHtml("activity-flags", "");
-        setHtml("activity-status-controls", "");
-        setHtml("activity-actions", "");
-        setHtml("activity-technical", "");
-        setText("activity-status-feedback", "");
-        try {
-          const activity = await fetchJson(`/api/activities/${encodeURIComponent(activityId)}`);
-          setHtml(
-            "activity-summary",
-            `<strong>${escapeHtml(activity.title)}</strong><div class="section-copy">${escapeHtml(activity.description || "This work item carries the main operational action inside the selected cycle.")}</div>`
-          );
-          setHtml("activity-meta-grid", renderMetaGrid([
-            ["State", formatStatusLabel(activity.status)],
-            ["Priority", formatPriorityLabel(activity.priority)],
-            ["Cycle context", formatCycleReference(activity.cycle_id)],
-            ["Work type", activity.activity_type ? titleCase(activity.activity_type) : "General work"],
-            ["Cycle start", activity.cycle_start_date ? formatDate(activity.cycle_start_date) : "-"],
-            ["Reading status", activity.status === "blocked" ? "Needs support before it can move" : "Ready for operational review"]
-          ]));
-          setHtml(
-            "activity-flags",
-            [
-              activity.status === "pending" ? '<span class="badge warning">pending</span>' : "",
-              activity.status === "in_progress" ? '<span class="badge">in progress</span>' : "",
-              activity.status === "completed" ? '<span class="badge success">completed</span>' : "",
-              activity.status === "blocked" ? '<span class="badge danger">blocked</span>' : "",
-              `<span class="badge">${escapeHtml(formatPriorityLabel(activity.priority))}</span>`,
-              `<span class="badge">${escapeHtml(formatCycleLabel(findCycle(activity.cycle_id) || { type: activity.cycle_type || "cycle" }))}</span>`
-            ].join("")
-          );
-          renderActivityStatusControls(activity);
-          setHtml(
-            "activity-actions",
-            [
-              `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(activity.cycle_id)}">Focus cycle ${escapeHtml(activity.cycle_id)}</button>`,
-              state.documents.some((item) => item.cycle_id === activity.cycle_id)
-                ? `<button class="inline-button" type="button" data-linked-document-id="${escapeAttribute(state.documents.find((item) => item.cycle_id === activity.cycle_id).id)}">Open a supporting document</button>`
-                : ""
-            ].join("")
-          );
-          setHtml(
-            "activity-technical",
-            renderTechnicalDetails("Technical activity details", [
-              ["Activity id", activity.id],
-              ["Cycle id", activity.cycle_id],
-              ["Cycle type", activity.cycle_type || "-"],
-              ["Created at", activity.created_at],
-              ["Raw status", activity.status]
-            ])
-          );
-        } catch (error) {
-          setHtml("activity-summary", "The selected activity could not be read from the local workspace.");
-          setHtml("activity-meta-grid", renderMetaGrid([
-            ["Activity", activityId],
-            ["State", "Unavailable"]
-          ]));
-          setHtml("activity-status-controls", "");
-          setHtml("activity-flags", `<span class="badge danger">${escapeHtml(error.message)}</span>`);
-          setHtml("activity-actions", "");
-        }
-      }
-
-      function renderMetaGrid(entries) {
-        return entries.map(([label, value]) => `
-          <div>
-            <div class="label">${escapeHtml(label)}</div>
-            <strong>${escapeHtml(value)}</strong>
-          </div>
-        `).join("");
-      }
-
-      function setWorkspaceEmptyState() {
-        ["entities-list", "documents-list", "cycles-list", "activities-list", "audit-log-list"].forEach((id) => {
-          setHtml(id, '<li class="empty">Workspace is not initialized.</li>');
-        });
-        setHtml("activities-breakdown", "");
-        setHtml("cycle-activities", '<li class="empty">Workspace is not initialized.</li>');
-        setHtml("cycle-documents", '<li class="empty">Workspace is not initialized.</li>');
-        setHtml("workspace-technical-list", "");
-      }
-
-      function escapeHtml(value) {
-        return String(value)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#39;");
-      }
-
-      function escapeAttribute(value) {
-        return escapeHtml(value);
-      }
-
-      async function bootCockpit() {
-        bindUiActions();
-        bindFilters();
-        setDetailFocus("activity");
-        updateCycleFocusBanner();
-        setReadiness(
-          "Preparing cockpit...",
-          "Checking the workspace and preparing the cycle-centered supervision surface.",
-          "loading",
-          false
-        );
-        try {
-          const status = await fetchJson(api.status);
-          renderWorkspaceStatus(status);
-          if (!status.is_workspace) {
-            setWorkspaceEmptyState();
-            setReadiness(
-              "Workspace not initialized",
-              "Run `python -m nexus init ./sandbox-workspace` and seed data before opening the cockpit.",
-              "warning",
-              false
-            );
-            return;
-          }
-
-          setReadiness(
-            "Workspace found",
-            "Loading cycles, activities, documents, and the supporting supervision context.",
-            "loading",
-            false
-          );
-
-          const [entities, documents, documentIntegrity, auditLog, cycles, activities] = await Promise.all([
-            fetchJson(api.entities),
-            fetchJson(api.documents),
-            fetchJson(api.documentIntegrity),
-            fetchJson(`${api.auditLog}?limit=6`),
-            fetchJson(api.cycles),
-            fetchJson(api.activities)
-          ]);
-
-          state.entities = entities;
-          state.documents = documents;
-          state.documentIntegrity = indexDocumentIntegrity(documentIntegrity);
-          state.auditLog = auditLog;
-          state.cycles = cycles;
-          state.activities = activities;
-          renderAuditLog();
-          populateCycleFilterOptions();
-          renderAllLists();
-          activateView("cycles-view");
-
-          if (cycles[0]) {
-            await loadCycle(cycles[0].id);
-          } else if (activities[0]) {
-            await loadActivity(activities[0].id);
-          }
-          if (!cycles[0] && documents[0]) {
-            await loadDocument(documents[0].id);
-          }
-          activateView("cycles-view");
-          setReadiness(
-            "Workspace ready",
-            "The cycle, activity, document, and supervision surfaces are fully loaded.",
-            "ready",
-            true
-          );
-        } catch (error) {
-          document.getElementById("workspace-badge").textContent = "Cockpit load failed";
-          document.getElementById("workspace-notes").innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
-          setWorkspaceEmptyState();
-          setReadiness(
-            "Cockpit load failed",
-            error.message,
-            "error",
-            false
-          );
-        }
-      }
-
-      bootCockpit();
-    </script>
+    {_body()}
+    <script>{_script()}</script>
   </body>
 </html>
+"""
+
+
+def _style() -> str:
+    return """
+:root {
+  color-scheme: dark;
+  --page: #091119;
+  --page-alt: #0e1721;
+  --panel: rgba(15, 24, 35, 0.92);
+  --panel-alt: rgba(18, 30, 44, 0.92);
+  --panel-soft: rgba(12, 20, 30, 0.72);
+  --panel-strong: rgba(20, 33, 49, 0.98);
+  --line: rgba(114, 141, 173, 0.24);
+  --line-strong: rgba(124, 165, 223, 0.34);
+  --text: #edf3f8;
+  --text-soft: #ccd6e1;
+  --text-muted: #8fa0b3;
+  --accent: #8db6ff;
+  --accent-soft: rgba(141, 182, 255, 0.18);
+  --accent-strong: #dce9ff;
+  --success: #90d2a7;
+  --success-soft: rgba(62, 142, 94, 0.18);
+  --warning: #f0c37a;
+  --warning-soft: rgba(187, 133, 35, 0.18);
+  --danger: #ff9a93;
+  --danger-soft: rgba(176, 66, 60, 0.18);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 8% 4%, rgba(141, 182, 255, 0.18), transparent 20%),
+    radial-gradient(circle at 90% 0%, rgba(113, 157, 214, 0.10), transparent 20%),
+    linear-gradient(180deg, #091019 0%, #0d1620 30%, #0f1823 100%);
+}
+a { color: inherit; }
+button, input, select { font: inherit; }
+
+.app-shell {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 22px 24px 30px;
+}
+
+.top-shell {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.brand-kicker {
+  color: var(--accent);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+
+.top-shell h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.top-shell p {
+  margin: 10px 0 0;
+  max-width: 760px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.workspace-pill {
+  padding: 14px 16px;
+  min-width: 240px;
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.14), rgba(12, 20, 30, 0.92));
+  border: 1px solid rgba(141, 182, 255, 0.26);
+  border-radius: var(--radius-md);
+  color: var(--accent-strong);
+  box-shadow: var(--shadow);
+}
+
+.surface {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.readiness-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+
+.readiness-bar.loading { border-color: rgba(141, 182, 255, 0.24); }
+.readiness-bar.ready { border-color: rgba(92, 170, 121, 0.28); }
+.readiness-bar.warning { border-color: rgba(187, 133, 35, 0.32); }
+.readiness-bar.error { border-color: rgba(176, 66, 60, 0.32); }
+
+.readiness-title {
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.readiness-detail {
+  color: var(--text-soft);
+  line-height: 1.45;
+}
+
+.cycle-context-bar {
+  display: grid;
+  grid-template-columns: 2.2fr repeat(6, 1fr);
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.10), rgba(18, 30, 44, 0.96));
+}
+
+.context-cell {
+  padding: 12px 14px;
+  background: rgba(9, 16, 24, 0.42);
+  border: 1px solid rgba(141, 182, 255, 0.12);
+  border-radius: var(--radius-md);
+}
+
+.context-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.context-value {
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.context-value strong {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--accent-strong);
+}
+
+.main-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.nav-button,
+.tab-button,
+.inline-button {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(13, 22, 31, 0.72);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: 120ms ease;
+}
+
+.nav-button:hover,
+.tab-button:hover,
+.inline-button:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.nav-button.active,
+.tab-button.active,
+.inline-button.primary {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: rgba(141, 182, 255, 0.34);
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1.55fr) 380px;
+  gap: 16px;
+  align-items: start;
+}
+
+.rail,
+.view-surface,
+.decision-surface {
+  padding: 18px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+}
+
+.section-copy,
+.quiet-copy {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.quiet-copy { font-size: 0.92rem; }
+
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+.list-reset {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cycle-card,
+.entity-card,
+.activity-card,
+.document-card,
+.audit-card,
+.mini-card,
+.inspect-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(10, 17, 25, 0.58);
+}
+
+.cycle-card button,
+.entity-card button,
+.activity-card button,
+.document-card button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.cycle-card.active,
+.activity-card.active,
+.document-card.active {
+  border-color: rgba(141, 182, 255, 0.34);
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.16), rgba(18, 30, 44, 0.92));
+}
+
+.card-title {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.card-kicker {
+  color: var(--accent);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.card-meta,
+.card-secondary {
+  margin-top: 6px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.83rem;
+  background: rgba(141, 182, 255, 0.13);
+  color: var(--accent-strong);
+}
+
+.badge.success { background: var(--success-soft); color: var(--success); }
+.badge.warning { background: var(--warning-soft); color: var(--warning); }
+.badge.danger { background: var(--danger-soft); color: var(--danger); }
+
+.view-panel[hidden] { display: none !important; }
+
+.view-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.view-head-copy {
+  max-width: 720px;
+}
+
+.view-body {
+  display: grid;
+  gap: 16px;
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 300px;
+  gap: 16px;
+}
+
+.graph-stage {
+  position: relative;
+  min-height: 620px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(141, 182, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(11, 18, 26, 0.96), rgba(9, 15, 23, 0.96));
+}
+
+.graph-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.graph-link {
+  stroke: rgba(141, 182, 255, 0.24);
+  stroke-width: 1.6;
+}
+
+.graph-link.risk { stroke: rgba(255, 154, 147, 0.4); stroke-dasharray: 6 6; }
+.graph-link.support { stroke: rgba(240, 195, 122, 0.34); }
+
+.graph-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 146px;
+  max-width: 190px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(18, 30, 44, 0.96), rgba(8, 14, 21, 0.94));
+  color: var(--text);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  text-align: left;
+}
+
+.graph-node.primary {
+  width: 230px;
+  min-width: 230px;
+  border-color: rgba(141, 182, 255, 0.36);
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.18), rgba(18, 30, 44, 0.98));
+}
+
+.graph-node.activity { border-color: rgba(124, 165, 223, 0.2); }
+.graph-node.document { border-color: rgba(240, 195, 122, 0.22); }
+.graph-node.entity { border-color: rgba(143, 176, 159, 0.2); }
+.graph-node.risk { border-color: rgba(255, 154, 147, 0.26); }
+.graph-node.selected { outline: 2px solid rgba(141, 182, 255, 0.34); }
+
+.graph-node-title {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.graph-node-meta {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.map-aside,
+.flow-grid,
+.inspect-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.flow-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lane {
+  padding: 16px;
+}
+
+.lane-header {
+  margin-bottom: 12px;
+}
+
+.lane-header h3,
+.inspect-card h3,
+.map-aside h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lane-items {
+  display: grid;
+  gap: 10px;
+}
+
+.support-strip {
+  display: grid;
+  gap: 12px;
+}
+
+.inspect-grid {
+  grid-template-columns: 1.15fr 0.85fr;
+}
+
+.inspect-focus {
+  padding: 18px;
+}
+
+.inspect-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.inspect-panel[hidden] { display: none !important; }
+
+.inspect-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.inspect-label {
+  color: var(--accent);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.inspect-title {
+  font-size: 1.48rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.inspect-summary {
+  margin-top: 10px;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.inspect-section {
+  margin-top: 16px;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.meta-cell {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(9, 16, 24, 0.5);
+}
+
+.meta-cell strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text);
+}
+
+.evidence-block {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(9, 16, 24, 0.58);
+  line-height: 1.6;
+}
+
+.preview {
+  padding: 16px;
+  min-height: 300px;
+  white-space: pre-wrap;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(5, 11, 17, 0.9);
+  color: #dbe5ef;
+}
+
+.preview.error {
+  background: rgba(50, 17, 17, 0.72);
+  color: var(--danger);
+  font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.detail-callout {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(9, 16, 24, 0.52);
+}
+
+.decision-surface {
+  display: grid;
+  gap: 16px;
+}
+
+.secondary-focus {
+  opacity: 0.9;
+}
+
+.audit-group {
+  padding: 14px;
+}
+
+.audit-group + .audit-group { margin-top: 12px; }
+
+.audit-date {
+  color: var(--accent);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 12px;
+}
+
+.audit-entry {
+  padding: 12px 0;
+  border-top: 1px solid rgba(114, 141, 173, 0.18);
+}
+
+.audit-entry:first-child { border-top: 0; padding-top: 0; }
+
+.audit-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.audit-title {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.audit-time {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.audit-body {
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.quiet-details {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(9, 16, 24, 0.4);
+}
+
+.quiet-details summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 12px;
+  color: var(--text-muted);
+}
+
+.quiet-details summary::-webkit-details-marker { display: none; }
+
+.technical-list {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.technical-row {
+  display: grid;
+  gap: 4px;
+}
+
+.technical-label {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.technical-value {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toolbar select {
+  min-width: 150px;
+}
+
+.toolbar input,
+.toolbar select {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(9, 16, 24, 0.62);
+  color: var(--text);
+}
+
+.empty-state {
+  padding: 14px;
+  border: 1px dashed rgba(114, 141, 173, 0.24);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  background: rgba(9, 16, 24, 0.34);
+}
+
+.muted { color: var(--text-muted); }
+
+@media (max-width: 1320px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+  .inspect-grid,
+  .map-layout,
+  .flow-grid,
+  .cycle-context-bar {
+    grid-template-columns: 1fr;
+  }
+  .graph-stage { min-height: 560px; }
+}
+"""
+
+
+def _body() -> str:
+    return """
+<main class="app-shell">
+  <header class="top-shell">
+    <div>
+      <div class="brand-kicker">Institutional supervision surface</div>
+      <h1>Nexus Cockpit</h1>
+      <p>
+        A shared operational substrate for human and agent work. Read the system through cycles,
+        follow the pressure moving inside them, and judge evidence before acting.
+      </p>
+    </div>
+    <div id="workspace-badge" class="workspace-pill" aria-live="polite">Checking workspace...</div>
+  </header>
+
+  <section id="readiness-bar" class="surface readiness-bar loading" aria-live="polite">
+    <div>
+      <div class="readiness-title" id="readiness-title">Preparing cockpit</div>
+      <div class="readiness-detail" id="readiness-detail">
+        Loading local supervision surfaces and validating workspace readiness.
+      </div>
+    </div>
+    <div class="badge-row" id="readiness-badges"></div>
+  </section>
+
+  <section id="cycle-context-bar" class="surface cycle-context-bar">
+    <div class="context-cell">
+      <div class="context-label">Cycle in focus</div>
+      <div class="context-value"><strong id="context-cycle-title">Waiting for cycle context</strong><span id="context-cycle-summary">Select a cycle to anchor the supervision surface.</span></div>
+    </div>
+    <div class="context-cell">
+      <div class="context-label">State</div>
+      <div class="context-value" id="context-cycle-state">-</div>
+    </div>
+    <div class="context-cell">
+      <div class="context-label">Temporal pressure</div>
+      <div class="context-value" id="context-cycle-pressure">-</div>
+    </div>
+    <div class="context-cell">
+      <div class="context-label">Relevant work</div>
+      <div class="context-value" id="context-cycle-work">-</div>
+    </div>
+    <div class="context-cell">
+      <div class="context-label">Blockages</div>
+      <div class="context-value" id="context-cycle-blockers">-</div>
+    </div>
+    <div class="context-cell">
+      <div class="context-label">Risk</div>
+      <div class="context-value" id="context-cycle-risk">-</div>
+    </div>
+    <div class="context-cell">
+      <div class="context-label">Evidence health</div>
+      <div class="context-value" id="context-cycle-evidence">-</div>
+    </div>
+  </section>
+
+  <nav id="main-nav" class="surface main-nav" aria-label="Primary cockpit views">
+    <button class="nav-button active" type="button" data-view="map">MAP</button>
+    <button class="nav-button" type="button" data-view="flow">FLOW</button>
+    <button class="nav-button" type="button" data-view="inspect">INSPECT</button>
+    <button class="nav-button" type="button" data-view="audit">AUDIT</button>
+  </nav>
+
+  <section class="workspace-grid">
+    <aside class="surface rail stack">
+      <section>
+        <h2 class="section-title">Cycle Index</h2>
+        <p class="section-copy">Cycles remain the gravitational center of the workspace.</p>
+        <ul id="cycle-index" class="list-reset stack"></ul>
+      </section>
+
+      <section>
+        <h2 class="section-title">Structural Context</h2>
+        <p class="quiet-copy">Entities and documents stay visible as supporting institutional structure.</p>
+        <div id="ontology-list" class="stack"></div>
+      </section>
+
+      <section>
+        <h2 class="section-title">Workspace Pulse</h2>
+        <div id="workspace-pulse" class="stack"></div>
+      </section>
+    </aside>
+
+    <section class="surface view-surface">
+      <section id="map-view" class="view-panel">
+        <div class="view-head">
+          <div class="view-head-copy">
+            <h2 class="section-title">MAP</h2>
+            <p class="section-copy">
+              Read the workspace as a living institutional map. The focused cycle anchors the scene,
+              activities reveal operational pressure, and documents show the supporting evidence layer.
+            </p>
+          </div>
+        </div>
+        <div class="view-body map-layout">
+          <section id="graph-stage" class="surface graph-stage"></section>
+          <aside class="map-aside">
+            <article class="surface inspect-card">
+              <h3>Map reading guide</h3>
+              <p class="quiet-copy" id="map-guide-copy">
+                Select a node to move directly into operational inspection.
+              </p>
+              <div class="badge-row" id="map-legend"></div>
+            </article>
+            <article class="surface inspect-card">
+              <h3>Focused cycle narrative</h3>
+              <div id="map-cycle-narrative" class="evidence-block">
+                Cycle context will appear here once the workspace is ready.
+              </div>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section id="flow-view" class="view-panel" hidden>
+        <div class="view-head">
+          <div class="view-head-copy">
+            <h2 class="section-title">FLOW</h2>
+            <p class="section-copy">
+              Move from focused cycle to immediate action. This surface answers what requires action now,
+              what is actively moving, and which documents are carrying operational legitimacy.
+            </p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <select id="flow-status-filter">
+            <option value="">All flow states</option>
+            <option value="attention">Requires action now</option>
+            <option value="moving">Moving now</option>
+            <option value="stable">Stabilized</option>
+          </select>
+        </div>
+        <div class="view-body flow-grid">
+          <section class="surface lane">
+            <div class="lane-header">
+              <h3>Requires action now</h3>
+              <p class="quiet-copy">Blocked and pending work that should shape the next intervention.</p>
+            </div>
+            <div id="flow-attention" class="lane-items"></div>
+          </section>
+          <section class="surface lane">
+            <div class="lane-header">
+              <h3>Moving now</h3>
+              <p class="quiet-copy">Work already in motion inside the selected cycle.</p>
+            </div>
+            <div id="flow-moving" class="lane-items"></div>
+          </section>
+          <section class="surface lane">
+            <div class="lane-header">
+              <h3>Stabilized and support</h3>
+              <p class="quiet-copy">Completed work and the documents currently supporting the cycle.</p>
+            </div>
+            <div id="flow-stable" class="lane-items"></div>
+            <div class="support-strip" id="flow-documents"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="inspect-view" class="view-panel" hidden>
+        <div class="view-head">
+          <div class="view-head-copy">
+            <h2 class="section-title">INSPECT</h2>
+            <p class="section-copy">
+              Judge the selected object through context, evidence, and governance. Technical details remain
+              accessible, but secondary.
+            </p>
+          </div>
+        </div>
+        <div class="view-body inspect-grid">
+          <section class="surface inspect-focus">
+            <div class="inspect-header">
+              <div class="inspect-label" id="inspect-object-label">Focus</div>
+              <div class="inspect-title" id="inspect-object-title">Select an activity, document, or cycle</div>
+              <div class="inspect-summary" id="inspect-object-summary">
+                The selected detail surface will organize context, evidence, and governance.
+              </div>
+              <div class="badge-row" id="inspect-object-badges"></div>
+            </div>
+            <div class="inspect-tabs">
+              <button class="tab-button active" type="button" data-inspect-tab="context">Context</button>
+              <button class="tab-button" type="button" data-inspect-tab="evidence">Evidence</button>
+              <button class="tab-button" type="button" data-inspect-tab="governance">Governance</button>
+            </div>
+            <section id="inspect-context" class="inspect-panel"></section>
+            <section id="inspect-evidence" class="inspect-panel" hidden></section>
+            <section id="inspect-governance" class="inspect-panel" hidden></section>
+          </section>
+
+          <aside class="decision-surface">
+            <article class="surface inspect-card">
+              <h3>Selected Detail</h3>
+              <p class="quiet-copy">Primary focus comes first; supporting material stays visible but quieter.</p>
+              <div id="selected-primary" class="stack"></div>
+              <div id="selected-secondary" class="stack secondary-focus"></div>
+            </article>
+            <article class="surface inspect-card">
+              <h3>Decision signal</h3>
+              <div id="decision-signal" class="evidence-block">
+                The cockpit will synthesize what matters once a cycle is in focus.
+              </div>
+            </article>
+            <details class="quiet-details">
+              <summary>Technical details</summary>
+              <div id="technical-drawer" class="technical-list"></div>
+            </details>
+          </aside>
+        </div>
+      </section>
+
+      <section id="audit-view" class="view-panel" hidden>
+        <div class="view-head">
+          <div class="view-head-copy">
+            <h2 class="section-title">AUDIT</h2>
+            <p class="section-copy">
+              Reconstruct the institutional memory of the workspace. Events are grouped as narrative
+              consequences rather than exposed as a flat technical log.
+            </p>
+          </div>
+        </div>
+        <div id="audit-timeline" class="view-body"></div>
+      </section>
+    </section>
+
+    <aside class="surface decision-surface">
+      <article class="inspect-card">
+        <h3>What matters now</h3>
+        <div id="operator-guidance" class="evidence-block">
+          Cycle pressure and evidence health will guide action once the workspace loads.
+        </div>
+      </article>
+      <article class="inspect-card">
+        <h3>Supporting documents</h3>
+        <p class="quiet-copy">Documents remain visible as operational support, not as the primary reading path.</p>
+        <div id="document-strip" class="stack"></div>
+      </article>
+      <article class="inspect-card">
+        <h3>Institutional memory</h3>
+        <p class="quiet-copy">A small live sample stays here; the full narrative remains in the AUDIT view.</p>
+        <div id="audit-snapshot" class="stack"></div>
+      </article>
+    </aside>
+  </section>
+</main>
+"""
+
+
+def _script() -> str:
+    return """
+const api = {
+  status: "/api/system/status",
+  entities: "/api/entities",
+  relations: "/api/relations",
+  documents: "/api/documents",
+  documentIntegrity: "/api/document-integrity",
+  cycles: "/api/cycles",
+  activities: "/api/activities",
+  audit: "/api/audit-log?limit=40"
+};
+
+const state = {
+  view: "map",
+  inspectTab: "context",
+  status: null,
+  entities: [],
+  relations: [],
+  documents: [],
+  documentIntegrity: [],
+  cycles: [],
+  activities: [],
+  audit: [],
+  focusedCycleId: null,
+  selected: { type: "cycle", id: null },
+  documentDetails: {},
+  pendingMutation: null
+};
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function setHtml(id, html) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.innerHTML = html;
+  }
+}
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+async function fetchJson(url, options) {
+  const response = await fetch(url, options);
+  const payload = await response.json();
+  if (!response.ok || payload.status !== "ok") {
+    throw new Error(payload.message || `Request failed for ${url}`);
+  }
+  return payload.data;
+}
+
+function titleCase(value) {
+  return String(value || "")
+    .replaceAll("_", " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function statusLabel(value) {
+  return titleCase(value || "unknown");
+}
+
+function cycleLabel(cycle) {
+  if (!cycle) {
+    return "No cycle selected";
+  }
+  return `${titleCase(cycle.type)} cycle | ${formatDate(cycle.start_date)}`;
+}
+
+function documentTypeLabel(value) {
+  return titleCase(value || "document");
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "-";
+  }
+  const parsed = new Date(String(value).replace(" ", "T"));
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+  const parsed = new Date(String(value).replace(" ", "T"));
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+  return parsed.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function statusBadgeClass(value) {
+  if (["completed", "approved", "ok", "active"].includes(value)) {
+    return "success";
+  }
+  if (["pending", "warning", "draft"].includes(value)) {
+    return "warning";
+  }
+  if (["blocked", "error", "archived"].includes(value)) {
+    return "danger";
+  }
+  return "";
+}
+
+function integrityFor(documentId) {
+  return state.documentIntegrity.find((item) => item.document_id === documentId) || null;
+}
+
+function cycleById(cycleId) {
+  return state.cycles.find((item) => item.id === cycleId) || null;
+}
+
+function activityById(activityId) {
+  return state.activities.find((item) => item.id === activityId) || null;
+}
+
+function documentById(documentId) {
+  return state.documents.find((item) => item.id === documentId) || null;
+}
+
+function relatedActivities(cycleId) {
+  return state.activities.filter((item) => item.cycle_id === cycleId);
+}
+
+function relatedDocuments(cycleId) {
+  return state.documents.filter((item) => item.cycle_id === cycleId);
+}
+
+function currentSelection() {
+  if (state.selected.type === "activity") {
+    return activityById(state.selected.id);
+  }
+  if (state.selected.type === "document") {
+    return documentById(state.selected.id);
+  }
+  return cycleById(state.selected.id || state.focusedCycleId);
+}
+
+function summarizeCycle(cycle) {
+  const documents = relatedDocuments(cycle.id);
+  const integrityIssues = documents.filter((doc) => {
+    const integrity = integrityFor(doc.id);
+    return integrity && integrity.integrity_state !== "ok";
+  }).length;
+  let pressure = "Calm";
+  if (cycle.blocked_count > 0) {
+    pressure = "Critical";
+  } else if (cycle.pending_count > 1 || cycle.in_progress_count > 2) {
+    pressure = "Elevated";
+  } else if (cycle.activity_count > 0) {
+    pressure = "Active";
+  }
+  let risk = "Managed";
+  if (cycle.blocked_count > 0 || integrityIssues > 0) {
+    risk = "Elevated";
+  }
+  if (cycle.blocked_count > 1 || integrityIssues > 1) {
+    risk = "High";
+  }
+  let evidence = "Steady";
+  if (integrityIssues > 0) {
+    evidence = integrityIssues > 1 ? "Degraded" : "Fragile";
+  }
+  return { documents, integrityIssues, pressure, risk, evidence };
+}
+
+function pickFocusedCycle() {
+  if (state.focusedCycleId && cycleById(state.focusedCycleId)) {
+    return cycleById(state.focusedCycleId);
+  }
+  state.focusedCycleId = state.cycles[0]?.id || null;
+  return cycleById(state.focusedCycleId);
+}
+
+function selectObject(type, id) {
+  state.selected = { type, id };
+  if (type === "cycle") {
+    state.focusedCycleId = id;
+  }
+  void renderEverything();
+}
+
+function activateView(view) {
+  state.view = view;
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  ["map", "flow", "inspect", "audit"].forEach((name) => {
+    const panel = document.getElementById(`${name}-view`);
+    if (panel) {
+      panel.hidden = name !== view;
+    }
+  });
+}
+
+function activateInspectTab(tab) {
+  state.inspectTab = tab;
+  document.querySelectorAll("[data-inspect-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.inspectTab === tab);
+  });
+  ["context", "evidence", "governance"].forEach((name) => {
+    const panel = document.getElementById(`inspect-${name}`);
+    if (panel) {
+      panel.hidden = name !== tab;
+    }
+  });
+}
+
+function setReadiness(title, detail, tone, ready = false) {
+  const bar = document.getElementById("readiness-bar");
+  bar.className = `surface readiness-bar ${tone}`;
+  setText("readiness-title", title);
+  setText("readiness-detail", detail);
+  setHtml(
+    "readiness-badges",
+    ready
+      ? '<span class="badge success">workspace ready</span><span class="badge">views online</span>'
+      : tone === "warning"
+      ? '<span class="badge warning">workspace missing</span>'
+      : tone === "error"
+      ? '<span class="badge danger">load failed</span>'
+      : '<span class="badge">loading</span>'
+  );
+}
+
+function renderWorkspaceBadge() {
+  const status = state.status;
+  if (!status) {
+    setText("workspace-badge", "Checking workspace...");
+    return;
+  }
+  if (!status.is_workspace) {
+    setHtml("workspace-badge", "<strong>Workspace not initialized</strong><div class='card-secondary'>Run init and seed before opening the cockpit.</div>");
+    return;
+  }
+  setHtml(
+    "workspace-badge",
+    `<strong>${escapeHtml(status.workspace_name || "Nexus workspace")}</strong><div class="card-secondary">Schema ${escapeHtml(status.schema_version || "-")} | DB ${status.db_present ? "present" : "missing"}</div>`
+  );
+}
+
+function renderMetaGrid(items) {
+  return `<div class="meta-grid">${items
+    .map(
+      ([label, value]) => `
+        <div class="meta-cell">
+          <div class="context-label">${escapeHtml(label)}</div>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `
+    )
+    .join("")}</div>`;
+}
+
+function renderTechnicalDetails(items) {
+  if (!items.length) {
+    return "";
+  }
+  return items
+    .map(
+      ([label, value]) => `
+        <div class="technical-row">
+          <div class="technical-label">${escapeHtml(label)}</div>
+          <div class="technical-value">${escapeHtml(value)}</div>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function documentNarrative(document) {
+  const cycle = document.cycle_id ? cycleById(document.cycle_id) : null;
+  const integrity = integrityFor(document.id);
+  const health =
+    integrity?.integrity_state === "ok"
+      ? "is aligned with the current backing file"
+      : integrity?.integrity_state === "warning"
+      ? "has metadata drift that deserves operator review"
+      : "is materially out of sync with its backing file";
+  if (cycle) {
+    return `${document.title} supports ${cycleLabel(cycle)} and ${health}.`;
+  }
+  return `${document.title} is general support material and ${health}.`;
+}
+
+function activityNarrative(activity) {
+  const cycle = cycleById(activity.cycle_id);
+  if (!cycle) {
+    return `${activity.title} is active in the workspace.`;
+  }
+  if (activity.status === "blocked") {
+    return `${activity.title} is blocked inside ${cycleLabel(cycle)} and needs intervention before work can move.`;
+  }
+  if (activity.status === "in_progress") {
+    return `${activity.title} is currently moving inside ${cycleLabel(cycle)}.`;
+  }
+  if (activity.status === "completed") {
+    return `${activity.title} is already completed inside ${cycleLabel(cycle)}.`;
+  }
+  return `${activity.title} is waiting to move inside ${cycleLabel(cycle)}.`;
+}
+
+function cycleNarrative(cycle) {
+  const summary = summarizeCycle(cycle);
+  return `${cycleLabel(cycle)} holds ${cycle.activity_count} activities and ${summary.documents.length} supporting documents. Pressure is ${summary.pressure.toLowerCase()}, risk is ${summary.risk.toLowerCase()}, and evidence health is ${summary.evidence.toLowerCase()}.`;
+}
+
+function describeAuditEntry(entry) {
+  const entity = titleCase(entry.entity_type);
+  const action =
+    entry.action === "create"
+      ? "entered the workspace"
+      : entry.action === "update"
+      ? "changed state"
+      : entry.action === "reconcile"
+      ? "was reconciled"
+      : entry.action;
+  return `${entity} ${action}. ${entry.reason || "No reason recorded."}`;
+}
+
+function auditObjectLabel(entry) {
+  if (entry.entity_type === "activity") {
+    return activityById(entry.entity_id)?.title || "Activity";
+  }
+  if (entry.entity_type === "document") {
+    return documentById(entry.entity_id)?.title || "Document";
+  }
+  if (entry.entity_type === "cycle") {
+    const cycle = cycleById(entry.entity_id);
+    return cycle ? cycleLabel(cycle) : "Cycle";
+  }
+  if (entry.entity_type === "entity") {
+    return state.entities.find((item) => item.id === entry.entity_id)?.name || "Entity";
+  }
+  return entry.entity_id || titleCase(entry.entity_type);
+}
+
+function groupAuditEntries(entries) {
+  const groups = new Map();
+  entries.forEach((entry) => {
+    const key = formatDate(entry.timestamp);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key).push(entry);
+  });
+  return Array.from(groups.entries());
+}
+
+function supportingDocumentForActivity(activity) {
+  return state.documents.find((item) => item.cycle_id === activity.cycle_id) || null;
+}
+
+function supportingActivityForDocument(document) {
+  return state.activities.find((item) => item.cycle_id === document.cycle_id) || null;
+}
+
+function operatorGuidance(cycle) {
+  if (!cycle) {
+    return "The workspace needs an active cycle before the cockpit can orient action.";
+  }
+  const summary = summarizeCycle(cycle);
+  if (cycle.blocked_count > 0) {
+    return `${cycleLabel(cycle)} is carrying blocked work. Clear blocked activities first, then review supporting documents for legitimacy drift.`;
+  }
+  if (summary.integrityIssues > 0) {
+    return `${cycleLabel(cycle)} has fragile evidence. Review supporting documents before moving more operational work.`;
+  }
+  if (cycle.pending_count > 0) {
+    return `${cycleLabel(cycle)} is ready to move. Start with pending activities and keep evidence close at hand.`;
+  }
+  return `${cycleLabel(cycle)} is stable. Use inspection and audit to reconstruct how the cycle evolved.`;
+}
+
+function renderOntology() {
+  const entityTypes = {};
+  state.entities.forEach((item) => {
+    entityTypes[item.type] = (entityTypes[item.type] || 0) + 1;
+  });
+  const integrityIssues = state.documentIntegrity.filter((item) => item.integrity_state !== "ok").length;
+  setHtml(
+    "ontology-list",
+    `
+      <div class="entity-card"><button type="button" disabled>
+        <div class="card-kicker">Entities</div>
+        <div class="card-title">${state.entities.length} structural actors and objects</div>
+        <div class="card-secondary">${Object.entries(entityTypes).map(([key, count]) => `${titleCase(key)} ${count}`).join(" | ") || "No entities yet"}</div>
+      </button></div>
+      <div class="entity-card"><button type="button" disabled>
+        <div class="card-kicker">Relations</div>
+        <div class="card-title">${state.relations.length} explicit structural links</div>
+        <div class="card-secondary">The map uses these links as institutional context.</div>
+      </button></div>
+      <div class="entity-card"><button type="button" disabled>
+        <div class="card-kicker">Evidence</div>
+        <div class="card-title">${state.documents.length} supporting documents</div>
+        <div class="card-secondary">${integrityIssues ? `${integrityIssues} documents need integrity attention` : "Evidence layer currently aligned"}</div>
+      </button></div>
+    `
+  );
+}
+
+function renderWorkspacePulse() {
+  const counts = state.status?.counts;
+  const activitySummary = state.status?.activity_summary;
+  if (!counts || !activitySummary) {
+    setHtml("workspace-pulse", '<div class="empty-state">Workspace counts will appear after initialization.</div>');
+    return;
+  }
+  setHtml(
+    "workspace-pulse",
+    `
+      <div class="mini-card"><div class="card-title">${counts.cycles} cycles in memory</div><div class="card-secondary">${counts.active_cycles} active | ${counts.completed_cycles} completed | ${counts.archived_cycles} archived</div></div>
+      <div class="mini-card"><div class="card-title">${counts.activities} activities</div><div class="card-secondary">${activitySummary.pending} pending | ${activitySummary.in_progress} in progress | ${activitySummary.completed} completed | ${activitySummary.blocked} blocked</div></div>
+      <div class="mini-card"><div class="card-title">${counts.documents} documents</div><div class="card-secondary">${counts.approved_documents} approved | ${counts.draft_documents} draft | ${counts.archived_documents} archived</div></div>
+    `
+  );
+}
+
+function renderCycleIndex() {
+  if (!state.cycles.length) {
+    setHtml("cycle-index", '<li class="empty-state">No cycles are available yet.</li>');
+    return;
+  }
+  setHtml(
+    "cycle-index",
+    state.cycles
+      .map((cycle) => {
+        const summary = summarizeCycle(cycle);
+        return `
+          <li class="cycle-card ${cycle.id === state.focusedCycleId ? "active" : ""}">
+            <button type="button" data-select-cycle="${escapeHtml(cycle.id)}">
+              <div class="card-kicker">${escapeHtml(titleCase(cycle.type))}</div>
+              <div class="card-title">${escapeHtml(formatDate(cycle.start_date))}</div>
+              <div class="card-secondary">${escapeHtml(statusLabel(cycle.status))} | ${cycle.activity_count} activities | ${summary.documents.length} documents</div>
+              <div class="badge-row">
+                <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+                <span class="badge ${statusBadgeClass(summary.pressure === "Critical" ? "blocked" : summary.pressure === "Elevated" ? "pending" : "completed")}">${escapeHtml(summary.pressure)}</span>
+              </div>
+            </button>
+          </li>
+        `;
+      })
+      .join("")
+  );
+}
+
+function renderContextBar() {
+  const cycle = pickFocusedCycle();
+  if (!cycle) {
+    setText("context-cycle-title", "No cycle in focus");
+    setText("context-cycle-summary", "Seed the workspace to unlock the institutional reading path.");
+    ["context-cycle-state", "context-cycle-pressure", "context-cycle-work", "context-cycle-blockers", "context-cycle-risk", "context-cycle-evidence"].forEach((id) => setText(id, "-"));
+    return;
+  }
+  const summary = summarizeCycle(cycle);
+  const blocked = cycle.blocked_count ? `${cycle.blocked_count} blocked activities` : "No active blockages";
+  const work = cycle.in_progress_count
+    ? `${cycle.in_progress_count} activities moving now`
+    : cycle.pending_count
+    ? `${cycle.pending_count} activities ready to move`
+    : "Operational work is mostly stabilized";
+  setText("context-cycle-title", cycleLabel(cycle));
+  setText("context-cycle-summary", cycleNarrative(cycle));
+  setText("context-cycle-state", statusLabel(cycle.status));
+  setText("context-cycle-pressure", summary.pressure);
+  setText("context-cycle-work", work);
+  setText("context-cycle-blockers", blocked);
+  setText("context-cycle-risk", summary.risk);
+  setText("context-cycle-evidence", summary.evidence);
+  setText("operator-guidance", operatorGuidance(cycle));
+}
+
+function graphNodeMarkup(node) {
+  return `
+    <button
+      class="graph-node ${escapeHtml(node.kind)} ${node.primary ? "primary" : ""} ${node.selected ? "selected" : ""}"
+      style="left:${node.x}%; top:${node.y}%"
+      type="button"
+      data-select="${escapeHtml(node.kind)}:${escapeHtml(node.id)}"
+    >
+      <div class="card-kicker">${escapeHtml(node.kicker)}</div>
+      <div class="graph-node-title">${escapeHtml(node.title)}</div>
+      <div class="graph-node-meta">${escapeHtml(node.meta)}</div>
+    </button>
+  `;
+}
+
+function buildMapModel(cycle) {
+  const activities = relatedActivities(cycle.id);
+  const documents = relatedDocuments(cycle.id);
+  const otherCycles = state.cycles.filter((item) => item.id !== cycle.id).slice(0, 3);
+  const entities = state.entities.slice(0, 4);
+  const riskNodes = [];
+  if (cycle.blocked_count > 0) {
+    riskNodes.push({
+      kind: "risk",
+      id: `${cycle.id}-blocked`,
+      kicker: "Risk",
+      title: "Blocked work pressure",
+      meta: `${cycle.blocked_count} blocked activities`,
+      x: 20,
+      y: 18,
+      selected: false
+    });
+  }
+  if (summarizeCycle(cycle).integrityIssues > 0) {
+    riskNodes.push({
+      kind: "risk",
+      id: `${cycle.id}-evidence`,
+      kicker: "Risk",
+      title: "Evidence drift",
+      meta: "Supporting documents need attention",
+      x: 80,
+      y: 18,
+      selected: false
+    });
+  }
+
+  const nodes = [
+    {
+      kind: "cycle",
+      id: cycle.id,
+      kicker: "Cycle",
+      title: cycleLabel(cycle),
+      meta: `${statusLabel(cycle.status)} | ${cycle.activity_count} activities`,
+      x: 50,
+      y: 48,
+      primary: true,
+      selected: state.selected.type === "cycle" && state.selected.id === cycle.id
+    },
+    ...otherCycles.map((item, index) => ({
+      kind: "cycle",
+      id: item.id,
+      kicker: "Adjacent cycle",
+      title: cycleLabel(item),
+      meta: `${statusLabel(item.status)} | ${item.activity_count} activities`,
+      x: 24 + index * 26,
+      y: 12,
+      selected: state.selected.type === "cycle" && state.selected.id === item.id
+    })),
+    ...activities.map((item, index) => ({
+      kind: "activity",
+      id: item.id,
+      kicker: "Activity",
+      title: item.title,
+      meta: `${statusLabel(item.status)} | ${titleCase(item.priority === 1 ? "urgent" : item.priority === 2 ? "high" : item.priority === 4 ? "low" : "normal")}`,
+      x: 22,
+      y: 30 + index * (activities.length > 1 ? 16 : 0),
+      selected: state.selected.type === "activity" && state.selected.id === item.id
+    })),
+    ...documents.map((item, index) => ({
+      kind: "document",
+      id: item.id,
+      kicker: "Document",
+      title: item.title,
+      meta: `${documentTypeLabel(item.type)} | ${statusLabel(item.status)}`,
+      x: 78,
+      y: 30 + index * (documents.length > 1 ? 16 : 0),
+      selected: state.selected.type === "document" && state.selected.id === item.id
+    })),
+    ...entities.map((item, index) => ({
+      kind: "entity",
+      id: item.id,
+      kicker: "Entity",
+      title: item.name,
+      meta: titleCase(item.type),
+      x: 20 + index * 20,
+      y: 84,
+      selected: false
+    })),
+    ...riskNodes
+  ];
+
+  const links = [];
+  nodes.filter((node) => node.kind === "activity").forEach((node) => {
+    links.push({ from: cycle.id, to: node.id, tone: node.meta.includes("Blocked") ? "risk" : "default" });
+  });
+  nodes.filter((node) => node.kind === "document").forEach((node) => {
+    links.push({ from: cycle.id, to: node.id, tone: "support" });
+  });
+  nodes.filter((node) => node.kind === "entity").forEach((node) => {
+    links.push({ from: cycle.id, to: node.id, tone: "default" });
+  });
+  riskNodes.forEach((node) => {
+    links.push({ from: cycle.id, to: node.id, tone: "risk" });
+  });
+  return { nodes, links };
+}
+
+function renderMapView() {
+  const cycle = pickFocusedCycle();
+  if (!cycle) {
+    setHtml("graph-stage", '<div class="empty-state" style="margin:18px">No cycle is available yet.</div>');
+    setText("map-guide-copy", "Initialize and seed the workspace to populate the map.");
+    setText("map-cycle-narrative", "Cycle context will appear here once the workspace contains operational data.");
+    return;
+  }
+  const model = buildMapModel(cycle);
+  const positions = Object.fromEntries(model.nodes.map((node) => [node.id, node]));
+  const links = model.links
+    .map((link) => {
+      const from = positions[link.from];
+      const to = positions[link.to];
+      if (!from || !to) return "";
+      return `<line class="graph-link ${link.tone === "risk" ? "risk" : link.tone === "support" ? "support" : ""}" x1="${from.x}%" y1="${from.y}%" x2="${to.x}%" y2="${to.y}%"></line>`;
+    })
+    .join("");
+  setHtml(
+    "graph-stage",
+    `
+      <svg class="graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">${links}</svg>
+      ${model.nodes.map(graphNodeMarkup).join("")}
+    `
+  );
+  setHtml(
+    "map-legend",
+    `
+      <span class="badge">cycle</span>
+      <span class="badge">activity</span>
+      <span class="badge warning">document</span>
+      <span class="badge success">entity</span>
+      <span class="badge danger">risk</span>
+    `
+  );
+  setText("map-guide-copy", "The cycle stays at the center. Activities carry operational pressure, documents carry support and evidence, and risk nodes signal where supervision should tighten.");
+  setText("map-cycle-narrative", cycleNarrative(cycle));
+}
+
+function activityCardMarkup(activity, emphasize = false) {
+  return `
+    <div class="activity-card ${state.selected.type === "activity" && state.selected.id === activity.id ? "active" : ""}">
+      <button type="button" data-select-activity="${escapeHtml(activity.id)}">
+        <div class="card-kicker">Activity</div>
+        <div class="card-title">${escapeHtml(activity.title)}</div>
+        <div class="card-secondary">${escapeHtml(activityNarrative(activity))}</div>
+        <div class="badge-row">
+          <span class="badge ${statusBadgeClass(activity.status)}">${escapeHtml(statusLabel(activity.status))}</span>
+          ${emphasize ? '<span class="badge warning">needs attention</span>' : ""}
+        </div>
+      </button>
+    </div>
+  `;
+}
+
+function documentCardMarkup(document) {
+  const integrity = integrityFor(document.id);
+  return `
+    <div class="document-card ${state.selected.type === "document" && state.selected.id === document.id ? "active" : ""}">
+      <button type="button" data-select-document="${escapeHtml(document.id)}">
+        <div class="card-kicker">${escapeHtml(documentTypeLabel(document.type))}</div>
+        <div class="card-title">${escapeHtml(document.title)}</div>
+        <div class="card-secondary">${escapeHtml(documentNarrative(document))}</div>
+        <div class="badge-row">
+          <span class="badge ${statusBadgeClass(document.status)}">${escapeHtml(statusLabel(document.status))}</span>
+          ${
+            integrity
+              ? `<span class="badge ${statusBadgeClass(integrity.integrity_state)}">${escapeHtml(statusLabel(integrity.integrity_state))}</span>`
+              : ""
+          }
+        </div>
+      </button>
+    </div>
+  `;
+}
+
+function renderFlowView() {
+  const cycle = pickFocusedCycle();
+  if (!cycle) {
+    ["flow-attention", "flow-moving", "flow-stable", "flow-documents"].forEach((id) => setHtml(id, '<div class="empty-state">No focused cycle is available.</div>'));
+    return;
+  }
+  const activities = relatedActivities(cycle.id);
+  const filter = document.getElementById("flow-status-filter")?.value || "";
+  const attention = activities.filter((item) => ["pending", "blocked"].includes(item.status));
+  const moving = activities.filter((item) => item.status === "in_progress");
+  const stable = activities.filter((item) => item.status === "completed");
+  const groups = { attention, moving, stable };
+  Object.entries(groups).forEach(([name, items]) => {
+    const target = filter && filter !== name ? [] : items;
+    setHtml(
+      `flow-${name}`,
+      target.length ? target.map((item) => activityCardMarkup(item, name === "attention")).join("") : '<div class="empty-state">No items in this lane.</div>'
+    );
+  });
+  const documents = relatedDocuments(cycle.id);
+  setHtml(
+    "flow-documents",
+    documents.length ? documents.map(documentCardMarkup).join("") : '<div class="empty-state">No supporting documents are linked to this cycle.</div>'
+  );
+  setHtml(
+    "document-strip",
+    documents.slice(0, 4).length ? documents.slice(0, 4).map(documentCardMarkup).join("") : '<div class="empty-state">No supporting documents in focus.</div>'
+  );
+}
+
+function renderSelectedCards() {
+  const selection = currentSelection();
+  const focusedCycle = pickFocusedCycle();
+  let primaryHtml = '<div class="empty-state">Select a cycle, activity, or document to anchor judgment.</div>';
+  let secondaryHtml = "";
+
+  if (!selection) {
+    setHtml("selected-primary", primaryHtml);
+    setHtml("selected-secondary", secondaryHtml);
+    return;
+  }
+
+  if (state.selected.type === "activity") {
+    const document = supportingDocumentForActivity(selection);
+    primaryHtml = activityCardMarkup(selection, selection.status === "blocked" || selection.status === "pending");
+    secondaryHtml = document
+      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Supporting document</div><div class="card-title">${escapeHtml(document.title)}</div><div class="card-secondary">${escapeHtml(documentNarrative(document))}</div></div>`
+      : '<div class="empty-state">No supporting document is linked to this activity yet.</div>';
+  } else if (state.selected.type === "document") {
+    const activity = supportingActivityForDocument(selection);
+    primaryHtml = documentCardMarkup(selection);
+    secondaryHtml = activity
+      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Operational anchor</div><div class="card-title">${escapeHtml(activity.title)}</div><div class="card-secondary">${escapeHtml(activityNarrative(activity))}</div></div>`
+      : '<div class="empty-state">No single activity is currently anchored by this document.</div>';
+  } else {
+    primaryHtml = `<div class="inspect-card detail-callout"><div class="card-kicker">Focused cycle</div><div class="card-title">${escapeHtml(cycleLabel(selection))}</div><div class="card-secondary">${escapeHtml(cycleNarrative(selection))}</div></div>`;
+    const firstActivity = relatedActivities(selection.id)[0];
+    secondaryHtml = firstActivity
+      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Next activity</div><div class="card-title">${escapeHtml(firstActivity.title)}</div><div class="card-secondary">${escapeHtml(activityNarrative(firstActivity))}</div></div>`
+      : '<div class="empty-state">No activity is attached to the focused cycle yet.</div>';
+  }
+
+  if (!secondaryHtml && focusedCycle) {
+    secondaryHtml = `<div class="inspect-card detail-callout"><div class="card-kicker">Cycle context</div><div class="card-title">${escapeHtml(cycleLabel(focusedCycle))}</div><div class="card-secondary">${escapeHtml(cycleNarrative(focusedCycle))}</div></div>`;
+  }
+  setHtml("selected-primary", primaryHtml);
+  setHtml("selected-secondary", secondaryHtml);
+}
+
+async function ensureDocumentDetails(documentId) {
+  if (!documentId) return null;
+  if (state.documentDetails[documentId]) {
+    return state.documentDetails[documentId];
+  }
+  try {
+    const details = await fetchJson(`/api/documents/${encodeURIComponent(documentId)}`);
+    state.documentDetails[documentId] = details;
+    return details;
+  } catch (error) {
+    state.documentDetails[documentId] = { error: error.message };
+    return state.documentDetails[documentId];
+  }
+}
+
+function renderInspectContext(selection) {
+  if (!selection) {
+    setHtml("inspect-context", '<div class="empty-state">Nothing is selected yet.</div>');
+    return;
+  }
+  if (state.selected.type === "activity") {
+    setHtml(
+      "inspect-context",
+      renderMetaGrid([
+        ["Activity", selection.title],
+        ["Cycle", cycleLabel(cycleById(selection.cycle_id))],
+        ["State", statusLabel(selection.status)],
+        ["Priority", selection.priority <= 2 ? "High" : selection.priority >= 4 ? "Low" : "Normal"],
+        ["Reading", activityNarrative(selection)],
+        ["Created", formatDateTime(selection.created_at)]
+      ])
+    );
+    return;
+  }
+  if (state.selected.type === "document") {
+    const integrity = integrityFor(selection.id);
+    setHtml(
+      "inspect-context",
+      renderMetaGrid([
+        ["Document", selection.title],
+        ["Type", documentTypeLabel(selection.type)],
+        ["Lifecycle", statusLabel(selection.status)],
+        ["Cycle", selection.cycle_id ? cycleLabel(cycleById(selection.cycle_id)) : "General support material"],
+        ["Integrity", integrity ? statusLabel(integrity.integrity_state) : "Unknown"],
+        ["Reading", documentNarrative(selection)]
+      ])
+    );
+    return;
+  }
+  const summary = summarizeCycle(selection);
+  setHtml(
+    "inspect-context",
+    renderMetaGrid([
+      ["Cycle", cycleLabel(selection)],
+      ["State", statusLabel(selection.status)],
+      ["Activities", String(selection.activity_count)],
+      ["Supporting documents", String(summary.documents.length)],
+      ["Pressure", summary.pressure],
+      ["Risk", summary.risk]
+    ])
+  );
+}
+
+async function renderInspectEvidence(selection) {
+  if (!selection) {
+    setHtml("inspect-evidence", '<div class="empty-state">Nothing is selected yet.</div>');
+    return;
+  }
+  if (state.selected.type === "document") {
+    const details = await ensureDocumentDetails(selection.id);
+    const integrity = integrityFor(selection.id);
+    const previewClass = details?.error ? "preview error" : "preview";
+    setHtml(
+      "inspect-evidence",
+      `
+        <div class="detail-callout">
+          <div class="card-kicker">Document evidence</div>
+          <div class="card-title">${escapeHtml(selection.title)}</div>
+          <div class="card-secondary">${escapeHtml(documentNarrative(selection))}</div>
+          <div class="badge-row">
+            <span class="badge ${statusBadgeClass(selection.status)}">${escapeHtml(statusLabel(selection.status))}</span>
+            ${
+              integrity
+                ? `<span class="badge ${statusBadgeClass(integrity.integrity_state)}">${escapeHtml(statusLabel(integrity.integrity_state))}</span>`
+                : ""
+            }
+          </div>
+        </div>
+        <div class="${previewClass}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
+      `
+    );
+    return;
+  }
+  if (state.selected.type === "activity") {
+    const document = supportingDocumentForActivity(selection);
+    if (!document) {
+      setHtml("inspect-evidence", '<div class="empty-state">No supporting document is linked to this activity.</div>');
+      return;
+    }
+    const details = await ensureDocumentDetails(document.id);
+    setHtml(
+      "inspect-evidence",
+      `
+        <div class="detail-callout">
+          <div class="card-kicker">Supporting evidence</div>
+          <div class="card-title">${escapeHtml(document.title)}</div>
+          <div class="card-secondary">${escapeHtml(documentNarrative(document))}</div>
+        </div>
+        <div class="${details?.error ? "preview error" : "preview"}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
+      `
+    );
+    return;
+  }
+  const documents = relatedDocuments(selection.id);
+  setHtml(
+    "inspect-evidence",
+    documents.length ? documents.map(documentCardMarkup).join("") : '<div class="empty-state">No supporting documents are currently attached to this cycle.</div>'
+  );
+}
+
+function activityStatusControls(activity) {
+  const options = ["pending", "in_progress", "completed", "blocked"];
+  return options
+    .filter((value) => value !== activity.status)
+    .map(
+      (value) => `<button class="inline-button ${value === "blocked" ? "" : "primary"}" type="button" data-set-activity-status="${escapeHtml(activity.id)}:${escapeHtml(value)}" ${state.pendingMutation ? "disabled" : ""}>Mark ${escapeHtml(statusLabel(value))}</button>`
+    )
+    .join("");
+}
+
+function documentStatusControls(document) {
+  const allowed = document.status === "draft" ? ["approved"] : document.status === "approved" ? ["archived"] : [];
+  return allowed
+    .map(
+      (value) => `<button class="inline-button primary" type="button" data-set-document-status="${escapeHtml(document.id)}:${escapeHtml(value)}" ${state.pendingMutation ? "disabled" : ""}>Set ${escapeHtml(statusLabel(value))}</button>`
+    )
+    .join("");
+}
+
+function canReconcile(integrity) {
+  return Boolean(
+    integrity &&
+      integrity.backing_file_exists &&
+      (integrity.current_content_hash && integrity.current_content_hash !== integrity.recorded_content_hash ||
+        (!integrity.path_matches_expected && integrity.expected_path_exists))
+  );
+}
+
+function renderInspectGovernance(selection) {
+  if (!selection) {
+    setHtml("inspect-governance", '<div class="empty-state">Nothing is selected yet.</div>');
+    setHtml("technical-drawer", "");
+    return;
+  }
+  const relatedAudit = state.audit.filter((entry) => entry.entity_id === selection.id).slice(0, 5);
+  if (state.selected.type === "activity") {
+    setHtml(
+      "inspect-governance",
+      `
+        <div class="detail-callout">
+          <div class="card-kicker">Controlled status transition</div>
+          <div class="card-secondary">Activity status updates stay explicit and auditable across CLI, API, and cockpit.</div>
+          <div class="action-row">${activityStatusControls(selection)}</div>
+        </div>
+        ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this activity.</div>'}
+      `
+    );
+    setHtml(
+      "technical-drawer",
+      renderTechnicalDetails([
+        ["Activity id", selection.id],
+        ["Cycle id", selection.cycle_id],
+        ["Created at", selection.created_at],
+        ["Raw status", selection.status]
+      ])
+    );
+    return;
+  }
+  if (state.selected.type === "document") {
+    const integrity = integrityFor(selection.id);
+    setHtml(
+      "inspect-governance",
+      `
+        <div class="detail-callout">
+          <div class="card-kicker">Lifecycle and reconciliation</div>
+          <div class="card-secondary">Document legitimacy remains explicit. Lifecycle and reconcile actions are available only when the current state allows them.</div>
+          <div class="action-row">${documentStatusControls(selection)}
+            <button class="inline-button ${canReconcile(integrity) ? "primary" : ""}" type="button" data-reconcile-document="${escapeHtml(selection.id)}" ${canReconcile(integrity) && !state.pendingMutation ? "" : "disabled"}>Reconcile metadata</button>
+          </div>
+        </div>
+        ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this document.</div>'}
+      `
+    );
+    setHtml(
+      "technical-drawer",
+      renderTechnicalDetails([
+        ["Document id", selection.id],
+        ["Stored path", selection.path],
+        ["Version", selection.version],
+        ["Created at", selection.created_at],
+        ["Modified at", selection.modified_at],
+        ["Approved at", selection.approved_at || "-"]
+      ])
+    );
+    return;
+  }
+  setHtml(
+    "inspect-governance",
+    `
+      <div class="detail-callout">
+        <div class="card-kicker">Cycle governance</div>
+        <div class="card-secondary">Cycles anchor the shared operational context. Use audit and supporting evidence to judge whether the cycle remains institutionally sound.</div>
+      </div>
+      ${relatedAudit.map(renderAuditSnippet).join("") || '<div class="empty-state">No audit memory yet for this cycle.</div>'}
+    `
+  );
+  setHtml(
+    "technical-drawer",
+    renderTechnicalDetails([
+      ["Cycle id", selection.id],
+      ["Type", selection.type],
+      ["Start", selection.start_date],
+      ["End", selection.end_date || "-"],
+      ["Created at", selection.created_at]
+    ])
+  );
+}
+
+function renderAuditSnippet(entry) {
+  return `
+    <div class="detail-callout">
+      <div class="audit-head">
+        <div class="audit-title">${escapeHtml(auditObjectLabel(entry))}</div>
+        <div class="audit-time">${escapeHtml(formatDateTime(entry.timestamp))}</div>
+      </div>
+      <div class="audit-body">${escapeHtml(describeAuditEntry(entry))}</div>
+    </div>
+  `;
+}
+
+async function renderInspectView() {
+  const selection = currentSelection();
+  if (!selection) {
+    setText("inspect-object-label", "Focus");
+    setText("inspect-object-title", "Select an activity, document, or cycle");
+    setText("inspect-object-summary", "The selected detail surface will organize context, evidence, and governance.");
+    setHtml("inspect-object-badges", "");
+    setHtml("inspect-context", '<div class="empty-state">Nothing selected.</div>');
+    setHtml("inspect-evidence", '<div class="empty-state">Nothing selected.</div>');
+    setHtml("inspect-governance", '<div class="empty-state">Nothing selected.</div>');
+    setHtml("technical-drawer", "");
+    return;
+  }
+  const label = state.selected.type === "document" ? "Supporting document" : state.selected.type === "activity" ? "Operational activity" : "Focused cycle";
+  const title = state.selected.type === "cycle" ? cycleLabel(selection) : selection.title;
+  const summary = state.selected.type === "document" ? documentNarrative(selection) : state.selected.type === "activity" ? activityNarrative(selection) : cycleNarrative(selection);
+  const badges =
+    state.selected.type === "cycle"
+      ? `<span class="badge ${statusBadgeClass(selection.status)}">${escapeHtml(statusLabel(selection.status))}</span>`
+      : state.selected.type === "activity"
+      ? `<span class="badge ${statusBadgeClass(selection.status)}">${escapeHtml(statusLabel(selection.status))}</span><span class="badge">${escapeHtml(cycleLabel(cycleById(selection.cycle_id)))}</span>`
+      : `<span class="badge ${statusBadgeClass(selection.status)}">${escapeHtml(statusLabel(selection.status))}</span><span class="badge ${statusBadgeClass(integrityFor(selection.id)?.integrity_state || "")}">${escapeHtml(statusLabel(integrityFor(selection.id)?.integrity_state || "unknown"))}</span>`;
+  setText("inspect-object-label", label);
+  setText("inspect-object-title", title);
+  setText("inspect-object-summary", summary);
+  setHtml("inspect-object-badges", badges);
+  renderInspectContext(selection);
+  await renderInspectEvidence(selection);
+  renderInspectGovernance(selection);
+  renderSelectedCards();
+}
+
+function renderAuditView() {
+  if (!state.audit.length) {
+    setHtml("audit-timeline", '<div class="empty-state">Audit memory will appear here once the workspace records events.</div>');
+    setHtml("audit-snapshot", '<div class="empty-state">No recent audit activity.</div>');
+    return;
+  }
+  const groups = groupAuditEntries(state.audit);
+  setHtml(
+    "audit-timeline",
+    groups
+      .map(
+        ([dateLabel, entries]) => `
+          <section class="surface audit-group">
+            <div class="audit-date">${escapeHtml(dateLabel)}</div>
+            ${entries
+              .map(
+                (entry) => `
+                  <article class="audit-entry">
+                    <div class="audit-head">
+                      <div class="audit-title">${escapeHtml(auditObjectLabel(entry))}</div>
+                      <div class="audit-time">${escapeHtml(formatDateTime(entry.timestamp))}</div>
+                    </div>
+                    <div class="audit-body">${escapeHtml(describeAuditEntry(entry))}</div>
+                  </article>
+                `
+              )
+              .join("")}
+          </section>
+        `
+      )
+      .join("")
+  );
+  setHtml(
+    "audit-snapshot",
+    state.audit.slice(0, 4).map(renderAuditSnippet).join("")
+  );
+}
+
+async function refreshWorkspace(preserveSelection = true) {
+  const previousSelection = { ...state.selected };
+  const previousFocus = state.focusedCycleId;
+  const status = await fetchJson(api.status);
+  state.status = status;
+  renderWorkspaceBadge();
+  if (!status.is_workspace) {
+    setReadiness(
+      "Workspace not initialized",
+      "Run `python -m nexus init` and then seed the workspace before opening the cockpit.",
+      "warning"
+    );
+    renderEmptyWorkspace();
+    return;
+  }
+
+  const [entities, relations, documents, documentIntegrity, cycles, activities, audit] = await Promise.all([
+    fetchJson(api.entities),
+    fetchJson(api.relations),
+    fetchJson(api.documents),
+    fetchJson(api.documentIntegrity),
+    fetchJson(api.cycles),
+    fetchJson(api.activities),
+    fetchJson(api.audit)
+  ]);
+  state.entities = entities;
+  state.relations = relations;
+  state.documents = documents;
+  state.documentIntegrity = documentIntegrity;
+  state.cycles = cycles;
+  state.activities = activities;
+  state.audit = audit;
+
+  if (preserveSelection && previousFocus && cycleById(previousFocus)) {
+    state.focusedCycleId = previousFocus;
+  } else {
+    state.focusedCycleId = state.cycles[0]?.id || null;
+  }
+  if (preserveSelection && previousSelection.id) {
+    const stillExists =
+      previousSelection.type === "activity"
+        ? activityById(previousSelection.id)
+        : previousSelection.type === "document"
+        ? documentById(previousSelection.id)
+        : cycleById(previousSelection.id);
+    state.selected = stillExists ? previousSelection : { type: "cycle", id: state.focusedCycleId };
+  } else {
+    state.selected = { type: "cycle", id: state.focusedCycleId };
+  }
+  if (!state.selected.id && state.focusedCycleId) {
+    state.selected = { type: "cycle", id: state.focusedCycleId };
+  }
+  await renderEverything();
+  setReadiness(
+    "Workspace ready",
+    "The institutional map, operational flow, judgment surface, and audit memory are fully loaded.",
+    "ready",
+    true
+  );
+}
+
+function renderEmptyWorkspace() {
+  setHtml("cycle-index", '<li class="empty-state">No cycles are available.</li>');
+  setHtml("ontology-list", '<div class="empty-state">No local structural context yet.</div>');
+  setHtml("workspace-pulse", '<div class="empty-state">Workspace pulse will appear after initialization.</div>');
+  setHtml("graph-stage", '<div class="empty-state" style="margin:18px">Workspace not initialized.</div>');
+  setHtml("flow-attention", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("flow-moving", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("flow-stable", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("flow-documents", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("document-strip", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("audit-timeline", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("audit-snapshot", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("selected-primary", '<div class="empty-state">Workspace not initialized.</div>');
+  setHtml("selected-secondary", "");
+  setText("operator-guidance", "Initialize the workspace before using the cockpit.");
+}
+
+async function renderEverything() {
+  renderOntology();
+  renderWorkspacePulse();
+  renderCycleIndex();
+  renderContextBar();
+  renderMapView();
+  renderFlowView();
+  await renderInspectView();
+  renderAuditView();
+}
+
+async function updateActivityStatus(activityId, status) {
+  if (state.pendingMutation) return;
+  state.pendingMutation = `activity:${activityId}`;
+  try {
+    await fetchJson(`/api/activities/${encodeURIComponent(activityId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    await refreshWorkspace(true);
+  } finally {
+    state.pendingMutation = null;
+    await renderEverything();
+  }
+}
+
+async function updateDocumentStatus(documentId, status) {
+  if (state.pendingMutation) return;
+  state.pendingMutation = `document:${documentId}`;
+  try {
+    await fetchJson(`/api/documents/${encodeURIComponent(documentId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    delete state.documentDetails[documentId];
+    await refreshWorkspace(true);
+  } finally {
+    state.pendingMutation = null;
+    await renderEverything();
+  }
+}
+
+async function reconcileDocument(documentId) {
+  if (state.pendingMutation) return;
+  state.pendingMutation = `reconcile:${documentId}`;
+  try {
+    await fetchJson(`/api/documents/${encodeURIComponent(documentId)}/reconcile`, {
+      method: "POST"
+    });
+    delete state.documentDetails[documentId];
+    await refreshWorkspace(true);
+  } finally {
+    state.pendingMutation = null;
+    await renderEverything();
+  }
+}
+
+function bindEvents() {
+  document.getElementById("main-nav")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-view]");
+    if (!button) return;
+    activateView(button.dataset.view);
+  });
+
+  document.addEventListener("click", async (event) => {
+    const cycleButton = event.target.closest("[data-select-cycle]");
+    if (cycleButton) {
+      selectObject("cycle", cycleButton.dataset.selectCycle);
+      return;
+    }
+    const activityButton = event.target.closest("[data-select-activity]");
+    if (activityButton) {
+      selectObject("activity", activityButton.dataset.selectActivity);
+      activateView("inspect");
+      return;
+    }
+    const documentButton = event.target.closest("[data-select-document]");
+    if (documentButton) {
+      selectObject("document", documentButton.dataset.selectDocument);
+      activateView("inspect");
+      return;
+    }
+    const graphButton = event.target.closest("[data-select]");
+    if (graphButton) {
+      const [type, id] = graphButton.dataset.select.split(":");
+      if (type === "entity" || type === "risk") return;
+      selectObject(type === "cycle" ? "cycle" : type, id);
+      if (type !== "cycle") activateView("inspect");
+      return;
+    }
+    const tabButton = event.target.closest("[data-inspect-tab]");
+    if (tabButton) {
+      activateInspectTab(tabButton.dataset.inspectTab);
+      return;
+    }
+    const activityMutation = event.target.closest("[data-set-activity-status]");
+    if (activityMutation) {
+      const [id, status] = activityMutation.dataset.setActivityStatus.split(":");
+      await updateActivityStatus(id, status);
+      return;
+    }
+    const documentMutation = event.target.closest("[data-set-document-status]");
+    if (documentMutation) {
+      const [id, status] = documentMutation.dataset.setDocumentStatus.split(":");
+      await updateDocumentStatus(id, status);
+      return;
+    }
+    const reconcileButton = event.target.closest("[data-reconcile-document]");
+    if (reconcileButton) {
+      await reconcileDocument(reconcileButton.dataset.reconcileDocument);
+      return;
+    }
+  });
+
+  document.getElementById("flow-status-filter")?.addEventListener("change", () => renderFlowView());
+}
+
+async function boot() {
+  activateView("map");
+  activateInspectTab("context");
+  bindEvents();
+  setReadiness(
+    "Preparing cockpit",
+    "Loading workspace surfaces and resolving the current institutional picture.",
+    "loading"
+  );
+  try {
+    await refreshWorkspace(false);
+  } catch (error) {
+    renderWorkspaceBadge();
+    renderEmptyWorkspace();
+    setReadiness("Cockpit load failed", error.message, "error");
+  }
+}
+
+boot();
 """
