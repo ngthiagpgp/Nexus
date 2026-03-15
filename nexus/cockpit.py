@@ -68,17 +68,17 @@ a { color: inherit; }
 button, input, select { font: inherit; }
 
 .app-shell {
-  max-width: 1680px;
+  max-width: 1760px;
   margin: 0 auto;
-  padding: 18px 22px 28px;
+  padding: 18px 20px 30px;
 }
 
 .top-shell {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 10px;
+  gap: 20px;
+  margin-bottom: 8px;
 }
 
 .brand-kicker {
@@ -106,13 +106,14 @@ button, input, select { font: inherit; }
 
 .workspace-pill {
   padding: 12px 16px;
-  min-width: 260px;
+  min-width: 250px;
   background: linear-gradient(180deg, rgba(18, 30, 44, 0.86), rgba(11, 17, 24, 0.92));
   border: 1px solid rgba(141, 182, 255, 0.2);
   border-radius: var(--radius-md);
   color: var(--text-soft);
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(12px);
+  align-self: flex-start;
 }
 
 .surface {
@@ -129,7 +130,7 @@ button, input, select { font: inherit; }
   justify-content: space-between;
   gap: 18px;
   padding: 12px 16px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   background: linear-gradient(180deg, rgba(14, 23, 33, 0.96), rgba(11, 18, 26, 0.92));
 }
 
@@ -157,7 +158,7 @@ button, input, select { font: inherit; }
   grid-template-columns: 2.6fr repeat(6, minmax(120px, 1fr));
   gap: 10px;
   padding: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   background: linear-gradient(180deg, rgba(20, 33, 49, 0.92), rgba(13, 21, 31, 0.98));
 }
 
@@ -198,7 +199,7 @@ button, input, select { font: inherit; }
   flex-wrap: wrap;
   gap: 6px;
   padding: 8px 10px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   background: linear-gradient(180deg, rgba(14, 22, 31, 0.82), rgba(11, 18, 26, 0.9));
 }
 
@@ -233,8 +234,8 @@ button, input, select { font: inherit; }
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 290px minmax(0, 1.6fr) 390px;
-  gap: 14px;
+  grid-template-columns: 238px minmax(0, 2.12fr) 322px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -242,6 +243,35 @@ button, input, select { font: inherit; }
 .view-surface,
 .decision-surface {
   padding: 16px;
+}
+
+.rail {
+  background: linear-gradient(180deg, rgba(11, 17, 24, 0.76), rgba(8, 13, 20, 0.68));
+  border-color: rgba(114, 141, 173, 0.14);
+  box-shadow: none;
+}
+
+.rail section + section {
+  padding-top: 6px;
+  border-top: 1px solid rgba(114, 141, 173, 0.08);
+}
+
+.view-surface {
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(151, 134, 255, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(13, 20, 29, 0.96), rgba(9, 15, 23, 0.98));
+}
+
+.decision-surface {
+  background: linear-gradient(180deg, rgba(12, 18, 27, 0.82), rgba(9, 14, 21, 0.72));
+  border-color: rgba(114, 141, 173, 0.14);
+  box-shadow: none;
+}
+
+.decision-surface > .inspect-card {
+  background: linear-gradient(180deg, rgba(12, 19, 28, 0.62), rgba(8, 13, 19, 0.44));
+  border-color: rgba(114, 141, 173, 0.12);
 }
 
 .section-title {
@@ -355,11 +385,11 @@ button, input, select { font: inherit; }
   justify-content: space-between;
   align-items: flex-start;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .view-head-copy {
-  max-width: 720px;
+  max-width: 640px;
 }
 
 .view-body {
@@ -369,19 +399,23 @@ button, input, select { font: inherit; }
 
 .map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) 300px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.92fr) 228px;
+  gap: 12px;
 }
 
 .graph-stage {
   position: relative;
-  min-height: 620px;
+  min-height: 720px;
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 42%, rgba(151, 134, 255, 0.12), transparent 20%),
     radial-gradient(circle at top, rgba(141, 182, 255, 0.08), transparent 34%),
     linear-gradient(180deg, rgba(11, 18, 26, 0.96), rgba(9, 15, 23, 0.96));
   border-color: rgba(141, 182, 255, 0.16);
+  border-radius: 26px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.02),
+    0 20px 54px rgba(0, 0, 0, 0.28);
 }
 
 .graph-stage::before,
@@ -394,7 +428,7 @@ button, input, select { font: inherit; }
 
 .graph-stage::before {
   background:
-    radial-gradient(circle at 50% 46%, rgba(151, 134, 255, 0.12), transparent 16%),
+    radial-gradient(circle at 50% 48%, rgba(151, 134, 255, 0.18), transparent 18%),
     radial-gradient(circle at 20% 18%, rgba(143, 176, 159, 0.08), transparent 14%),
     radial-gradient(circle at 80% 24%, rgba(240, 195, 122, 0.06), transparent 16%);
   opacity: 0.92;
@@ -416,6 +450,48 @@ button, input, select { font: inherit; }
   height: 100%;
 }
 
+.map-stage-overlay {
+  position: absolute;
+  left: 20px;
+  top: 18px;
+  z-index: 2;
+  max-width: 360px;
+  padding: 14px 16px;
+  border: 1px solid rgba(141, 182, 255, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(11, 18, 26, 0.74), rgba(8, 13, 20, 0.58));
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.map-stage-kicker {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.map-stage-title {
+  margin-top: 8px;
+  font-size: 1.24rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.map-stage-copy {
+  margin-top: 8px;
+  color: var(--text-soft);
+  line-height: 1.52;
+  font-size: 0.93rem;
+}
+
+.map-stage-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .graph-link {
   stroke: rgba(141, 182, 255, 0.24);
   stroke-width: 1.8;
@@ -430,11 +506,11 @@ button, input, select { font: inherit; }
 .graph-node {
   position: absolute;
   transform: translate(-50%, -50%);
-  min-width: 146px;
-  max-width: 190px;
+  min-width: 132px;
+  max-width: 174px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 13px 14px;
+  padding: 12px 13px;
   background: linear-gradient(180deg, rgba(19, 30, 43, 0.98), rgba(8, 14, 21, 0.96));
   color: var(--text);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.03);
@@ -460,6 +536,11 @@ button, input, select { font: inherit; }
     0 0 0 1px rgba(176, 155, 255, 0.12),
     0 0 36px rgba(151, 134, 255, 0.24),
     0 20px 44px rgba(0, 0, 0, 0.34);
+  z-index: 3;
+}
+
+.graph-node.primary .graph-node-title {
+  font-size: 1.16rem;
 }
 
 .graph-node.activity { border-color: rgba(124, 165, 223, 0.2); }
@@ -491,8 +572,14 @@ button, input, select { font: inherit; }
   gap: 16px;
 }
 
+.map-aside {
+  align-content: start;
+  gap: 10px;
+}
+
 .flow-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .lane {
@@ -547,11 +634,18 @@ button, input, select { font: inherit; }
   display: grid;
   gap: 12px;
   margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(114, 141, 173, 0.12);
+}
+
+.support-strip .document-card {
+  background: rgba(10, 16, 23, 0.44);
 }
 
 .inspect-grid {
   grid-template-columns: 1.15fr 0.85fr;
   align-items: start;
+  gap: 12px;
 }
 
 .inspect-focus {
@@ -671,16 +765,16 @@ button, input, select { font: inherit; }
 
 .decision-surface {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .secondary-focus {
-  opacity: 0.9;
+  opacity: 0.82;
 }
 
 .audit-group {
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(14, 21, 31, 0.94), rgba(10, 16, 24, 0.94));
+  padding: 16px 18px;
+  background: linear-gradient(180deg, rgba(14, 21, 31, 0.92), rgba(10, 16, 24, 0.9));
 }
 
 .audit-group + .audit-group { margin-top: 12px; }
@@ -746,10 +840,14 @@ button, input, select { font: inherit; }
   max-width: 72ch;
 }
 
+#audit-snapshot .detail-callout {
+  background: rgba(10, 16, 23, 0.4);
+}
+
 .quiet-details {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(9, 16, 24, 0.4);
+  background: rgba(9, 16, 24, 0.34);
 }
 
 .quiet-details summary {
@@ -826,6 +924,13 @@ button, input, select { font: inherit; }
     grid-template-columns: 1fr;
   }
   .graph-stage { min-height: 560px; }
+  .map-stage-overlay {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin: 16px;
+    max-width: none;
+  }
 }
 """
 
@@ -839,7 +944,7 @@ def _body() -> str:
       <h1>Nexus Cockpit</h1>
       <p>
         A shared operational substrate for human and agent work. Read the system through cycles,
-        follow the pressure moving inside them, and judge evidence before acting.
+        trace pressure, and judge evidence before acting.
       </p>
     </div>
     <div id="workspace-badge" class="workspace-pill" aria-live="polite">Checking workspace...</div>
@@ -897,13 +1002,13 @@ def _body() -> str:
     <aside class="surface rail stack">
       <section>
         <h2 class="section-title">Cycle Index</h2>
-        <p class="section-copy">Cycles remain the gravitational center of the workspace.</p>
+        <p class="section-copy">Cycles anchor the workspace.</p>
         <ul id="cycle-index" class="list-reset stack"></ul>
       </section>
 
       <section>
         <h2 class="section-title">Structural Context</h2>
-        <p class="quiet-copy">Entities and documents stay visible as supporting institutional structure.</p>
+        <p class="quiet-copy">Structural support, kept quiet.</p>
         <div id="ontology-list" class="stack"></div>
       </section>
 
@@ -920,7 +1025,7 @@ def _body() -> str:
             <h2 class="section-title">MAP</h2>
             <p class="section-copy">
               Read the workspace as a living institutional map. The focused cycle anchors the scene,
-              activities reveal operational pressure, and documents show the supporting evidence layer.
+              activities reveal pressure, and documents carry the evidence layer.
             </p>
           </div>
         </div>
@@ -928,14 +1033,14 @@ def _body() -> str:
           <section id="graph-stage" class="surface graph-stage"></section>
           <aside class="map-aside">
             <article class="surface inspect-card">
-              <h3>Map reading guide</h3>
+              <h3>Read the scene</h3>
               <p class="quiet-copy" id="map-guide-copy">
                 Select a node to move directly into operational inspection.
               </p>
               <div class="badge-row" id="map-legend"></div>
             </article>
             <article class="surface inspect-card">
-              <h3>Focused cycle narrative</h3>
+              <h3>Cycle narrative</h3>
               <div id="map-cycle-narrative" class="evidence-block">
                 Cycle context will appear here once the workspace is ready.
               </div>
@@ -950,7 +1055,7 @@ def _body() -> str:
             <h2 class="section-title">FLOW</h2>
             <p class="section-copy">
               Move from focused cycle to immediate action. This surface answers what requires action now,
-              what is actively moving, and which documents are carrying operational legitimacy.
+              what is moving, and which documents are carrying operational legitimacy.
             </p>
           </div>
         </div>
@@ -967,6 +1072,7 @@ def _body() -> str:
             <div class="lane-header">
               <h3>Requires action now</h3>
               <p class="quiet-copy">Blocked and pending work that should shape the next intervention.</p>
+              <div class="badge-row" id="flow-attention-meta"></div>
             </div>
             <div id="flow-attention" class="lane-items"></div>
           </section>
@@ -974,6 +1080,7 @@ def _body() -> str:
             <div class="lane-header">
               <h3>Moving now</h3>
               <p class="quiet-copy">Work already in motion inside the selected cycle.</p>
+              <div class="badge-row" id="flow-moving-meta"></div>
             </div>
             <div id="flow-moving" class="lane-items"></div>
           </section>
@@ -981,6 +1088,7 @@ def _body() -> str:
             <div class="lane-header">
               <h3>Stabilized and support</h3>
               <p class="quiet-copy">Completed work and the documents currently supporting the cycle.</p>
+              <div class="badge-row" id="flow-stable-meta"></div>
             </div>
             <div id="flow-stable" class="lane-items"></div>
             <div class="support-strip" id="flow-documents"></div>
@@ -994,7 +1102,7 @@ def _body() -> str:
             <h2 class="section-title">INSPECT</h2>
             <p class="section-copy">
               Judge the selected object through context, evidence, and governance. Technical details remain
-              accessible, but secondary.
+              available, but secondary.
             </p>
           </div>
         </div>
@@ -1064,12 +1172,10 @@ def _body() -> str:
       </article>
       <article class="inspect-card">
         <h3>Supporting documents</h3>
-        <p class="quiet-copy">Documents remain visible as operational support, not as the primary reading path.</p>
         <div id="document-strip" class="stack"></div>
       </article>
       <article class="inspect-card">
         <h3>Institutional memory</h3>
-        <p class="quiet-copy">A small live sample stays here; the full narrative remains in the AUDIT view.</p>
         <div id="audit-snapshot" class="stack"></div>
       </article>
     </aside>
@@ -1684,8 +1790,8 @@ function buildMapModel(cycle) {
       kicker: "Cycle",
       title: cycleLabel(cycle),
       meta: `${statusLabel(cycle.status)} | ${cycle.activity_count} activities`,
-      x: 50,
-      y: 48,
+      x: 51,
+      y: 52,
       primary: true,
       selected: state.selected.type === "cycle" && state.selected.id === cycle.id
     },
@@ -1695,8 +1801,8 @@ function buildMapModel(cycle) {
       kicker: "Adjacent cycle",
       title: cycleLabel(item),
       meta: `${statusLabel(item.status)} | ${item.activity_count} activities`,
-      x: 24 + index * 26,
-      y: 12,
+      x: [18, 50, 82][index] || 18 + index * 22,
+      y: 16,
       selected: state.selected.type === "cycle" && state.selected.id === item.id
     })),
     ...activities.map((item, index) => ({
@@ -1705,8 +1811,8 @@ function buildMapModel(cycle) {
       kicker: "Activity",
       title: item.title,
       meta: `${statusLabel(item.status)} | ${titleCase(item.priority === 1 ? "urgent" : item.priority === 2 ? "high" : item.priority === 4 ? "low" : "normal")}`,
-      x: 22,
-      y: 30 + index * (activities.length > 1 ? 16 : 0),
+      x: 17,
+      y: 28 + index * (activities.length > 1 ? 18 : 0),
       selected: state.selected.type === "activity" && state.selected.id === item.id
     })),
     ...documents.map((item, index) => ({
@@ -1715,8 +1821,8 @@ function buildMapModel(cycle) {
       kicker: "Document",
       title: item.title,
       meta: `${documentTypeLabel(item.type)} | ${statusLabel(item.status)}`,
-      x: 78,
-      y: 30 + index * (documents.length > 1 ? 16 : 0),
+      x: 84,
+      y: 26 + index * (documents.length > 1 ? 18 : 0),
       selected: state.selected.type === "document" && state.selected.id === item.id
     })),
     ...entities.map((item, index) => ({
@@ -1725,8 +1831,8 @@ function buildMapModel(cycle) {
       kicker: "Entity",
       title: item.name,
       meta: titleCase(item.type),
-      x: 20 + index * 20,
-      y: 84,
+      x: 18 + index * 20,
+      y: 88,
       selected: false
     })),
     ...riskNodes
@@ -1757,6 +1863,7 @@ function renderMapView() {
     return;
   }
   const model = buildMapModel(cycle);
+  const summary = summarizeCycle(cycle);
   const positions = Object.fromEntries(model.nodes.map((node) => [node.id, node]));
   const links = model.links
     .map((link) => {
@@ -1769,6 +1876,16 @@ function renderMapView() {
   setHtml(
     "graph-stage",
     `
+      <div class="map-stage-overlay">
+        <div class="map-stage-kicker">System reality</div>
+        <div class="map-stage-title">${escapeHtml(cycleLabel(cycle))}</div>
+        <div class="map-stage-copy">${escapeHtml(cycleNarrative(cycle))}</div>
+        <div class="map-stage-metrics">
+          <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+          <span class="badge ${statusBadgeClass(summary.pressure === "Critical" ? "blocked" : summary.pressure === "Elevated" ? "pending" : "completed")}">${escapeHtml(summary.pressure)}</span>
+          <span class="badge ${statusBadgeClass(summary.evidence === "Fragile" ? "warning" : summary.evidence === "Compromised" ? "error" : "completed")}">${escapeHtml(summary.evidence)}</span>
+        </div>
+      </div>
       <svg class="graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">${links}</svg>
       ${model.nodes.map(graphNodeMarkup).join("")}
     `
@@ -1783,7 +1900,7 @@ function renderMapView() {
       <span class="badge danger">risk</span>
     `
   );
-  setText("map-guide-copy", "The cycle stays at the center. Activities carry operational pressure, documents carry support and evidence, and risk nodes signal where supervision should tighten.");
+  setText("map-guide-copy", "Start at the cycle. Read outward into pressure, support, structure, and risk.");
   setText("map-cycle-narrative", cycleNarrative(cycle));
 }
 
@@ -1828,6 +1945,7 @@ function renderFlowView() {
   const cycle = pickFocusedCycle();
   if (!cycle) {
     ["flow-attention", "flow-moving", "flow-stable", "flow-documents"].forEach((id) => setHtml(id, '<div class="empty-state">No focused cycle is available.</div>'));
+    ["flow-attention-meta", "flow-moving-meta", "flow-stable-meta"].forEach((id) => setHtml(id, ""));
     return;
   }
   const activities = relatedActivities(cycle.id);
@@ -1835,6 +1953,18 @@ function renderFlowView() {
   const attention = activities.filter((item) => ["pending", "blocked"].includes(item.status));
   const moving = activities.filter((item) => item.status === "in_progress");
   const stable = activities.filter((item) => item.status === "completed");
+  setHtml(
+    "flow-attention-meta",
+    `<span class="badge warning">${attention.length} in tension</span>${attention.some((item) => item.status === "blocked") ? '<span class="badge danger">blocked work present</span>' : ""}`
+  );
+  setHtml(
+    "flow-moving-meta",
+    `<span class="badge">${moving.length} advancing</span>${moving.length ? '<span class="badge success">active momentum</span>' : ""}`
+  );
+  setHtml(
+    "flow-stable-meta",
+    `<span class="badge success">${stable.length} stabilized</span><span class="badge">${relatedDocuments(cycle.id).length} support docs</span>`
+  );
   const groups = { attention, moving, stable };
   Object.entries(groups).forEach(([name, items]) => {
     const target = filter && filter !== name ? [] : items;
