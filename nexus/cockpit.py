@@ -24,24 +24,29 @@ def _style() -> str:
   color-scheme: dark;
   --page: #091119;
   --page-alt: #0e1721;
+  --page-glow: rgba(115, 155, 228, 0.14);
   --panel: rgba(15, 24, 35, 0.92);
   --panel-alt: rgba(18, 30, 44, 0.92);
   --panel-soft: rgba(12, 20, 30, 0.72);
   --panel-strong: rgba(20, 33, 49, 0.98);
+  --panel-glass: rgba(18, 28, 42, 0.78);
   --line: rgba(114, 141, 173, 0.24);
   --line-strong: rgba(124, 165, 223, 0.34);
   --text: #edf3f8;
   --text-soft: #ccd6e1;
   --text-muted: #8fa0b3;
+  --text-faint: #728396;
   --accent: #8db6ff;
   --accent-soft: rgba(141, 182, 255, 0.18);
   --accent-strong: #dce9ff;
+  --accent-glow: rgba(151, 134, 255, 0.26);
   --success: #90d2a7;
   --success-soft: rgba(62, 142, 94, 0.18);
   --warning: #f0c37a;
   --warning-soft: rgba(187, 133, 35, 0.18);
   --danger: #ff9a93;
   --danger-soft: rgba(176, 66, 60, 0.18);
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.24);
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
   --radius-lg: 22px;
   --radius-md: 16px;
@@ -54,64 +59,67 @@ body {
   font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 8% 4%, rgba(141, 182, 255, 0.18), transparent 20%),
-    radial-gradient(circle at 90% 0%, rgba(113, 157, 214, 0.10), transparent 20%),
+    radial-gradient(circle at 8% 4%, rgba(141, 182, 255, 0.16), transparent 20%),
+    radial-gradient(circle at 90% 0%, rgba(113, 157, 214, 0.08), transparent 20%),
+    radial-gradient(circle at 50% 0%, rgba(164, 133, 255, 0.08), transparent 32%),
     linear-gradient(180deg, #091019 0%, #0d1620 30%, #0f1823 100%);
 }
 a { color: inherit; }
 button, input, select { font: inherit; }
 
 .app-shell {
-  max-width: 1600px;
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 22px 24px 30px;
+  padding: 18px 22px 28px;
 }
 
 .top-shell {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 14px;
+  gap: 18px;
+  margin-bottom: 10px;
 }
 
 .brand-kicker {
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: 8px;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+  opacity: 0.9;
 }
 
 .top-shell h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  font-size: clamp(2.1rem, 4vw, 3.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.05em;
 }
 
 .top-shell p {
-  margin: 10px 0 0;
-  max-width: 760px;
+  margin: 9px 0 0;
+  max-width: 800px;
   color: var(--text-muted);
-  line-height: 1.55;
+  line-height: 1.52;
 }
 
 .workspace-pill {
-  padding: 14px 16px;
-  min-width: 240px;
-  background: linear-gradient(180deg, rgba(141, 182, 255, 0.14), rgba(12, 20, 30, 0.92));
-  border: 1px solid rgba(141, 182, 255, 0.26);
+  padding: 12px 16px;
+  min-width: 260px;
+  background: linear-gradient(180deg, rgba(18, 30, 44, 0.86), rgba(11, 17, 24, 0.92));
+  border: 1px solid rgba(141, 182, 255, 0.2);
   border-radius: var(--radius-md);
-  color: var(--accent-strong);
-  box-shadow: var(--shadow);
+  color: var(--text-soft);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
 }
 
 .surface {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
   backdrop-filter: blur(10px);
 }
 
@@ -120,8 +128,9 @@ button, input, select { font: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 14px 18px;
-  margin-bottom: 14px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(180deg, rgba(14, 23, 33, 0.96), rgba(11, 18, 26, 0.92));
 }
 
 .readiness-bar.loading { border-color: rgba(141, 182, 255, 0.24); }
@@ -130,68 +139,75 @@ button, input, select { font: inherit; }
 .readiness-bar.error { border-color: rgba(176, 66, 60, 0.32); }
 
 .readiness-title {
-  font-size: 0.86rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   color: var(--text-muted);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .readiness-detail {
   color: var(--text-soft);
-  line-height: 1.45;
+  line-height: 1.4;
+  font-size: 0.95rem;
 }
 
 .cycle-context-bar {
   display: grid;
-  grid-template-columns: 2.2fr repeat(6, 1fr);
-  gap: 12px;
-  padding: 14px;
-  margin-bottom: 14px;
-  background: linear-gradient(180deg, rgba(141, 182, 255, 0.10), rgba(18, 30, 44, 0.96));
+  grid-template-columns: 2.6fr repeat(6, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: linear-gradient(180deg, rgba(20, 33, 49, 0.92), rgba(13, 21, 31, 0.98));
 }
 
 .context-cell {
-  padding: 12px 14px;
-  background: rgba(9, 16, 24, 0.42);
-  border: 1px solid rgba(141, 182, 255, 0.12);
+  padding: 12px 13px;
+  background: rgba(9, 16, 24, 0.36);
+  border: 1px solid rgba(141, 182, 255, 0.1);
   border-radius: var(--radius-md);
 }
 
+.context-cell:first-child {
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.12), rgba(12, 20, 30, 0.42));
+  border-color: rgba(141, 182, 255, 0.2);
+}
+
 .context-label {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
 }
 
 .context-value {
-  margin-top: 8px;
+  margin-top: 7px;
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.35;
 }
 
 .context-value strong {
   display: block;
-  font-size: 1.1rem;
+  font-size: 1.14rem;
   color: var(--accent-strong);
 }
 
 .main-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px;
-  margin-bottom: 16px;
+  gap: 6px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  background: linear-gradient(180deg, rgba(14, 22, 31, 0.82), rgba(11, 18, 26, 0.9));
 }
 
 .nav-button,
 .tab-button,
 .inline-button {
   appearance: none;
-  border: 1px solid var(--line);
-  background: rgba(13, 22, 31, 0.72);
+  border: 1px solid transparent;
+  background: rgba(13, 22, 31, 0.42);
   color: var(--text-muted);
   border-radius: 999px;
   padding: 9px 14px;
@@ -209,41 +225,42 @@ button, input, select { font: inherit; }
 .nav-button.active,
 .tab-button.active,
 .inline-button.primary {
-  background: var(--accent-soft);
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.16), rgba(141, 182, 255, 0.08));
   color: var(--accent-strong);
   border-color: rgba(141, 182, 255, 0.34);
+  box-shadow: inset 0 -1px 0 rgba(141, 182, 255, 0.22);
 }
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1.55fr) 380px;
-  gap: 16px;
+  grid-template-columns: 290px minmax(0, 1.6fr) 390px;
+  gap: 14px;
   align-items: start;
 }
 
 .rail,
 .view-surface,
 .decision-surface {
-  padding: 18px;
+  padding: 16px;
 }
 
 .section-title {
   margin: 0;
-  font-size: 1.02rem;
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
 }
 
 .section-copy,
 .quiet-copy {
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.48;
 }
 
-.quiet-copy { font-size: 0.92rem; }
+.quiet-copy { font-size: 0.9rem; }
 
 .stack {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .list-reset {
@@ -261,7 +278,8 @@ button, input, select { font: inherit; }
 .inspect-card {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: rgba(10, 17, 25, 0.58);
+  background: rgba(10, 17, 25, 0.54);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .cycle-card button,
@@ -273,7 +291,7 @@ button, input, select { font: inherit; }
   background: transparent;
   color: inherit;
   text-align: left;
-  padding: 14px;
+  padding: 13px;
   cursor: pointer;
 }
 
@@ -281,46 +299,49 @@ button, input, select { font: inherit; }
 .activity-card.active,
 .document-card.active {
   border-color: rgba(141, 182, 255, 0.34);
-  background: linear-gradient(180deg, rgba(141, 182, 255, 0.16), rgba(18, 30, 44, 0.92));
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.14), rgba(18, 30, 44, 0.92));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
 }
 
 .card-title {
   font-weight: 600;
   color: var(--text);
   line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .card-kicker {
   color: var(--accent);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 6px;
+  letter-spacing: 0.16em;
+  margin-bottom: 7px;
 }
 
 .card-meta,
 .card-secondary {
   margin-top: 6px;
   color: var(--text-muted);
-  line-height: 1.45;
-  font-size: 0.92rem;
+  line-height: 1.42;
+  font-size: 0.89rem;
 }
 
 .badge-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 9px;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 5px 9px;
-  font-size: 0.83rem;
+  padding: 5px 10px;
+  font-size: 0.79rem;
   background: rgba(141, 182, 255, 0.13);
   color: var(--accent-strong);
+  border: 1px solid rgba(141, 182, 255, 0.08);
 }
 
 .badge.success { background: var(--success-soft); color: var(--success); }
@@ -334,7 +355,7 @@ button, input, select { font: inherit; }
   justify-content: space-between;
   align-items: flex-start;
   gap: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .view-head-copy {
@@ -343,13 +364,13 @@ button, input, select { font: inherit; }
 
 .view-body {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .map-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) 300px;
-  gap: 16px;
+  gap: 14px;
 }
 
 .graph-stage {
@@ -357,8 +378,35 @@ button, input, select { font: inherit; }
   min-height: 620px;
   overflow: hidden;
   background:
+    radial-gradient(circle at 50% 42%, rgba(151, 134, 255, 0.12), transparent 20%),
     radial-gradient(circle at top, rgba(141, 182, 255, 0.08), transparent 34%),
     linear-gradient(180deg, rgba(11, 18, 26, 0.96), rgba(9, 15, 23, 0.96));
+  border-color: rgba(141, 182, 255, 0.16);
+}
+
+.graph-stage::before,
+.graph-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.graph-stage::before {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(151, 134, 255, 0.12), transparent 16%),
+    radial-gradient(circle at 20% 18%, rgba(143, 176, 159, 0.08), transparent 14%),
+    radial-gradient(circle at 80% 24%, rgba(240, 195, 122, 0.06), transparent 16%);
+  opacity: 0.92;
+}
+
+.graph-stage::after {
+  background-image:
+    linear-gradient(rgba(141, 182, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(141, 182, 255, 0.04) 1px, transparent 1px);
+  background-size: 84px 84px;
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.72), transparent 86%);
+  opacity: 0.22;
 }
 
 .graph-svg {
@@ -370,7 +418,10 @@ button, input, select { font: inherit; }
 
 .graph-link {
   stroke: rgba(141, 182, 255, 0.24);
-  stroke-width: 1.6;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 8px rgba(141, 182, 255, 0.12));
 }
 
 .graph-link.risk { stroke: rgba(255, 154, 147, 0.4); stroke-dasharray: 6 6; }
@@ -383,37 +434,54 @@ button, input, select { font: inherit; }
   max-width: 190px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 12px;
-  background: linear-gradient(180deg, rgba(18, 30, 44, 0.96), rgba(8, 14, 21, 0.94));
+  padding: 13px 14px;
+  background: linear-gradient(180deg, rgba(19, 30, 43, 0.98), rgba(8, 14, 21, 0.96));
   color: var(--text);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.03);
   cursor: pointer;
   text-align: left;
+  backdrop-filter: blur(8px);
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.graph-node:hover {
+  transform: translate(-50%, -50%) translateY(-2px);
+  border-color: rgba(141, 182, 255, 0.28);
 }
 
 .graph-node.primary {
-  width: 230px;
-  min-width: 230px;
-  border-color: rgba(141, 182, 255, 0.36);
-  background: linear-gradient(180deg, rgba(141, 182, 255, 0.18), rgba(18, 30, 44, 0.98));
+  width: 246px;
+  min-width: 246px;
+  border-color: rgba(176, 155, 255, 0.48);
+  background:
+    radial-gradient(circle at top, rgba(193, 168, 255, 0.16), transparent 56%),
+    linear-gradient(180deg, rgba(74, 52, 112, 0.26), rgba(16, 26, 38, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(176, 155, 255, 0.12),
+    0 0 36px rgba(151, 134, 255, 0.24),
+    0 20px 44px rgba(0, 0, 0, 0.34);
 }
 
 .graph-node.activity { border-color: rgba(124, 165, 223, 0.2); }
 .graph-node.document { border-color: rgba(240, 195, 122, 0.22); }
 .graph-node.entity { border-color: rgba(143, 176, 159, 0.2); }
 .graph-node.risk { border-color: rgba(255, 154, 147, 0.26); }
-.graph-node.selected { outline: 2px solid rgba(141, 182, 255, 0.34); }
+.graph-node.selected {
+  outline: 2px solid rgba(141, 182, 255, 0.3);
+  box-shadow: 0 0 0 1px rgba(141, 182, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.28);
+}
 
 .graph-node-title {
   font-weight: 600;
   line-height: 1.3;
+  letter-spacing: -0.015em;
 }
 
 .graph-node-meta {
   margin-top: 6px;
   color: var(--text-muted);
-  font-size: 0.84rem;
-  line-height: 1.35;
+  font-size: 0.81rem;
+  line-height: 1.42;
 }
 
 .map-aside,
@@ -429,10 +497,37 @@ button, input, select { font: inherit; }
 
 .lane {
   padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 33, 0.96), rgba(10, 16, 24, 0.96));
+  position: relative;
+  overflow: hidden;
+}
+
+.lane::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  opacity: 0.92;
+}
+
+.lane-attention::before {
+  background: linear-gradient(90deg, rgba(255, 154, 147, 0.92), rgba(240, 195, 122, 0.82));
+}
+
+.lane-moving::before {
+  background: linear-gradient(90deg, rgba(111, 177, 255, 0.88), rgba(142, 187, 255, 0.4));
+}
+
+.lane-stable::before {
+  background: linear-gradient(90deg, rgba(110, 206, 144, 0.86), rgba(132, 210, 167, 0.4));
 }
 
 .lane-header {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  padding-right: 24px;
 }
 
 .lane-header h3,
@@ -440,58 +535,64 @@ button, input, select { font: inherit; }
 .map-aside h3 {
   margin: 0;
   font-size: 1rem;
+  letter-spacing: -0.01em;
 }
 
 .lane-items {
   display: grid;
-  gap: 10px;
+  gap: 11px;
 }
 
 .support-strip {
   display: grid;
   gap: 12px;
+  margin-top: 12px;
 }
 
 .inspect-grid {
   grid-template-columns: 1.15fr 0.85fr;
+  align-items: start;
 }
 
 .inspect-focus {
   padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 33, 0.96), rgba(9, 15, 23, 0.98));
 }
 
 .inspect-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 14px;
+  margin: 16px 0 14px;
 }
 
 .inspect-panel[hidden] { display: none !important; }
 
 .inspect-header {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(114, 141, 173, 0.18);
 }
 
 .inspect-label {
-  color: var(--accent);
-  font-size: 0.8rem;
+  color: var(--text-faint);
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: 6px;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
 }
 
 .inspect-title {
-  font-size: 1.48rem;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  font-size: 1.58rem;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
 }
 
 .inspect-summary {
-  margin-top: 10px;
+  margin-top: 12px;
   color: var(--text-soft);
-  line-height: 1.6;
+  line-height: 1.62;
+  max-width: 58ch;
 }
 
 .inspect-section {
@@ -508,38 +609,40 @@ button, input, select { font: inherit; }
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(9, 16, 24, 0.5);
+  background: rgba(9, 16, 24, 0.44);
 }
 
 .meta-cell strong {
   display: block;
   margin-top: 6px;
   color: var(--text);
+  letter-spacing: -0.01em;
 }
 
 .evidence-block {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(9, 16, 24, 0.58);
+  background: rgba(9, 16, 24, 0.48);
   line-height: 1.6;
 }
 
 .preview {
-  padding: 16px;
-  min-height: 300px;
+  padding: 18px 18px 20px;
+  min-height: 340px;
   white-space: pre-wrap;
   font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.92rem;
+  line-height: 1.72;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: rgba(5, 11, 17, 0.9);
+  background: linear-gradient(180deg, rgba(6, 12, 18, 0.96), rgba(7, 13, 19, 0.9));
   color: #dbe5ef;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .preview.error {
-  background: rgba(50, 17, 17, 0.72);
+  background: linear-gradient(180deg, rgba(50, 17, 17, 0.78), rgba(28, 10, 10, 0.74));
   color: var(--danger);
   font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
 }
@@ -555,7 +658,15 @@ button, input, select { font: inherit; }
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: rgba(9, 16, 24, 0.52);
+  background: rgba(9, 16, 24, 0.48);
+}
+
+.detail-stack-label {
+  margin: 2px 0 10px;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
 }
 
 .decision-surface {
@@ -568,47 +679,71 @@ button, input, select { font: inherit; }
 }
 
 .audit-group {
-  padding: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(14, 21, 31, 0.94), rgba(10, 16, 24, 0.94));
 }
 
 .audit-group + .audit-group { margin-top: 12px; }
 
 .audit-date {
-  color: var(--accent);
-  font-size: 0.82rem;
+  color: var(--text-faint);
+  font-size: 0.74rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: 12px;
+  letter-spacing: 0.18em;
+  margin-bottom: 10px;
 }
 
 .audit-entry {
-  padding: 12px 0;
-  border-top: 1px solid rgba(114, 141, 173, 0.18);
+  position: relative;
+  padding: 14px 0 14px 16px;
+  border-top: 1px solid rgba(114, 141, 173, 0.12);
 }
 
 .audit-entry:first-child { border-top: 0; padding-top: 0; }
+
+.audit-entry::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(141, 182, 255, 0.7), rgba(141, 182, 255, 0.08));
+}
+
+.audit-entry:first-child::before { top: 4px; }
 
 .audit-head {
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .audit-title {
   font-weight: 600;
   line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.audit-subtitle {
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .audit-time {
   color: var(--text-muted);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 
 .audit-body {
   color: var(--text-soft);
-  line-height: 1.55;
+  line-height: 1.62;
+  max-width: 72ch;
 }
 
 .quiet-details {
@@ -674,7 +809,7 @@ button, input, select { font: inherit; }
   padding: 14px;
   border: 1px dashed rgba(114, 141, 173, 0.24);
   border-radius: var(--radius-md);
-  color: var(--text-muted);
+  color: var(--text-faint);
   background: rgba(9, 16, 24, 0.34);
 }
 
@@ -828,21 +963,21 @@ def _body() -> str:
           </select>
         </div>
         <div class="view-body flow-grid">
-          <section class="surface lane">
+          <section class="surface lane lane-attention">
             <div class="lane-header">
               <h3>Requires action now</h3>
               <p class="quiet-copy">Blocked and pending work that should shape the next intervention.</p>
             </div>
             <div id="flow-attention" class="lane-items"></div>
           </section>
-          <section class="surface lane">
+          <section class="surface lane lane-moving">
             <div class="lane-header">
               <h3>Moving now</h3>
               <p class="quiet-copy">Work already in motion inside the selected cycle.</p>
             </div>
             <div id="flow-moving" class="lane-items"></div>
           </section>
-          <section class="surface lane">
+          <section class="surface lane lane-stable">
             <div class="lane-header">
               <h3>Stabilized and support</h3>
               <p class="quiet-copy">Completed work and the documents currently supporting the cycle.</p>
@@ -887,7 +1022,9 @@ def _body() -> str:
             <article class="surface inspect-card">
               <h3>Selected Detail</h3>
               <p class="quiet-copy">Primary focus comes first; supporting material stays visible but quieter.</p>
+              <div class="detail-stack-label">Primary focus</div>
               <div id="selected-primary" class="stack"></div>
+              <div class="detail-stack-label">Supporting context</div>
               <div id="selected-secondary" class="stack secondary-focus"></div>
             </article>
             <article class="surface inspect-card">
@@ -1271,6 +1408,36 @@ function cycleNarrative(cycle) {
   return `${cycleLabel(cycle)} holds ${cycle.activity_count} activities and ${summary.documents.length} supporting documents. Pressure is ${summary.pressure.toLowerCase()}, risk is ${summary.risk.toLowerCase()}, and evidence health is ${summary.evidence.toLowerCase()}.`;
 }
 
+function activityCardSummary(activity) {
+  if (activity.status === "blocked") {
+    return "Blocked work requiring intervention before the cycle can move cleanly.";
+  }
+  if (activity.status === "in_progress") {
+    return "Work currently moving inside the focused cycle.";
+  }
+  if (activity.status === "completed") {
+    return "Completed work now stabilizing the cycle.";
+  }
+  return "Queued work ready to move when the operator advances it.";
+}
+
+function documentCardSummary(document) {
+  const integrity = integrityFor(document.id);
+  const integrityLabel =
+    integrity?.integrity_state === "warning"
+      ? "Integrity drift needs review."
+      : integrity?.integrity_state === "error"
+      ? "Integrity is out of sync."
+      : "Integrity is aligned.";
+  if (document.status === "approved") {
+    return `Approved support material for the current operational picture. ${integrityLabel}`;
+  }
+  if (document.status === "archived") {
+    return `Archived reference retained for institutional memory. ${integrityLabel}`;
+  }
+  return `Working support material still being stabilized. ${integrityLabel}`;
+}
+
 function describeAuditEntry(entry) {
   const entity = titleCase(entry.entity_type);
   const action =
@@ -1299,6 +1466,19 @@ function auditObjectLabel(entry) {
     return state.entities.find((item) => item.id === entry.entity_id)?.name || "Entity";
   }
   return entry.entity_id || titleCase(entry.entity_type);
+}
+
+function auditContextLabel(entry) {
+  const entity = titleCase(entry.entity_type);
+  const action =
+    entry.action === "create"
+      ? "Created"
+      : entry.action === "update"
+      ? "State changed"
+      : entry.action === "reconcile"
+      ? "Reconciled"
+      : titleCase(entry.action || "Event");
+  return `${entity} • ${action}`;
 }
 
 function groupAuditEntries(entries) {
@@ -1452,6 +1632,20 @@ function graphNodeMarkup(node) {
   `;
 }
 
+function graphLinkPath(from, to) {
+  const x1 = from.x;
+  const y1 = from.y;
+  const x2 = to.x;
+  const y2 = to.y;
+  const dx = x2 - x1;
+  const curvature = Math.max(8, Math.min(18, Math.abs(dx) * 0.22));
+  const c1x = x1 + dx * 0.28;
+  const c2x = x2 - dx * 0.24;
+  const c1y = y1 - curvature;
+  const c2y = y2 + curvature;
+  return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
+}
+
 function buildMapModel(cycle) {
   const activities = relatedActivities(cycle.id);
   const documents = relatedDocuments(cycle.id);
@@ -1569,7 +1763,7 @@ function renderMapView() {
       const from = positions[link.from];
       const to = positions[link.to];
       if (!from || !to) return "";
-      return `<line class="graph-link ${link.tone === "risk" ? "risk" : link.tone === "support" ? "support" : ""}" x1="${from.x}%" y1="${from.y}%" x2="${to.x}%" y2="${to.y}%"></line>`;
+      return `<path class="graph-link ${link.tone === "risk" ? "risk" : link.tone === "support" ? "support" : ""}" d="${graphLinkPath(from, to)}"></path>`;
     })
     .join("");
   setHtml(
@@ -1599,7 +1793,7 @@ function activityCardMarkup(activity, emphasize = false) {
       <button type="button" data-select-activity="${escapeHtml(activity.id)}">
         <div class="card-kicker">Activity</div>
         <div class="card-title">${escapeHtml(activity.title)}</div>
-        <div class="card-secondary">${escapeHtml(activityNarrative(activity))}</div>
+        <div class="card-secondary">${escapeHtml(activityCardSummary(activity))}</div>
         <div class="badge-row">
           <span class="badge ${statusBadgeClass(activity.status)}">${escapeHtml(statusLabel(activity.status))}</span>
           ${emphasize ? '<span class="badge warning">needs attention</span>' : ""}
@@ -1616,7 +1810,7 @@ function documentCardMarkup(document) {
       <button type="button" data-select-document="${escapeHtml(document.id)}">
         <div class="card-kicker">${escapeHtml(documentTypeLabel(document.type))}</div>
         <div class="card-title">${escapeHtml(document.title)}</div>
-        <div class="card-secondary">${escapeHtml(documentNarrative(document))}</div>
+        <div class="card-secondary">${escapeHtml(documentCardSummary(document))}</div>
         <div class="badge-row">
           <span class="badge ${statusBadgeClass(document.status)}">${escapeHtml(statusLabel(document.status))}</span>
           ${
@@ -1676,19 +1870,19 @@ function renderSelectedCards() {
     const document = supportingDocumentForActivity(selection);
     primaryHtml = activityCardMarkup(selection, selection.status === "blocked" || selection.status === "pending");
     secondaryHtml = document
-      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Supporting document</div><div class="card-title">${escapeHtml(document.title)}</div><div class="card-secondary">${escapeHtml(documentNarrative(document))}</div></div>`
+      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Supporting document</div><div class="card-title">${escapeHtml(document.title)}</div><div class="card-secondary">${escapeHtml(documentCardSummary(document))}</div></div>`
       : '<div class="empty-state">No supporting document is linked to this activity yet.</div>';
   } else if (state.selected.type === "document") {
     const activity = supportingActivityForDocument(selection);
     primaryHtml = documentCardMarkup(selection);
     secondaryHtml = activity
-      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Operational anchor</div><div class="card-title">${escapeHtml(activity.title)}</div><div class="card-secondary">${escapeHtml(activityNarrative(activity))}</div></div>`
+      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Operational anchor</div><div class="card-title">${escapeHtml(activity.title)}</div><div class="card-secondary">${escapeHtml(activityCardSummary(activity))}</div></div>`
       : '<div class="empty-state">No single activity is currently anchored by this document.</div>';
   } else {
     primaryHtml = `<div class="inspect-card detail-callout"><div class="card-kicker">Focused cycle</div><div class="card-title">${escapeHtml(cycleLabel(selection))}</div><div class="card-secondary">${escapeHtml(cycleNarrative(selection))}</div></div>`;
     const firstActivity = relatedActivities(selection.id)[0];
     secondaryHtml = firstActivity
-      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Next activity</div><div class="card-title">${escapeHtml(firstActivity.title)}</div><div class="card-secondary">${escapeHtml(activityNarrative(firstActivity))}</div></div>`
+      ? `<div class="inspect-card detail-callout"><div class="card-kicker">Next activity</div><div class="card-title">${escapeHtml(firstActivity.title)}</div><div class="card-secondary">${escapeHtml(activityCardSummary(firstActivity))}</div></div>`
       : '<div class="empty-state">No activity is attached to the focused cycle yet.</div>';
   }
 
@@ -1805,7 +1999,7 @@ async function renderInspectEvidence(selection) {
         <div class="detail-callout">
           <div class="card-kicker">Supporting evidence</div>
           <div class="card-title">${escapeHtml(document.title)}</div>
-          <div class="card-secondary">${escapeHtml(documentNarrative(document))}</div>
+          <div class="card-secondary">${escapeHtml(documentCardSummary(document))}</div>
         </div>
         <div class="${details?.error ? "preview error" : "preview"}">${escapeHtml(details?.content_preview || details?.error || "(empty document)")}</div>
       `
@@ -1931,7 +2125,10 @@ function renderAuditSnippet(entry) {
   return `
     <div class="detail-callout">
       <div class="audit-head">
-        <div class="audit-title">${escapeHtml(auditObjectLabel(entry))}</div>
+        <div>
+          <div class="audit-title">${escapeHtml(auditObjectLabel(entry))}</div>
+          <div class="audit-subtitle">${escapeHtml(auditContextLabel(entry))}</div>
+        </div>
         <div class="audit-time">${escapeHtml(formatDateTime(entry.timestamp))}</div>
       </div>
       <div class="audit-body">${escapeHtml(describeAuditEntry(entry))}</div>
@@ -1990,7 +2187,10 @@ function renderAuditView() {
                 (entry) => `
                   <article class="audit-entry">
                     <div class="audit-head">
-                      <div class="audit-title">${escapeHtml(auditObjectLabel(entry))}</div>
+                      <div>
+                        <div class="audit-title">${escapeHtml(auditObjectLabel(entry))}</div>
+                        <div class="audit-subtitle">${escapeHtml(auditContextLabel(entry))}</div>
+                      </div>
                       <div class="audit-time">${escapeHtml(formatDateTime(entry.timestamp))}</div>
                     </div>
                     <div class="audit-body">${escapeHtml(describeAuditEntry(entry))}</div>
