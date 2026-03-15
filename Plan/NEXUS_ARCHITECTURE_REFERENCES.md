@@ -267,6 +267,9 @@ If a PR or spec update cannot answer those clearly, it is likely introducing arc
 
 ## 10. References
 
+- `Plan/UI_NORTH_STAR.md`
+- `Plan/UI_VISUAL_DIRECTION.md`
+- `Plan/DEMO_SEED_RICH_SPEC.md`
 - `README.md`
 - `AGENTS.md`
 - `Plan/NEXUS_MVP_SPEC.md`
