@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
-from nexus.workspace import (
+from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,
     fetch_system_state_value,

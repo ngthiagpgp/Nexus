@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from nexus.entities import normalize_optional_text, validate_required_text
-from nexus.workspace import (
+from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,
     fetch_system_state_value,

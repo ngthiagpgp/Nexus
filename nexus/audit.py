@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from nexus.entities import validate_required_text
-from nexus.workspace import (
+from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,
     require_workspace,

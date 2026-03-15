@@ -8,7 +8,7 @@ from nexus.cycles import create_cycle
 from nexus.documents import create_document, reconcile_document, update_document_status
 from nexus.entities import create_entity
 from nexus.relations import create_relation
-from nexus.workspace import (
+from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,
     fetch_system_state_value,

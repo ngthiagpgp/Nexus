@@ -11,6 +11,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from nexus.activities import ActivityRecord, get_activity, list_activities, update_activity_status
 from nexus.audit import AuditLogRecord, list_audit_log
 from nexus.cockpit import render_cockpit_page
+from nexus.core.read_models import WorkspaceStatusReadModel, inspect_workspace_read_model
+from nexus.core.workspace import WorkspaceBootstrapError
 from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import (
     DocumentIntegrityResult,
@@ -25,7 +27,6 @@ from nexus.documents import (
 )
 from nexus.entities import EntityRecord, get_entity, list_entities
 from nexus.relations import RelationRecord, list_relations
-from nexus.workspace import WorkspaceBootstrapError, inspect_workspace
 
 API_PREFIX = "/api"
 
@@ -79,51 +80,10 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
 
     @app.get(f"{API_PREFIX}/system/status")
     def workspace_status() -> dict[str, object]:
-        status = inspect_workspace(resolve_workspace_root())
-        counts = status.resource_counts
-        activity_summary = status.activity_summary
+        status = inspect_workspace_read_model(resolve_workspace_root())
         return {
             "status": "ok",
-            "data": {
-                "workspace_root": str(status.workspace_root),
-                "is_workspace": status.is_workspace,
-                "schema_version": status.schema_version,
-                "workspace_name": status.workspace_name,
-                "initialized_at": status.initialized_at,
-                "paths": {
-                    "marker_dir": str(status.marker_dir),
-                    "config_path": str(status.config_path),
-                    "database_path": str(status.database_path),
-                    "documents_dir": str(status.documents_dir),
-                    "backups_dir": str(status.backups_dir),
-                },
-                "db_present": status.database_path.exists(),
-                "missing_paths": [str(path) for path in status.missing_paths],
-                "notes": list(status.notes),
-                "counts": None
-                if counts is None
-                else {
-                    "entities": counts.entities,
-                    "documents": counts.documents,
-                    "draft_documents": counts.draft_documents,
-                    "approved_documents": counts.approved_documents,
-                    "archived_documents": counts.archived_documents,
-                    "relations": counts.relations,
-                    "cycles": counts.cycles,
-                    "active_cycles": counts.active_cycles,
-                    "completed_cycles": counts.completed_cycles,
-                    "archived_cycles": counts.archived_cycles,
-                    "activities": counts.activities,
-                },
-                "activity_summary": None
-                if activity_summary is None
-                else {
-                    "pending": activity_summary.pending,
-                    "in_progress": activity_summary.in_progress,
-                    "completed": activity_summary.completed,
-                    "blocked": activity_summary.blocked,
-                },
-            },
+            "data": serialize_workspace_status(status),
         }
 
     @app.get(f"{API_PREFIX}/audit-log")
@@ -366,6 +326,51 @@ def serialize_activity(record: ActivityRecord) -> dict[str, Any]:
 
 def serialize_audit_log_record(record: AuditLogRecord) -> dict[str, Any]:
     return asdict(record)
+
+
+def serialize_workspace_status(status: WorkspaceStatusReadModel) -> dict[str, Any]:
+    counts = status.resource_counts
+    activity_summary = status.activity_summary
+    return {
+        "workspace_root": str(status.workspace_root),
+        "is_workspace": status.is_workspace,
+        "schema_version": status.schema_version,
+        "workspace_name": status.workspace_name,
+        "initialized_at": status.initialized_at,
+        "paths": {
+            "marker_dir": str(status.marker_dir),
+            "config_path": str(status.config_path),
+            "database_path": str(status.database_path),
+            "documents_dir": str(status.documents_dir),
+            "backups_dir": str(status.backups_dir),
+        },
+        "db_present": status.database_path.exists(),
+        "missing_paths": [str(path) for path in status.missing_paths],
+        "notes": list(status.notes),
+        "counts": None
+        if counts is None
+        else {
+            "entities": counts.entities,
+            "documents": counts.documents,
+            "draft_documents": counts.draft_documents,
+            "approved_documents": counts.approved_documents,
+            "archived_documents": counts.archived_documents,
+            "relations": counts.relations,
+            "cycles": counts.cycles,
+            "active_cycles": counts.active_cycles,
+            "completed_cycles": counts.completed_cycles,
+            "archived_cycles": counts.archived_cycles,
+            "activities": counts.activities,
+        },
+        "activity_summary": None
+        if activity_summary is None
+        else {
+            "pending": activity_summary.pending,
+            "in_progress": activity_summary.in_progress,
+            "completed": activity_summary.completed,
+            "blocked": activity_summary.blocked,
+        },
+    }
 
 
 app = create_app()

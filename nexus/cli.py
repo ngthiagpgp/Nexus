@@ -7,6 +7,12 @@ import typer
 
 from nexus.activities import create_activity, list_activities, update_activity_status
 from nexus.audit import list_audit_log
+from nexus.core.read_models import inspect_workspace_read_model
+from nexus.core.workspace import (
+    SCHEMA_COMPATIBILITY_NOTE,
+    WorkspaceBootstrapError,
+    initialize_workspace,
+)
 from nexus.cycles import create_cycle, list_cycles
 from nexus.demo_seed import seed_demo_workspace
 from nexus.documents import (
@@ -20,12 +26,6 @@ from nexus.documents import (
 )
 from nexus.entities import create_entity, list_entities, validate_required_text
 from nexus.relations import create_relation, list_relations, relation_display_map
-from nexus.workspace import (
-    SCHEMA_COMPATIBILITY_NOTE,
-    WorkspaceBootstrapError,
-    initialize_workspace,
-    inspect_workspace,
-)
 
 app = typer.Typer(
     add_completion=False,
@@ -104,7 +104,7 @@ def init_command(
 def status_command() -> None:
     """Show a compact operational status for the current directory."""
 
-    status = _run_or_exit(lambda: inspect_workspace(Path.cwd()))
+    status = _run_or_exit(lambda: inspect_workspace_read_model(Path.cwd()))
 
     typer.echo("Nexus workspace status")
     typer.echo(f"Root: {status.workspace_root}")
@@ -184,7 +184,7 @@ def serve_command(
     from nexus.api import create_app
     import uvicorn
 
-    workspace_status = _run_or_exit(lambda: inspect_workspace(Path.cwd()))
+    workspace_status = _run_or_exit(lambda: inspect_workspace_read_model(Path.cwd()))
     if not workspace_status.is_workspace:
         typer.echo(
             f"Error: Current directory is not a Nexus workspace: {workspace_status.workspace_root}. Run `nexus init` first.",
