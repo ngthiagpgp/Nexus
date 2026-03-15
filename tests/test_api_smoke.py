@@ -62,6 +62,9 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn("/api/document-integrity", response.text)
             self.assertIn("/api/audit-log", response.text)
             self.assertIn('id="audit-log-list"', response.text)
+            self.assertIn('id="page-readiness"', response.text)
+            self.assertIn('id="cockpit-surfaces"', response.text)
+            self.assertIn("Preparing cockpit...", response.text)
 
     def test_audit_log_endpoint_exposes_recent_rows_with_limit(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

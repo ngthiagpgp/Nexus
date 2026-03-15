@@ -92,6 +92,31 @@ def render_cockpit_page() -> str:
         font-size: 0.95rem;
         margin-top: 12px;
       }
+      .readiness-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .readiness-panel strong {
+        font-size: 1.02rem;
+      }
+      .readiness-panel.loading {
+        border-color: #c8d8ff;
+        background: linear-gradient(180deg, #f8fbff 0%, #edf3ff 100%);
+      }
+      .readiness-panel.ready {
+        border-color: #cde6d7;
+        background: linear-gradient(180deg, #f8fcf9 0%, #eefaf1 100%);
+      }
+      .readiness-panel.warning {
+        border-color: #ead7a1;
+        background: linear-gradient(180deg, #fffaf0 0%, #fff5dd 100%);
+      }
+      .readiness-panel.error {
+        border-color: #f1c0bc;
+        background: linear-gradient(180deg, #fff8f8 0%, #ffeceb 100%);
+      }
       .two-column {
         grid-template-columns: minmax(0, 1.3fr) minmax(380px, 0.95fr);
         align-items: start;
@@ -308,12 +333,20 @@ def render_cockpit_page() -> str:
         <div>
           <h1>Nexus Cockpit</h1>
           <p class="subtitle">
-            Read-only local supervision with cycles as the main operational surface for activities and documents.
+            Local supervision surface with cycles as the main operational view for activities and documents.
           </p>
         </div>
         <div id="workspace-badge" class="panel" aria-live="polite">Loading workspace...</div>
       </section>
 
+      <section id="page-readiness" class="panel readiness-panel loading" aria-live="polite">
+        <strong id="page-readiness-title">Preparing cockpit...</strong>
+        <div class="inline-note" id="page-readiness-detail">
+          Loading workspace status and local operational surfaces.
+        </div>
+      </section>
+
+      <div id="cockpit-surfaces" hidden>
       <section class="grid stats-grid" id="summary-grid" aria-live="polite">
         <article class="stat-card"><span class="label">Entities</span><strong id="count-entities">-</strong></article>
         <article class="stat-card"><span class="label">Documents</span><strong id="count-documents">-</strong></article>
@@ -481,6 +514,7 @@ def render_cockpit_page() -> str:
           </article>
         </aside>
       </section>
+      </div>
     </main>
 
     <script>
@@ -507,7 +541,10 @@ def render_cockpit_page() -> str:
         focusedCycleId: null,
         selectedDocumentId: null,
         selectedCycleId: null,
-        selectedActivityId: null
+        selectedActivityId: null,
+        pendingActivityMutation: null,
+        pendingDocumentMutation: null,
+        pendingReconcileDocumentId: null
       };
 
       async function fetchJson(url) {
@@ -609,10 +646,12 @@ def render_cockpit_page() -> str:
         });
       }
 
-      function bindTabs() {
-        document.querySelectorAll(".tab-button").forEach((button) => {
-          button.addEventListener("click", () => activateView(button.dataset.view));
-        });
+      function setReadiness(title, detail, tone, revealSurfaces) {
+        const panel = document.getElementById("page-readiness");
+        panel.className = `panel readiness-panel ${tone}`;
+        setText("page-readiness-title", title);
+        setText("page-readiness-detail", detail);
+        document.getElementById("cockpit-surfaces").hidden = !revealSurfaces;
       }
 
       function bindFilters() {
@@ -633,36 +672,76 @@ def render_cockpit_page() -> str:
             node.addEventListener("change", renderAllLists);
           }
         });
-        document.getElementById("clear-cycle-focus").addEventListener("click", clearCycleFocus);
       }
 
-      function bindDynamicActions() {
-        document.querySelectorAll("[data-focus-cycle-id]").forEach((button) => {
-          button.addEventListener("click", () => {
-            focusCycle(button.dataset.focusCycleId);
-            activateView("cycles-view");
-          });
-        });
-        document.querySelectorAll("[data-set-activity-status]").forEach((button) => {
-          button.addEventListener("click", async () => {
+      function bindUiActions() {
+        document.addEventListener("click", async (event) => {
+          const button = event.target.closest("button");
+          if (!button) {
+            return;
+          }
+
+          if (button.dataset.view) {
+            activateView(button.dataset.view);
+            return;
+          }
+
+          if (button.id === "clear-cycle-focus") {
+            clearCycleFocus();
+            return;
+          }
+
+          if (button.dataset.setActivityStatus && !button.disabled) {
             await updateActivityStatus(
               button.dataset.activityId,
               button.dataset.setActivityStatus
             );
-          });
-        });
-        document.querySelectorAll("[data-set-document-status]").forEach((button) => {
-          button.addEventListener("click", async () => {
+            return;
+          }
+
+          if (button.dataset.setDocumentStatus && !button.disabled) {
             await updateDocumentStatus(
               button.dataset.documentId,
               button.dataset.setDocumentStatus
             );
-          });
-        });
-        document.querySelectorAll("[data-reconcile-document]").forEach((button) => {
-          button.addEventListener("click", async () => {
+            return;
+          }
+
+          if (button.dataset.reconcileDocument && !button.disabled) {
             await reconcileDocument(button.dataset.reconcileDocument);
-          });
+            return;
+          }
+
+          if (button.dataset.focusCycleId) {
+            focusCycle(button.dataset.focusCycleId);
+            activateView("cycles-view");
+            return;
+          }
+
+          if (button.dataset.cycleId) {
+            focusCycle(button.dataset.cycleId);
+            activateView("cycles-view");
+            return;
+          }
+
+          if (button.dataset.linkedActivityId) {
+            await loadActivity(button.dataset.linkedActivityId);
+            return;
+          }
+
+          if (button.dataset.linkedDocumentId) {
+            await loadDocument(button.dataset.linkedDocumentId);
+            return;
+          }
+
+          if (button.dataset.activityId) {
+            await loadActivity(button.dataset.activityId);
+            return;
+          }
+
+          if (button.dataset.documentId) {
+            await loadDocument(button.dataset.documentId);
+          }
         });
       }
 
@@ -718,7 +797,6 @@ def render_cockpit_page() -> str:
               <button class="inline-button" id="clear-cycle-focus" type="button" hidden>Clear focus</button>
             `
           );
-          document.getElementById("clear-cycle-focus").addEventListener("click", clearCycleFocus);
           return;
         }
 
@@ -734,7 +812,6 @@ def render_cockpit_page() -> str:
             <button class="inline-button primary" id="clear-cycle-focus" type="button">Clear focus</button>
           `
         );
-        document.getElementById("clear-cycle-focus").addEventListener("click", clearCycleFocus);
       }
 
       function renderWorkspaceStatus(data) {
@@ -833,9 +910,6 @@ def render_cockpit_page() -> str:
             </button>
           </li>
         `).join("");
-        list.querySelectorAll("button[data-document-id]").forEach((button) => {
-          button.addEventListener("click", () => loadDocument(button.dataset.documentId));
-        });
       }
 
       function renderCycles() {
@@ -860,12 +934,6 @@ def render_cockpit_page() -> str:
             </button>
           </li>
         `).join("");
-        list.querySelectorAll("button[data-cycle-id]").forEach((button) => {
-          button.addEventListener("click", () => {
-            focusCycle(button.dataset.cycleId);
-            activateView("cycles-view");
-          });
-        });
       }
 
       function renderActivities() {
@@ -902,9 +970,6 @@ def render_cockpit_page() -> str:
             </button>
           </li>
         `).join("");
-        list.querySelectorAll("button[data-activity-id]").forEach((button) => {
-          button.addEventListener("click", () => loadActivity(button.dataset.activityId));
-        });
       }
 
       function summarizeActivities(activities) {
@@ -995,6 +1060,11 @@ def render_cockpit_page() -> str:
       async function updateActivityStatus(activityId, status) {
         const feedback = document.getElementById("activity-status-feedback");
         const currentView = state.activeView;
+        const mutationKey = `${activityId}:${status}`;
+        if (state.pendingActivityMutation === mutationKey) {
+          return;
+        }
+        state.pendingActivityMutation = mutationKey;
         feedback.textContent = "Updating activity status...";
         feedback.classList.remove("error");
         try {
@@ -1009,12 +1079,19 @@ def render_cockpit_page() -> str:
         } catch (error) {
           feedback.textContent = error.message;
           feedback.classList.add("error");
+        } finally {
+          state.pendingActivityMutation = null;
         }
       }
 
       async function updateDocumentStatus(documentId, status) {
         const feedback = document.getElementById("document-status-feedback");
         const currentView = state.activeView;
+        const mutationKey = `${documentId}:${status}`;
+        if (state.pendingDocumentMutation === mutationKey) {
+          return;
+        }
+        state.pendingDocumentMutation = mutationKey;
         feedback.textContent = "Updating document status...";
         feedback.classList.remove("error");
         try {
@@ -1029,12 +1106,18 @@ def render_cockpit_page() -> str:
         } catch (error) {
           feedback.textContent = error.message;
           feedback.classList.add("error");
+        } finally {
+          state.pendingDocumentMutation = null;
         }
       }
 
       async function reconcileDocument(documentId) {
         const feedback = document.getElementById("document-status-feedback");
         const currentView = state.activeView;
+        if (state.pendingReconcileDocumentId === documentId) {
+          return;
+        }
+        state.pendingReconcileDocumentId = documentId;
         feedback.textContent = "Reconciling document metadata...";
         feedback.classList.remove("error");
         try {
@@ -1051,6 +1134,8 @@ def render_cockpit_page() -> str:
         } catch (error) {
           feedback.textContent = error.message;
           feedback.classList.add("error");
+        } finally {
+          state.pendingReconcileDocumentId = null;
         }
       }
 
@@ -1105,18 +1190,24 @@ def render_cockpit_page() -> str:
             ].join("")
           );
           renderDocumentStatusControls(doc);
+          const reconcileAvailable = canOfferDocumentReconcile(integrity);
           setHtml(
             "document-actions",
             [
               doc.cycle_id
                 ? `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(doc.cycle_id)}">Focus cycle ${escapeHtml(doc.cycle_id)}</button>`
                 : "",
-              canOfferDocumentReconcile(integrity)
-                ? `<button class="inline-button" type="button" data-reconcile-document="${escapeAttribute(doc.id)}">Reconcile metadata</button>`
-                : ""
+              `<button class="inline-button ${reconcileAvailable ? "primary" : ""}" type="button" data-reconcile-document="${escapeAttribute(doc.id)}" ${reconcileAvailable ? "" : "disabled"}>
+                Reconcile metadata
+              </button>`
             ].join("")
           );
-          bindDynamicActions();
+          setText(
+            "document-status-feedback",
+            reconcileAvailable
+              ? "Safe reconcile is available for the current file metadata drift."
+              : "Document metadata is aligned. Reconcile becomes available only when safe drift is detected."
+          );
           preview.textContent = doc.content_preview || "(empty document)";
         } catch (error) {
           if (!integrity) {
@@ -1151,11 +1242,18 @@ def render_cockpit_page() -> str:
           setHtml("document-status-controls", "");
           setHtml(
             "document-actions",
-            canOfferDocumentReconcile(integrity)
-              ? `<button class="inline-button" type="button" data-reconcile-document="${escapeAttribute(integrity.document_id)}">Reconcile metadata</button>`
+            integrity
+              ? `<button class="inline-button ${canOfferDocumentReconcile(integrity) ? "primary" : ""}" type="button" data-reconcile-document="${escapeAttribute(integrity.document_id)}" ${canOfferDocumentReconcile(integrity) ? "" : "disabled"}>
+                  Reconcile metadata
+                </button>`
               : ""
           );
-          bindDynamicActions();
+          setText(
+            "document-status-feedback",
+            integrity && canOfferDocumentReconcile(integrity)
+              ? "Safe reconcile is available for the current file metadata drift."
+              : "Reconcile is unavailable until the backing file can be resolved safely."
+          );
           preview.classList.add("error-state");
           preview.textContent = `Document inspection failed. ${error.message}`;
         }
@@ -1211,9 +1309,6 @@ def render_cockpit_page() -> str:
                 </button>
               </li>
             `).join("");
-            activitiesList.querySelectorAll("button[data-linked-activity-id]").forEach((button) => {
-              button.addEventListener("click", () => loadActivity(button.dataset.linkedActivityId));
-            });
           }
           const documentsList = document.getElementById("cycle-documents");
           if (!relatedDocuments.length) {
@@ -1228,9 +1323,6 @@ def render_cockpit_page() -> str:
                 </button>
               </li>
             `).join("");
-            documentsList.querySelectorAll("button[data-linked-document-id]").forEach((button) => {
-              button.addEventListener("click", () => loadDocument(button.dataset.linkedDocumentId));
-            });
           }
           renderAllLists();
         } catch (error) {
@@ -1284,7 +1376,6 @@ def render_cockpit_page() -> str:
             "activity-actions",
             `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(activity.cycle_id)}">Focus cycle ${escapeHtml(activity.cycle_id)}</button>`
           );
-          bindDynamicActions();
         } catch (error) {
           setHtml("activity-meta-grid", renderMetaGrid([
             ["Activity", activityId],
@@ -1327,16 +1418,35 @@ def render_cockpit_page() -> str:
       }
 
       async function bootCockpit() {
-        bindTabs();
+        bindUiActions();
         bindFilters();
         updateCycleFocusBanner();
+        setReadiness(
+          "Preparing cockpit...",
+          "Loading workspace status and local operational surfaces.",
+          "loading",
+          false
+        );
         try {
           const status = await fetchJson(api.status);
           renderWorkspaceStatus(status);
           if (!status.is_workspace) {
             setWorkspaceEmptyState();
+            setReadiness(
+              "Workspace not initialized",
+              "Run `python -m nexus init ./sandbox-workspace` and seed data before opening the cockpit.",
+              "warning",
+              false
+            );
             return;
           }
+
+          setReadiness(
+            "Workspace found",
+            "Loading entities, documents, cycles, activities, and audit surfaces.",
+            "loading",
+            false
+          );
 
           const [entities, documents, documentIntegrity, auditLog, cycles, activities] = await Promise.all([
             fetchJson(api.entities),
@@ -1368,10 +1478,22 @@ def render_cockpit_page() -> str:
             await loadDocument(documents[0].id);
           }
           activateView("cycles-view");
+          setReadiness(
+            "Workspace ready",
+            "Workspace status and operational surfaces are loaded. You can now inspect and mutate supported records safely.",
+            "ready",
+            true
+          );
         } catch (error) {
           document.getElementById("workspace-badge").textContent = "Cockpit load failed";
           document.getElementById("workspace-notes").innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
           setWorkspaceEmptyState();
+          setReadiness(
+            "Cockpit load failed",
+            error.message,
+            "error",
+            false
+          );
         }
       }
 

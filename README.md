@@ -22,25 +22,37 @@ The current MVP already supports:
 python -m pip install -e .
 ```
 
+Preferred command path when the console script is available:
+
+```bash
+nexus ...
+```
+
+Safe fallback that works even when `nexus` is not yet on `PATH`:
+
+```bash
+python -m nexus ...
+```
+
 ## 5-minute quickstart
 
 1. Create a fresh workspace:
 
 ```bash
-nexus init ./sandbox-workspace
+python -m nexus init ./sandbox-workspace
 cd ./sandbox-workspace
 ```
 
 2. Seed a coherent demo dataset:
 
 ```bash
-nexus demo-seed
+python -m nexus demo-seed
 ```
 
 3. Start the local API and cockpit:
 
 ```bash
-nexus serve
+python -m nexus serve
 ```
 
 4. Open the cockpit:
@@ -52,18 +64,18 @@ http://127.0.0.1:3000/
 5. Inspect the workspace from the CLI:
 
 ```bash
-nexus status
-nexus audit --limit 20
+python -m nexus status
+python -m nexus audit --limit 20
 ```
 
 ## Core local commands
 
 ```bash
-nexus init ./sandbox-workspace
-nexus demo-seed
-nexus serve
-nexus status
-nexus audit --limit 20
+python -m nexus init ./sandbox-workspace
+python -m nexus demo-seed
+python -m nexus serve
+python -m nexus status
+python -m nexus audit --limit 20
 ```
 
 ## Cockpit and API

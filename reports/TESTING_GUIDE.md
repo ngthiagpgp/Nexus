@@ -30,7 +30,12 @@ python -m pip install -e .
 Expected:
 
 - installation completes without dependency errors
-- `nexus` command becomes available in the current environment
+- the local package installs successfully
+
+Note:
+
+- prefer `python -m nexus ...` for the human test flow
+- `nexus ...` is still the preferred console-script form when it is already available on `PATH`
 
 Failure signals:
 
@@ -43,7 +48,7 @@ Failure signals:
 Run:
 
 ```bash
-nexus init ./sandbox-workspace
+python -m nexus init ./sandbox-workspace
 cd ./sandbox-workspace
 ```
 
@@ -65,7 +70,7 @@ Failure signals:
 Run:
 
 ```bash
-nexus demo-seed
+python -m nexus demo-seed
 ```
 
 Expected:
@@ -87,7 +92,7 @@ Failure signals:
 Run:
 
 ```bash
-nexus status
+python -m nexus status
 ```
 
 Expected:
@@ -108,7 +113,7 @@ Failure signals:
 Run:
 
 ```bash
-nexus audit --limit 20
+python -m nexus audit --limit 20
 ```
 
 Expected:
@@ -128,7 +133,7 @@ Failure signals:
 Run:
 
 ```bash
-nexus serve
+python -m nexus serve
 ```
 
 Expected:
