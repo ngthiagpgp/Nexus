@@ -49,6 +49,8 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn('id="cycle-focus-banner"', response.text)
             self.assertIn('id="cycle-documents"', response.text)
             self.assertIn('id="activities-breakdown"', response.text)
+            self.assertIn('id="document-header"', response.text)
+            self.assertIn('id="audit-panel"', response.text)
             self.assertIn('id="activities-cycle-filter"', response.text)
             self.assertIn('id="documents-cycle-filter"', response.text)
             self.assertIn('id="activity-status-controls"', response.text)
@@ -56,6 +58,15 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn('id="documents-status-filter"', response.text)
             self.assertIn('id="cycles-status-filter"', response.text)
             self.assertIn('id="activities-status-filter"', response.text)
+            self.assertIn("Current Cycles", response.text)
+            self.assertIn("Activities in Selected Cycle", response.text)
+            self.assertIn("Supporting Documents", response.text)
+            self.assertIn("Selected Detail", response.text)
+            self.assertIn("Recent Audit (secondary)", response.text)
+            self.assertIn(
+                "Cycles organize operational work, activities, and supporting documents.",
+                response.text,
+            )
             self.assertIn("/api/cycles", response.text)
             self.assertIn("/api/activities", response.text)
             self.assertIn("/api/documents", response.text)

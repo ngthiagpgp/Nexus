@@ -117,19 +117,22 @@ def render_cockpit_page() -> str:
         border-color: #f1c0bc;
         background: linear-gradient(180deg, #fff8f8 0%, #ffeceb 100%);
       }
-      .two-column {
-        grid-template-columns: minmax(0, 1.3fr) minmax(380px, 0.95fr);
+      .overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-bottom: 20px;
+      }
+      .cockpit-flow {
+        grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.15fr) minmax(360px, 1fr);
+        align-items: start;
+      }
+      .secondary-grid {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        margin-top: 20px;
         align-items: start;
       }
       .stack {
         display: grid;
         gap: 16px;
-      }
-      .tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 14px;
       }
       .tab-button,
       .inline-button {
@@ -184,7 +187,6 @@ def render_cockpit_page() -> str:
         margin-bottom: 4px;
       }
       .view {
-        display: none;
         margin-top: 16px;
       }
       .view.active {
@@ -203,6 +205,14 @@ def render_cockpit_page() -> str:
         border-radius: 14px;
         padding: 12px;
         background: var(--panel-muted);
+      }
+      .resource-item.selected {
+        border-color: #bdd0ff;
+        background: linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%);
+      }
+      .selected {
+        border-color: #bdd0ff !important;
+        background: linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%) !important;
       }
       .resource-item button {
         appearance: none;
@@ -228,6 +238,11 @@ def render_cockpit_page() -> str:
       }
       .selection-panel {
         background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+      }
+      .section-copy {
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.45;
       }
       .detail-card {
         margin-top: 14px;
@@ -265,17 +280,90 @@ def render_cockpit_page() -> str:
         margin-top: 14px;
         padding: 14px;
         border-radius: 14px;
-        background: #111a24;
-        color: #f7fbff;
+        border: 1px solid var(--border);
+        background: #fdfefe;
+        color: #1f2f3d;
         white-space: pre-wrap;
         font-family: "Cascadia Code", Consolas, monospace;
         font-size: 0.9rem;
-        min-height: 180px;
+        line-height: 1.55;
+        min-height: 260px;
       }
       .detail-preview.error-state {
         background: var(--danger-soft);
         color: var(--danger);
         font-family: inherit;
+      }
+      .document-header {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+      }
+      .document-header strong {
+        display: block;
+        font-size: 1.05rem;
+      }
+      .document-path {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        word-break: break-word;
+      }
+      .status-group-list {
+        list-style: none;
+        padding: 0;
+        margin: 14px 0 0;
+        display: grid;
+        gap: 12px;
+      }
+      .status-group-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        background: #fff;
+      }
+      .status-group-card h4 {
+        margin-bottom: 10px;
+      }
+      .status-group-items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .status-group-items li {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel-muted);
+        padding: 10px;
+      }
+      .status-group-items button {
+        appearance: none;
+        border: 0;
+        background: none;
+        color: inherit;
+        width: 100%;
+        text-align: left;
+        padding: 0;
+        cursor: pointer;
+      }
+      .audit-panel {
+        padding: 0;
+        overflow: hidden;
+      }
+      .audit-panel summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 18px;
+        font-weight: 600;
+      }
+      .audit-panel summary::-webkit-details-marker {
+        display: none;
+      }
+      .audit-panel .audit-body {
+        padding: 0 18px 18px;
       }
       .compact-badges {
         display: flex;
@@ -321,7 +409,9 @@ def render_cockpit_page() -> str:
       [hidden] { display: none !important; }
       @media (max-width: 960px) {
         .hero { align-items: start; flex-direction: column; }
-        .two-column { grid-template-columns: 1fr; }
+        .overview-grid,
+        .cockpit-flow,
+        .secondary-grid { grid-template-columns: 1fr; }
         .detail-grid { grid-template-columns: 1fr; }
         .focus-banner { flex-direction: column; align-items: start; }
       }
@@ -347,6 +437,29 @@ def render_cockpit_page() -> str:
       </section>
 
       <div id="cockpit-surfaces" hidden>
+      <section class="grid overview-grid">
+        <article class="panel">
+          <h2>Workspace Status</h2>
+          <div class="status-strip" id="workspace-summary"></div>
+          <div class="inline-note" id="workspace-notes"></div>
+        </article>
+
+        <article class="panel">
+          <h2>Operational Focus</h2>
+          <p class="section-copy">Cycles organize operational work, activities, and supporting documents.</p>
+          <div class="status-strip" id="operations-summary"></div>
+          <div class="focus-banner" id="cycle-focus-banner">
+            <div>
+              <strong>Cycle focus not set</strong>
+              <div class="resource-meta" id="cycle-focus-meta">
+                Select a cycle to drive the activity and document inspection surface.
+              </div>
+            </div>
+            <button class="inline-button" id="clear-cycle-focus" type="button" hidden>Clear focus</button>
+          </div>
+        </article>
+      </section>
+
       <section class="grid stats-grid" id="summary-grid" aria-live="polite">
         <article class="stat-card"><span class="label">Entities</span><strong id="count-entities">-</strong></article>
         <article class="stat-card"><span class="label">Documents</span><strong id="count-documents">-</strong></article>
@@ -355,140 +468,104 @@ def render_cockpit_page() -> str:
         <article class="stat-card"><span class="label">Activities</span><strong id="count-activities">-</strong></article>
       </section>
 
-      <section class="grid two-column">
-        <div class="stack">
-          <article class="panel">
-            <h2>Workspace Status</h2>
-            <div class="status-strip" id="workspace-summary"></div>
-            <div class="inline-note" id="workspace-notes"></div>
-          </article>
-
-          <article class="panel">
-            <h2>Operational Summary</h2>
-            <div class="status-strip" id="operations-summary"></div>
-            <div class="focus-banner" id="cycle-focus-banner">
-              <div>
-                <strong>Cycle focus not set</strong>
-                <div class="resource-meta" id="cycle-focus-meta">
-                  Select a cycle to drive the activity and document inspection surface.
-                </div>
-              </div>
-              <button class="inline-button" id="clear-cycle-focus" type="button" hidden>Clear focus</button>
+      <section class="grid cockpit-flow">
+        <article class="panel">
+          <h2>Current Cycles</h2>
+          <p class="section-copy">
+            Start here. Pick the cycle that frames the current operational work, then inspect its activities and supporting documents.
+          </p>
+          <section class="view active" id="cycles-view">
+            <div class="toolbar">
+              <input id="cycles-filter" type="search" placeholder="Filter by id or type" />
+              <select id="cycles-status-filter">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
             </div>
-          </article>
-
-          <article class="panel">
-            <h2>Recent Audit</h2>
-            <p class="inline-note">
-              Latest operational mutations recorded in the local workspace audit trail.
-            </p>
-            <ul class="resource-list" id="audit-log-list">
-              <li class="resource-meta">Loading audit trail...</li>
+            <ul class="resource-list" id="cycles-list">
+              <li class="resource-meta">Loading cycles...</li>
             </ul>
-          </article>
+          </section>
 
-          <article class="panel">
-            <nav class="tabs" id="cockpit-tabs" aria-label="Cockpit views">
-              <button class="tab-button active" id="tab-cycles" type="button" data-view="cycles-view">Cycles</button>
-              <button class="tab-button" id="tab-activities" type="button" data-view="activities-view">Activities</button>
-              <button class="tab-button" id="tab-documents" type="button" data-view="documents-view">Documents</button>
-              <button class="tab-button" id="tab-entities" type="button" data-view="entities-view">Entities</button>
-            </nav>
-
-            <section class="view active" id="cycles-view">
-              <h2>Cycles</h2>
-              <div class="toolbar">
-                <input id="cycles-filter" type="search" placeholder="Filter by id or type" />
-                <select id="cycles-status-filter">
-                  <option value="">All statuses</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </select>
+          <section class="detail-card" id="cycle-detail">
+            <h3>Selected Cycle Summary</h3>
+            <div class="empty" id="cycle-empty">No cycle selected.</div>
+            <div id="cycle-content" hidden>
+              <div class="detail-grid" id="cycle-meta-grid"></div>
+              <div class="compact-badges" id="cycle-breakdown"></div>
+              <div class="detail-section">
+                <h4>Activities in This Cycle</h4>
+                <ul class="resource-list" id="cycle-activities"></ul>
               </div>
-              <ul class="resource-list" id="cycles-list">
-                <li class="resource-meta">Loading cycles...</li>
-              </ul>
-            </section>
-
-            <section class="view" id="activities-view">
-              <h2>Activities</h2>
-              <div class="toolbar">
-                <input id="activities-filter" type="search" placeholder="Filter by title or cycle" />
-                <select id="activities-cycle-filter">
-                  <option value="">All cycles</option>
-                </select>
-                <select id="activities-status-filter">
-                  <option value="">All statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="blocked">Blocked</option>
-                </select>
+              <div class="detail-section">
+                <h4>Supporting Documents</h4>
+                <ul class="resource-list" id="cycle-documents"></ul>
               </div>
-              <div class="compact-badges" id="activities-breakdown"></div>
-              <ul class="resource-list" id="activities-list">
-                <li class="resource-meta">Loading activities...</li>
-              </ul>
-            </section>
+            </div>
+          </section>
+        </article>
 
-            <section class="view" id="documents-view">
-              <h2>Documents</h2>
-              <div class="toolbar">
-                <input id="documents-filter" type="search" placeholder="Filter by title or path" />
-                <select id="documents-cycle-filter">
-                  <option value="">All cycles</option>
-                </select>
-                <select id="documents-status-filter">
-                  <option value="">All statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="approved">Approved</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <ul class="resource-list" id="documents-list">
-                <li class="resource-meta">Loading documents...</li>
-              </ul>
-            </section>
+        <article class="panel">
+          <h2>Cycle to Activity Flow</h2>
+          <p class="section-copy" id="activity-panel-hint">
+            Focus a cycle to see the activities that need attention and the documents that support them.
+          </p>
 
-            <section class="view" id="entities-view">
-              <h2>Entities</h2>
-              <div class="toolbar">
-                <input id="entities-filter" type="search" placeholder="Filter by name, type, or context" />
-              </div>
-              <ul class="resource-list" id="entities-list">
-                <li class="resource-meta">Loading entities...</li>
-              </ul>
-            </section>
-          </article>
-        </div>
+          <section class="view" id="activities-view">
+            <h3>Activities in Selected Cycle</h3>
+            <div class="toolbar">
+              <input id="activities-filter" type="search" placeholder="Filter by title or cycle" />
+              <select id="activities-cycle-filter">
+                <option value="">All cycles</option>
+              </select>
+              <select id="activities-status-filter">
+                <option value="">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In progress</option>
+                <option value="completed">Completed</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+            <div class="compact-badges" id="activities-breakdown"></div>
+            <ul class="status-group-list" id="activities-list">
+              <li class="resource-meta">Loading activities...</li>
+            </ul>
+          </section>
+
+          <section class="view" id="documents-view">
+            <h3>Supporting Documents</h3>
+            <p class="section-copy" id="documents-panel-hint">
+              Documents stay visually secondary here so the work path remains cycle first, then activity, then supporting material.
+            </p>
+            <div class="toolbar">
+              <input id="documents-filter" type="search" placeholder="Filter by title or path" />
+              <select id="documents-cycle-filter">
+                <option value="">All cycles</option>
+              </select>
+              <select id="documents-status-filter">
+                <option value="">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="approved">Approved</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            <ul class="resource-list" id="documents-list">
+              <li class="resource-meta">Loading documents...</li>
+            </ul>
+          </section>
+        </article>
 
         <aside class="stack">
           <article class="panel selection-panel">
-            <h2>Inspection</h2>
+            <h2>Selected Detail</h2>
             <p class="inline-note" id="selection-hint">
-              Use cycles as the main navigation point, then inspect linked activities and supporting documents.
+              Inspect the selected activity first. Open a document when you need the narrative or lifecycle context behind the work.
             </p>
 
-            <section class="detail-card" id="cycle-detail">
-              <h3>Cycle Inspection</h3>
-              <div class="empty" id="cycle-empty">No cycle selected.</div>
-              <div id="cycle-content" hidden>
-                <div class="detail-grid" id="cycle-meta-grid"></div>
-                <div class="compact-badges" id="cycle-breakdown"></div>
-                <div class="detail-section">
-                  <h4>Related Activities</h4>
-                  <ul class="resource-list" id="cycle-activities"></ul>
-                </div>
-                <div class="detail-section">
-                  <h4>Related Documents</h4>
-                  <ul class="resource-list" id="cycle-documents"></ul>
-                </div>
-              </div>
-            </section>
-
             <section class="detail-card" id="activity-detail">
-              <h3>Activity Inspection</h3>
+              <h3>Selected Activity</h3>
               <div class="empty" id="activity-empty">No activity selected.</div>
               <div id="activity-content" hidden>
                 <div class="detail-grid" id="activity-meta-grid"></div>
@@ -500,19 +577,50 @@ def render_cockpit_page() -> str:
             </section>
 
             <section class="detail-card" id="document-detail">
-              <h3>Document Inspection</h3>
+              <h3>Selected Document</h3>
               <div class="empty" id="document-empty">No document selected.</div>
               <div id="document-content" hidden>
-                <div class="detail-grid" id="document-meta-grid"></div>
+                <div class="document-header" id="document-header"></div>
                 <div class="compact-badges" id="document-flags"></div>
+                <div class="detail-grid" id="document-meta-grid"></div>
                 <div class="detail-actions" id="document-status-controls"></div>
                 <div class="detail-actions" id="document-actions"></div>
                 <div class="inline-note" id="document-status-feedback"></div>
-                <div class="detail-preview" id="document-preview"></div>
+                <div class="detail-section">
+                  <h4>Content Preview</h4>
+                  <div class="detail-preview" id="document-preview"></div>
+                </div>
               </div>
             </section>
           </article>
         </aside>
+      </section>
+
+      <section class="grid secondary-grid">
+        <article class="panel">
+          <h2>Reference Entities</h2>
+          <p class="section-copy">Entities remain available as context, but they should not compete with the active cycle flow on the main surface.</p>
+          <section class="view" id="entities-view">
+            <div class="toolbar">
+              <input id="entities-filter" type="search" placeholder="Filter by name, type, or context" />
+            </div>
+            <ul class="resource-list" id="entities-list">
+              <li class="resource-meta">Loading entities...</li>
+            </ul>
+          </section>
+        </article>
+
+        <details class="panel audit-panel" id="audit-panel">
+          <summary>Recent Audit (secondary)</summary>
+          <div class="audit-body">
+            <p class="inline-note">
+              The audit trail remains available for supervision, but it is intentionally secondary to the cycle and work surfaces.
+            </p>
+            <ul class="resource-list" id="audit-log-list">
+              <li class="resource-meta">Loading audit trail...</li>
+            </ul>
+          </div>
+        </details>
       </section>
       </div>
     </main>
@@ -761,6 +869,10 @@ def render_cockpit_page() -> str:
         return state.cycles.find((cycle) => cycle.id === state.focusedCycleId) || null;
       }
 
+      function getCycleDocuments(cycleId) {
+        return state.documents.filter((item) => item.cycle_id === cycleId);
+      }
+
       function getEffectiveFilterValue(controlId) {
         const node = document.getElementById(controlId);
         if (!node) return "";
@@ -784,6 +896,8 @@ def render_cockpit_page() -> str:
 
       function updateCycleFocusBanner() {
         const cycle = getFocusedCycle();
+        const activityHint = document.getElementById("activity-panel-hint");
+        const documentHint = document.getElementById("documents-panel-hint");
         if (!cycle) {
           setHtml(
             "cycle-focus-banner",
@@ -797,21 +911,35 @@ def render_cockpit_page() -> str:
               <button class="inline-button" id="clear-cycle-focus" type="button" hidden>Clear focus</button>
             `
           );
+          if (activityHint) {
+            activityHint.textContent = "Focus a cycle to see the activities that need attention and the documents that support them.";
+          }
+          if (documentHint) {
+            documentHint.textContent = "Documents stay visually secondary here so the work path remains cycle first, then activity, then supporting material.";
+          }
           return;
         }
+
+        const relatedDocuments = getCycleDocuments(cycle.id);
 
         setHtml(
           "cycle-focus-banner",
           `
             <div>
-              <strong>Focused cycle: ${escapeHtml(cycle.id)}</strong>
+              <strong>Active cycle: ${escapeHtml(cycle.id)}</strong>
               <div class="resource-meta" id="cycle-focus-meta">
-                ${escapeHtml(cycle.type)} | ${escapeHtml(cycle.status)} | pending ${escapeHtml(cycle.pending_count)} | in progress ${escapeHtml(cycle.in_progress_count)} | completed ${escapeHtml(cycle.completed_count)}
+                ${escapeHtml(cycle.type)} | ${escapeHtml(cycle.status)} | ${escapeHtml(cycle.activity_count)} activities | ${escapeHtml(relatedDocuments.length)} supporting documents
               </div>
             </div>
             <button class="inline-button primary" id="clear-cycle-focus" type="button">Clear focus</button>
           `
         );
+        if (activityHint) {
+          activityHint.textContent = `Showing activities that belong to ${cycle.id}. Use this surface to see what is pending, moving, or completed inside the active cycle.`;
+        }
+        if (documentHint) {
+          documentHint.textContent = `Showing documents linked to ${cycle.id}. Use them as support material for the selected cycle and its activities.`;
+        }
       }
 
       function renderWorkspaceStatus(data) {
@@ -902,10 +1030,11 @@ def render_cockpit_page() -> str:
           return;
         }
         list.innerHTML = filtered.map((item) => `
-          <li class="resource-item">
+          <li class="resource-item ${item.id === state.selectedDocumentId ? "selected" : ""}">
             <button type="button" data-document-id="${escapeAttribute(item.id)}">
               <div class="resource-title">${escapeHtml(item.title)}</div>
-              <div class="resource-meta">${escapeHtml(item.type)} | ${escapeHtml(item.status)} | ${escapeHtml(item.path)} | cycle ${escapeHtml(item.cycle_id || "-")}</div>
+              <div class="resource-meta">${escapeHtml(item.status)} | ${escapeHtml(item.type)} | cycle ${escapeHtml(item.cycle_id || "-")}</div>
+              <div class="resource-meta">${escapeHtml(item.path)}</div>
               <div class="compact-badges">${documentIntegrityBadgeMarkup(item.id)}</div>
             </button>
           </li>
@@ -927,10 +1056,15 @@ def render_cockpit_page() -> str:
           return;
         }
         list.innerHTML = filtered.map((item) => `
-          <li class="resource-item">
+          <li class="resource-item ${item.id === state.focusedCycleId ? "selected" : ""}">
             <button type="button" data-cycle-id="${escapeAttribute(item.id)}">
               <div class="resource-title">${escapeHtml(item.id)}</div>
-              <div class="resource-meta">${escapeHtml(item.type)} | ${escapeHtml(item.status)} | activities ${escapeHtml(item.activity_count)} | pending ${escapeHtml(item.pending_count)} | in progress ${escapeHtml(item.in_progress_count)} | completed ${escapeHtml(item.completed_count)}</div>
+              <div class="resource-meta">${escapeHtml(item.type)} | ${escapeHtml(item.status)}</div>
+              <div class="resource-meta">activities ${escapeHtml(item.activity_count)} | pending ${escapeHtml(item.pending_count)} | in progress ${escapeHtml(item.in_progress_count)} | completed ${escapeHtml(item.completed_count)}</div>
+              <div class="compact-badges">
+                ${item.id === state.focusedCycleId ? '<span class="badge">active context</span>' : ""}
+                ${item.blocked_count ? `<span class="badge danger">blocked ${escapeHtml(item.blocked_count)}</span>` : ""}
+              </div>
             </button>
           </li>
         `).join("");
@@ -962,14 +1096,34 @@ def render_cockpit_page() -> str:
           list.innerHTML = '<li class="empty">No activities match the current filter.</li>';
           return;
         }
-        list.innerHTML = filtered.map((item) => `
-          <li class="resource-item">
-            <button type="button" data-activity-id="${escapeAttribute(item.id)}">
-              <div class="resource-title">${escapeHtml(item.title)}</div>
-              <div class="resource-meta">${escapeHtml(item.status)} | priority ${escapeHtml(item.priority)} | ${escapeHtml(item.cycle_id)}</div>
-            </button>
-          </li>
-        `).join("");
+        const orderedStatuses = ["pending", "in_progress", "completed", "blocked"];
+        const labels = {
+          pending: "Pending",
+          in_progress: "In Progress",
+          completed: "Completed",
+          blocked: "Blocked"
+        };
+        list.innerHTML = orderedStatuses
+          .filter((status) => filtered.some((item) => item.status === status))
+          .map((status) => `
+            <li class="status-group-card">
+              <h4>${escapeHtml(labels[status])}</h4>
+              <ul class="status-group-items">
+                ${filtered
+                  .filter((item) => item.status === status)
+                  .map((item) => `
+                    <li class="${item.id === state.selectedActivityId ? "selected" : ""}">
+                      <button type="button" data-activity-id="${escapeAttribute(item.id)}">
+                        <div class="resource-title">${escapeHtml(item.title)}</div>
+                        <div class="resource-meta">priority ${escapeHtml(item.priority)} | ${escapeHtml(item.cycle_id)}</div>
+                      </button>
+                    </li>
+                  `)
+                  .join("")}
+              </ul>
+            </li>
+          `)
+          .join("");
       }
 
       function summarizeActivities(activities) {
@@ -1040,7 +1194,7 @@ def render_cockpit_page() -> str:
       async function refreshOperationalData() {
         const [status, auditLog, documents, documentIntegrity, cycles, activities] = await Promise.all([
           fetchJson(api.status),
-          fetchJson(`${api.auditLog}?limit=10`),
+          fetchJson(`${api.auditLog}?limit=6`),
           fetchJson(api.documents),
           fetchJson(api.documentIntegrity),
           fetchJson(api.cycles),
@@ -1145,8 +1299,10 @@ def render_cockpit_page() -> str:
         const empty = document.getElementById("document-empty");
         const content = document.getElementById("document-content");
         const preview = document.getElementById("document-preview");
+        const header = document.getElementById("document-header");
         empty.hidden = true;
         content.hidden = false;
+        setHtml("document-header", "");
         setHtml("document-meta-grid", "");
         setHtml("document-flags", "");
         setHtml("document-status-controls", "");
@@ -1165,11 +1321,14 @@ def render_cockpit_page() -> str:
               : integrity.integrity_state === "warning"
               ? "warning"
               : "danger";
+          header.innerHTML = `
+            <strong>${escapeHtml(doc.title)}</strong>
+            <div class="document-path">${escapeHtml(doc.path)}</div>
+            <div class="inline-note">
+              ${escapeHtml(doc.status)} document | ${escapeHtml(doc.type)} | cycle ${escapeHtml(doc.cycle_id || "-")}
+            </div>
+          `;
           setHtml("document-meta-grid", renderMetaGrid([
-            ["Title", doc.title],
-            ["Type", doc.type],
-            ["Status", doc.status],
-            ["Path", doc.path],
             ["Version", doc.version],
             ["Cycle", doc.cycle_id || "-"],
             ["Created", doc.created_at],
@@ -1224,11 +1383,15 @@ def render_cockpit_page() -> str:
               : integrity?.integrity_state === "ok"
               ? "success"
               : "danger";
+          header.innerHTML = `
+            <strong>${escapeHtml(integrity?.title || "Document unavailable")}</strong>
+            <div class="document-path">${escapeHtml(integrity?.path || integrity?.expected_path || documentId)}</div>
+            <div class="inline-note">
+              ${escapeHtml(integrity?.status || "Unavailable")} | integrity ${escapeHtml(integrity?.integrity_state || "error")}
+            </div>
+          `;
           setHtml("document-meta-grid", renderMetaGrid([
             ["Document id", integrity?.document_id || documentId],
-            ["Title", integrity?.title || "-"],
-            ["Status", integrity?.status || "Unavailable"],
-            ["Path", integrity?.path || "-"],
             ["Expected path", integrity?.expected_path || "-"],
             ["Integrity", integrity?.integrity_state || "error"]
           ]));
@@ -1276,7 +1439,7 @@ def render_cockpit_page() -> str:
             fetchJson(`/api/cycles/${encodeURIComponent(cycleId)}`),
             fetchJson(`/api/activities?cycle_id=${encodeURIComponent(cycleId)}`)
           ]);
-          const relatedDocuments = state.documents.filter((item) => item.cycle_id === cycleId);
+          const relatedDocuments = getCycleDocuments(cycleId);
           setHtml("cycle-meta-grid", renderMetaGrid([
             ["Cycle", cycle.id],
             ["Type", cycle.type],
@@ -1323,6 +1486,18 @@ def render_cockpit_page() -> str:
                 </button>
               </li>
             `).join("");
+          }
+          if (
+            activities.length &&
+            !activities.some((item) => item.id === state.selectedActivityId)
+          ) {
+            await loadActivity(activities[0].id);
+          }
+          if (
+            relatedDocuments.length &&
+            !relatedDocuments.some((item) => item.id === state.selectedDocumentId)
+          ) {
+            await loadDocument(relatedDocuments[0].id);
           }
           renderAllLists();
         } catch (error) {
@@ -1374,7 +1549,12 @@ def render_cockpit_page() -> str:
           renderActivityStatusControls(activity);
           setHtml(
             "activity-actions",
-            `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(activity.cycle_id)}">Focus cycle ${escapeHtml(activity.cycle_id)}</button>`
+            [
+              `<button class="inline-button primary" type="button" data-focus-cycle-id="${escapeAttribute(activity.cycle_id)}">Focus cycle ${escapeHtml(activity.cycle_id)}</button>`,
+              state.documents.some((item) => item.cycle_id === activity.cycle_id)
+                ? `<button class="inline-button" type="button" data-linked-document-id="${escapeAttribute(state.documents.find((item) => item.cycle_id === activity.cycle_id).id)}">Open a supporting document</button>`
+                : ""
+            ].join("")
           );
         } catch (error) {
           setHtml("activity-meta-grid", renderMetaGrid([
@@ -1401,6 +1581,7 @@ def render_cockpit_page() -> str:
           setHtml(id, '<li class="empty">Workspace is not initialized.</li>');
         });
         setHtml("activities-breakdown", "");
+        setHtml("cycle-activities", '<li class="empty">Workspace is not initialized.</li>');
         setHtml("cycle-documents", '<li class="empty">Workspace is not initialized.</li>');
       }
 
@@ -1423,7 +1604,7 @@ def render_cockpit_page() -> str:
         updateCycleFocusBanner();
         setReadiness(
           "Preparing cockpit...",
-          "Loading workspace status and local operational surfaces.",
+          "Checking the workspace and preparing the cycle-centered supervision surface.",
           "loading",
           false
         );
@@ -1443,7 +1624,7 @@ def render_cockpit_page() -> str:
 
           setReadiness(
             "Workspace found",
-            "Loading entities, documents, cycles, activities, and audit surfaces.",
+            "Loading cycles, activities, documents, and the supporting supervision context.",
             "loading",
             false
           );
@@ -1452,7 +1633,7 @@ def render_cockpit_page() -> str:
             fetchJson(api.entities),
             fetchJson(api.documents),
             fetchJson(api.documentIntegrity),
-            fetchJson(`${api.auditLog}?limit=10`),
+            fetchJson(`${api.auditLog}?limit=6`),
             fetchJson(api.cycles),
             fetchJson(api.activities)
           ]);
@@ -1470,17 +1651,16 @@ def render_cockpit_page() -> str:
 
           if (cycles[0]) {
             await loadCycle(cycles[0].id);
-          }
-          if (activities[0]) {
+          } else if (activities[0]) {
             await loadActivity(activities[0].id);
           }
-          if (documents[0]) {
+          if (!cycles[0] && documents[0]) {
             await loadDocument(documents[0].id);
           }
           activateView("cycles-view");
           setReadiness(
             "Workspace ready",
-            "Workspace status and operational surfaces are loaded. You can now inspect and mutate supported records safely.",
+            "The cycle, activity, document, and supervision surfaces are fully loaded.",
             "ready",
             true
           );
