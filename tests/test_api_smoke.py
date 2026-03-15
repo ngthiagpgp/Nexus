@@ -58,11 +58,14 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn('id="documents-status-filter"', response.text)
             self.assertIn('id="cycles-status-filter"', response.text)
             self.assertIn('id="activities-status-filter"', response.text)
-            self.assertIn("Current Cycles", response.text)
+            self.assertIn("Current Work Cycles", response.text)
             self.assertIn("Activities in Selected Cycle", response.text)
             self.assertIn("Supporting Documents", response.text)
             self.assertIn("Selected Detail", response.text)
-            self.assertIn("Recent Audit (secondary)", response.text)
+            self.assertIn("Recent Audit Trace", response.text)
+            self.assertIn("Technical workspace details", response.text)
+            self.assertIn("Primary focus", response.text)
+            self.assertIn("Supporting document", response.text)
             self.assertIn(
                 "Cycles organize operational work, activities, and supporting documents.",
                 response.text,
