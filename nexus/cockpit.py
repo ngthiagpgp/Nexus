@@ -458,6 +458,8 @@ button, input, select { font: inherit; }
 }
 
 .graph-stage {
+  --graph-node-scale: 1;
+  --graph-link-scale: 1;
   position: relative;
   min-height: 720px;
   overflow: hidden;
@@ -487,8 +489,9 @@ button, input, select { font: inherit; }
 }
 
 .graph-tool-button {
-  width: 38px;
-  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 12px;
   border-radius: 12px;
   border: 1px solid rgba(141, 182, 255, 0.08);
   background: rgba(12, 19, 28, 0.66);
@@ -518,6 +521,7 @@ button, input, select { font: inherit; }
   inset: 0;
   transform-origin: 50% 50%;
   transition: transform 140ms ease;
+  will-change: transform;
 }
 
 .graph-stage::before,
@@ -625,19 +629,45 @@ button, input, select { font: inherit; }
 
 .graph-link {
   stroke: rgba(141, 182, 255, 0.24);
-  stroke-width: 1.8;
+  stroke-width: calc(1.12px * var(--graph-link-scale));
   stroke-linecap: round;
   fill: none;
   filter: drop-shadow(0 0 8px rgba(141, 182, 255, 0.12));
   transition: opacity 120ms ease, stroke-width 120ms ease;
 }
 
-.graph-link.risk { stroke: rgba(255, 154, 147, 0.4); stroke-dasharray: 6 6; }
-.graph-link.support { stroke: rgba(240, 195, 122, 0.34); }
-.graph-link.requires { stroke: rgba(108, 181, 255, 0.34); stroke-dasharray: 10 6; }
-.graph-link.reference { stroke: rgba(127, 145, 163, 0.28); }
-.graph-link.ownership { stroke: rgba(139, 203, 159, 0.28); }
-.graph-link.active { stroke-width: 2.7; opacity: 1; }
+.graph-link.blocks {
+  stroke: rgba(255, 154, 147, 0.54);
+  stroke-dasharray: 9 5;
+  stroke-linecap: square;
+}
+
+.graph-link.supports {
+  stroke: rgba(240, 195, 122, 0.34);
+  stroke-width: calc(1px * var(--graph-link-scale));
+}
+
+.graph-link.requires {
+  stroke: rgba(108, 181, 255, 0.34);
+  stroke-dasharray: 10 6;
+}
+
+.graph-link.impacts {
+  stroke: rgba(176, 155, 255, 0.34);
+  stroke-dasharray: 14 9;
+}
+
+.graph-link.references {
+  stroke: rgba(127, 145, 163, 0.24);
+  stroke-dasharray: 2 8;
+}
+
+.graph-link.owns {
+  stroke: rgba(139, 203, 159, 0.32);
+  stroke-width: calc(1.46px * var(--graph-link-scale));
+}
+
+.graph-link.active { stroke-width: calc(2.2px * var(--graph-link-scale)); opacity: 1; }
 .graph-link.muted { opacity: 0.22; }
 
 .graph-link-label {
@@ -651,8 +681,9 @@ button, input, select { font: inherit; }
 .graph-link-label.active { opacity: 0.92; }
 
 .graph-node {
+  --node-scale: 1;
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--node-scale));
   min-width: 132px;
   max-width: 174px;
   border: 1px solid var(--line);
@@ -668,7 +699,7 @@ button, input, select { font: inherit; }
 }
 
 .graph-node:hover {
-  transform: translate(-50%, -50%) translateY(-2px);
+  transform: translate(-50%, -50%) translateY(-2px) scale(var(--node-scale));
   border-color: rgba(141, 182, 255, 0.28);
 }
 
@@ -1373,9 +1404,22 @@ button, input, select { font: inherit; }
   margin-top: 10px;
 }
 
+.graph-range-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .graph-range {
   display: grid;
   gap: 6px;
+}
+
+.graph-range.compact {
+  padding: 10px;
+  border: 1px solid rgba(141, 182, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(10, 16, 24, 0.44);
 }
 
 .graph-range-head {
@@ -2056,7 +2100,8 @@ function defaultMapPhysics() {
     center: 0.58,
     repel: 0.52,
     link: 0.56,
-    distance: 0.54
+    distance: 0.54,
+    focus: 0.66
   };
 }
 
@@ -2073,6 +2118,10 @@ const state = {
   mapShowIsolated: false,
   mapControlsAdvanced: false,
   mapPhysics: defaultMapPhysics(),
+  mapNodeSize: 1,
+  mapLinkThickness: 1,
+  mapFrozen: false,
+  mapAnimate: true,
   status: null,
   entities: [],
   relations: [],
@@ -2091,6 +2140,7 @@ const state = {
   dragState: null,
   railSoftTimer: null,
   mapModel: null,
+  mapSimulation: null,
   selected: { type: "cycle", id: null },
   documentDetails: {},
   pendingMutation: null
@@ -2327,6 +2377,11 @@ function activateView(view) {
     }
   });
   syncFieldRegime();
+  if (view !== "map") {
+    stopMapSimulation();
+  } else if (state.mapModel) {
+    startMapSimulation(state.mapModel);
+  }
 }
 
 function activateInspectTab(tab) {
@@ -2833,6 +2888,7 @@ function graphNodeMarkup(node) {
       type="button"
       data-select="${escapeHtml(node.kind)}:${escapeHtml(node.id)}"
       data-node-key="${escapeHtml(node.key)}"
+      data-node-kind="${escapeHtml(node.kind)}"
       data-node-summary="${escapeHtml(node.summary)}"
       data-node-depth="${escapeHtml(String(node.depth ?? 99))}"
     >
@@ -3024,15 +3080,64 @@ function blendNodePosition(key, target) {
   };
 }
 
+function graphNodeMass(kind) {
+  if (kind === "cycle") return 2.8;
+  if (kind === "risk") return 1.9;
+  if (kind === "activity") return 1.55;
+  if (kind === "document") return 1.34;
+  return 1.18;
+}
+
+function graphNodeScaleFor(node) {
+  const base = node?.primary ? 1.12 : node?.kind === "risk" ? 0.94 : 1;
+  return clamp(state.mapNodeSize * base, 0.72, 1.72);
+}
+
+function baseLinkDistance(type) {
+  const tone = relationTone(type);
+  if (tone === "blocks") return 12;
+  if (tone === "supports") return 18;
+  if (tone === "requires") return 16;
+  if (tone === "impacts") return 21;
+  if (tone === "owns") return 24;
+  return 26;
+}
+
+function relationPhysicsProfile(type) {
+  const tone = relationTone(type);
+  if (tone === "blocks") {
+    return { tension: 1.42, fromBias: 1, toBias: 1.08, alignX: 0.026, alignY: 0.012, vector: 0.005 };
+  }
+  if (tone === "supports") {
+    return { tension: 1, fromBias: 1, toBias: 1, cluster: 0.01 };
+  }
+  if (tone === "requires") {
+    return { tension: 0.88, fromBias: 0.72, toBias: 1.18, directional: 0.014 };
+  }
+  if (tone === "impacts") {
+    return { tension: 1.16, fromBias: 0.92, toBias: 1.08, vector: 0.015 };
+  }
+  if (tone === "owns") {
+    return { tension: 1.12, fromBias: 0.85, toBias: 1, radial: 0.034 };
+  }
+  return { tension: 0.58, fromBias: 1, toBias: 1 };
+}
+
+function stableNodeSeed(key) {
+  let hash = 0;
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 33 + key.charCodeAt(index)) % 1000003;
+  }
+  return hash / 1000003;
+}
+
 function layoutMapNodes(nodes, anchorKey, depthMap) {
   const center = { x: 50, y: 51.5 };
   const positioned = [];
-  const nextPositions = {};
   const anchor = nodes.find((node) => node.key === anchorKey);
   if (anchor) {
     const target = blendNodePosition(anchor.key, center);
-    nextPositions[anchor.key] = target;
-    positioned.push({ ...anchor, ...target, depth: 0, primary: true });
+    positioned.push({ ...anchor, ...target, targetX: target.x, targetY: target.y, depth: 0, primary: true });
   }
   const density = spreadMultiplier();
   const rings = new Map();
@@ -3065,14 +3170,245 @@ function layoutMapNodes(nodes, anchorKey, depthMap) {
           y: clamp(51.5 + Math.sin(radians) * radius * 0.74, 10, 90)
         };
         const blended = blendNodePosition(node.key, target);
-        nextPositions[node.key] = blended;
-        positioned.push({ ...node, ...blended, depth: ring, primary: false });
+        positioned.push({ ...node, ...blended, targetX: blended.x, targetY: blended.y, depth: ring, primary: false });
       });
     });
   });
 
-  state.mapPositions = nextPositions;
   return positioned;
+}
+
+function stopMapSimulation() {
+  if (state.mapSimulation) {
+    syncMapPositionsFromSimulation(state.mapSimulation);
+  }
+  if (state.mapSimulation?.rafId) {
+    cancelAnimationFrame(state.mapSimulation.rafId);
+  }
+  state.mapSimulation = null;
+}
+
+function applyMapVisualTuning() {
+  const stage = document.getElementById("graph-stage");
+  if (stage) {
+    stage.style.setProperty("--graph-link-scale", String(state.mapLinkThickness.toFixed(2)));
+  }
+  const liveNodes = state.mapSimulation?.nodes;
+  document.querySelectorAll(".graph-node").forEach((element) => {
+    const key = element.dataset.nodeKey;
+    const node = (key && liveNodes?.get(key)) || state.mapModel?.nodes.find((item) => item.key === key);
+    element.style.setProperty("--node-scale", String(graphNodeScaleFor(node)));
+  });
+}
+
+function syncMapPositionsFromSimulation(simulation) {
+  const nextPositions = {};
+  simulation.nodes.forEach((node, key) => {
+    nextPositions[key] = { x: Number(node.x.toFixed(2)), y: Number(node.y.toFixed(2)) };
+  });
+  state.mapPositions = nextPositions;
+}
+
+function applySimulationFrame(simulation) {
+  const world = document.getElementById("graph-world");
+  if (!world) return;
+  const positions = new Map();
+  simulation.nodes.forEach((node, key) => {
+    positions.set(key, node);
+    const element = world.querySelector(`[data-node-key="${CSS.escape(key)}"]`);
+    if (element) {
+      element.style.left = `${node.x.toFixed(2)}%`;
+      element.style.top = `${node.y.toFixed(2)}%`;
+    }
+  });
+  world.querySelectorAll(".graph-link").forEach((element) => {
+    const linkId = element.dataset.linkId;
+    const link = simulation.linkMap.get(linkId);
+    if (!link) return;
+    const from = positions.get(link.from);
+    const to = positions.get(link.to);
+    if (!from || !to) return;
+    element.setAttribute("d", graphLinkPath(from, to, link.type));
+  });
+  world.querySelectorAll(".graph-link-label").forEach((element) => {
+    const linkId = element.dataset.linkId;
+    const link = simulation.linkMap.get(linkId);
+    if (!link) return;
+    const from = positions.get(link.from);
+    const to = positions.get(link.to);
+    if (!from || !to) return;
+    element.setAttribute("x", ((from.x + to.x) / 2).toFixed(2));
+    element.setAttribute("y", ((from.y + to.y) / 2).toFixed(2));
+  });
+  applyMapVisualTuning();
+  renderHoverProbe();
+}
+
+function tickMapSimulation(timestamp) {
+  const simulation = state.mapSimulation;
+  if (!simulation || state.view !== "map") return;
+  const frame = clamp((timestamp - simulation.lastFrame) / 16.7, 0.72, 1.72);
+  simulation.lastFrame = timestamp;
+  if (state.mapFrozen) {
+    simulation.rafId = null;
+    syncMapPositionsFromSimulation(simulation);
+    return;
+  }
+  const nodes = Array.from(simulation.nodes.values());
+  const anchor = simulation.nodes.get(simulation.anchorKey) || nodes[0];
+  const centerX = 50;
+  const centerY = 51.5;
+  const repulsion = 0.018 + state.mapPhysics.repel * 0.11;
+  const spring = 0.01 + state.mapPhysics.link * 0.045;
+  const gravity = 0.004 + state.mapPhysics.center * 0.02;
+  const focusGravity = 0.005 + state.mapPhysics.focus * 0.032;
+  const preferredDistance = 0.7 + state.mapPhysics.distance * 0.85;
+
+  for (let left = 0; left < nodes.length; left += 1) {
+    for (let right = left + 1; right < nodes.length; right += 1) {
+      const a = nodes[left];
+      const b = nodes[right];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.max(1.2, Math.hypot(dx, dy));
+      const force = repulsion * ((a.mass + b.mass) / distance);
+      const fx = (dx / distance) * force;
+      const fy = (dy / distance) * force;
+      a.vx -= fx / a.mass;
+      a.vy -= fy / a.mass;
+      b.vx += fx / b.mass;
+      b.vy += fy / b.mass;
+    }
+  }
+
+  simulation.links.forEach((link) => {
+    const from = simulation.nodes.get(link.from);
+    const to = simulation.nodes.get(link.to);
+    if (!from || !to) return;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const distance = Math.max(0.8, Math.hypot(dx, dy));
+    const profile = relationPhysicsProfile(link.type);
+    const desired = baseLinkDistance(link.type) * preferredDistance * spreadMultiplier();
+    const error = distance - desired;
+    const tension = spring * profile.tension * error;
+    const nx = dx / distance;
+    const ny = dy / distance;
+    from.vx += nx * tension * profile.fromBias / from.mass;
+    from.vy += ny * tension * profile.fromBias / from.mass;
+    to.vx -= nx * tension * profile.toBias / to.mass;
+    to.vy -= ny * tension * profile.toBias / to.mass;
+
+    if (profile.alignX) {
+      const align = dx * profile.alignX * 0.01;
+      from.vx += align / from.mass;
+      to.vx -= align / to.mass;
+    }
+    if (profile.alignY) {
+      const alignY = dy * profile.alignY * 0.01;
+      from.vy += alignY / from.mass;
+      to.vy -= alignY / to.mass;
+    }
+    if (profile.directional) {
+      const directional = profile.directional * 0.02;
+      to.vx += nx * directional;
+      to.vy += ny * directional * 0.4;
+    }
+    if (profile.vector) {
+      const vector = profile.vector * 0.01;
+      to.vx += nx * vector;
+      to.vy += ny * vector;
+    }
+    if (profile.cluster) {
+      const cluster = profile.cluster * 0.018;
+      from.vx += (to.targetX - from.x) * cluster;
+      from.vy += (to.targetY - from.y) * cluster;
+      to.vx += (from.targetX - to.x) * cluster;
+      to.vy += (from.targetY - to.y) * cluster;
+    }
+    if (profile.radial) {
+      const radial = profile.radial * 0.015;
+      to.vx += (to.targetX - to.x) * radial;
+      to.vy += (to.targetY - to.y) * radial;
+    }
+  });
+
+  let energy = 0;
+  nodes.forEach((node) => {
+    const memory = node.primary ? gravity * 1.28 : gravity;
+    node.vx += (node.targetX - node.x) * memory;
+    node.vy += (node.targetY - node.y) * memory;
+
+    if (anchor && state.mapFieldRegime === "focused" && node.key !== anchor.key) {
+      const depthFactor = 1 / Math.max(1, (node.depth ?? 1));
+      node.vx += (anchor.x - node.x) * focusGravity * depthFactor * 0.12;
+      node.vy += (anchor.y - node.y) * focusGravity * depthFactor * 0.12;
+    }
+
+    if (node.primary || node.key === simulation.anchorKey) {
+      node.vx += (centerX - node.x) * gravity * 0.22;
+      node.vy += (centerY - node.y) * gravity * 0.22;
+    }
+
+    if (state.mapAnimate) {
+      const pulse = timestamp * 0.0012 + node.seed * Math.PI * 2;
+      node.vx += Math.cos(pulse) * 0.0026;
+      node.vy += Math.sin(pulse * 0.82) * 0.0021;
+    }
+
+    const damping = state.mapAnimate ? 0.88 : 0.81;
+    node.vx *= damping;
+    node.vy *= damping;
+    node.x = clamp(node.x + node.vx * frame, 6, 94);
+    node.y = clamp(node.y + node.vy * frame, 8, 92);
+    energy += Math.abs(node.vx) + Math.abs(node.vy);
+  });
+
+  syncMapPositionsFromSimulation(simulation);
+  applySimulationFrame(simulation);
+
+  if (!state.mapAnimate && energy < 0.012) {
+    simulation.rafId = null;
+    return;
+  }
+  simulation.rafId = requestAnimationFrame(tickMapSimulation);
+}
+
+function startMapSimulation(model) {
+  const previous = state.mapSimulation?.nodes || new Map();
+  stopMapSimulation();
+  if (!model?.nodes?.length) return;
+  const nodes = new Map(
+    model.nodes.map((node) => {
+      const previousNode = previous.get(node.key);
+      return [
+        node.key,
+        {
+          ...node,
+          x: previousNode?.x ?? node.x,
+          y: previousNode?.y ?? node.y,
+          vx: previousNode?.vx ?? 0,
+          vy: previousNode?.vy ?? 0,
+          mass: graphNodeMass(node.kind),
+          seed: stableNodeSeed(node.key)
+        }
+      ];
+    })
+  );
+  const simulation = {
+    anchorKey: model.anchorKey,
+    nodes,
+    links: model.links.map((link) => ({ ...link })),
+    linkMap: new Map(model.links.map((link) => [link.id, { ...link }])),
+    lastFrame: performance.now(),
+    rafId: null
+  };
+  state.mapSimulation = simulation;
+  syncMapPositionsFromSimulation(simulation);
+  applySimulationFrame(simulation);
+  if (!state.mapFrozen) {
+    simulation.rafId = requestAnimationFrame(tickMapSimulation);
+  }
 }
 
 function buildRawMapModel(cycle) {
@@ -3308,6 +3644,10 @@ function resetMapView() {
   state.mapEntityFilters = defaultMapEntityFilters();
   state.mapRelationFilters = defaultMapRelationFilters();
   state.mapPhysics = defaultMapPhysics();
+  state.mapNodeSize = 1;
+  state.mapLinkThickness = 1;
+  state.mapFrozen = false;
+  state.mapAnimate = true;
   state.mapShowIsolated = false;
   renderMapView();
 }
@@ -3383,6 +3723,19 @@ function renderMapToolbar(model, cycle) {
         </div>
       </div>
       <div class="graph-control-row">
+        <div class="graph-control-label">Structure</div>
+        <div class="graph-range-grid">
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Node size</span><span>${escapeHtml(String(Math.round(state.mapNodeSize * 100)))}%</span></div>
+            <input type="range" min="70" max="160" value="${escapeHtml(String(Math.round(state.mapNodeSize * 100)))}" data-map-node-size />
+          </label>
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Link thickness</span><span>${escapeHtml(String(Math.round(state.mapLinkThickness * 100)))}%</span></div>
+            <input type="range" min="60" max="180" value="${escapeHtml(String(Math.round(state.mapLinkThickness * 100)))}" data-map-link-thickness />
+          </label>
+        </div>
+      </div>
+      <div class="graph-control-row">
         <div class="graph-control-label">Node filters</div>
         <div class="graph-filter-grid">
           ${Object.entries({
@@ -3411,6 +3764,8 @@ function renderMapToolbar(model, cycle) {
         <div class="graph-control-group">
           <button class="graph-tool-button ${state.isolatedNodeId ? "active" : ""}" type="button" data-map-isolate>Isolate</button>
           <button class="graph-tool-button ${state.mapShowIsolated ? "active" : ""}" type="button" data-map-show-isolated>Keep isolated</button>
+          <button class="graph-tool-button ${state.mapFrozen ? "active" : ""}" type="button" data-map-freeze>${state.mapFrozen ? "Resume" : "Freeze"}</button>
+          <button class="graph-tool-button ${state.mapAnimate ? "active" : ""}" type="button" data-map-animate>${state.mapAnimate ? "Animate" : "Still"}</button>
           <button class="graph-tool-button" type="button" data-map-zoom="out">-</button>
           <button class="graph-tool-button" type="button" data-map-zoom="in">+</button>
           <button class="graph-tool-button" type="button" data-map-reset>Reset view</button>
@@ -3421,10 +3776,11 @@ function renderMapToolbar(model, cycle) {
       <summary data-map-advanced-toggle>Advanced field physics</summary>
       <div class="graph-advanced-grid">
         ${[
-          ["center", "Center force"],
-          ["repel", "Repel force"],
-          ["link", "Link force"],
-          ["distance", "Link distance"]
+          ["center", "Global gravity"],
+          ["repel", "Repulsion"],
+          ["link", "Link tension"],
+          ["focus", "Focus gravity"],
+          ["distance", "Preferred distance"]
         ].map(([key, label]) => `
           <label class="graph-range">
             <div class="graph-range-head"><span>${escapeHtml(label)}</span><span>${escapeHtml(String(Math.round(state.mapPhysics[key] * 100)))}</span></div>
@@ -3488,6 +3844,7 @@ function syncGraphAttention() {
 function renderMapView() {
   const cycle = pickFocusedCycle();
   if (!cycle) {
+    stopMapSimulation();
     state.mapModel = null;
     setHtml("graph-stage", '<div class="empty-state" style="margin:18px">No cycle is available yet.</div>');
     setText("map-guide-copy", "Initialize and seed the workspace to populate the field.");
@@ -3515,6 +3872,7 @@ function renderMapView() {
       return `
         <path
           class="graph-link ${escapeHtml(link.tone)} ${active ? "active" : activeKey ? "muted" : ""}"
+          data-link-id="${escapeHtml(link.id)}"
           data-from-key="${escapeHtml(link.from)}"
           data-to-key="${escapeHtml(link.to)}"
           data-relation-type="${escapeHtml(link.type)}"
@@ -3523,6 +3881,7 @@ function renderMapView() {
         ></path>
         <text
           class="graph-link-label ${active ? "active" : ""}"
+          data-link-id="${escapeHtml(link.id)}"
           data-from-key="${escapeHtml(link.from)}"
           data-to-key="${escapeHtml(link.to)}"
           data-relation-type="${escapeHtml(link.type)}"
@@ -3562,6 +3921,11 @@ function renderMapView() {
   setText("map-cycle-narrative", cycleNarrative(cycle));
   applyMapTransform();
   syncGraphAttention();
+  if (state.view === "map") {
+    startMapSimulation(model);
+  } else {
+    stopMapSimulation();
+  }
 }
 
 function activityCardMarkup(activity, emphasize = false) {
@@ -4333,6 +4697,20 @@ function bindEvents() {
       revealRails();
       return;
     }
+    const freezeButton = event.target.closest("[data-map-freeze]");
+    if (freezeButton) {
+      state.mapFrozen = !state.mapFrozen;
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const animateButton = event.target.closest("[data-map-animate]");
+    if (animateButton) {
+      state.mapAnimate = !state.mapAnimate;
+      renderMapView();
+      revealRails();
+      return;
+    }
     const resetButton = event.target.closest("[data-map-reset]");
     if (resetButton) {
       resetMapView();
@@ -4368,6 +4746,22 @@ function bindEvents() {
   });
 
   document.addEventListener("input", (event) => {
+    const nodeSize = event.target.closest("[data-map-node-size]");
+    if (nodeSize) {
+      state.mapNodeSize = Number(nodeSize.value) / 100;
+      applyMapVisualTuning();
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const linkThickness = event.target.closest("[data-map-link-thickness]");
+    if (linkThickness) {
+      state.mapLinkThickness = Number(linkThickness.value) / 100;
+      applyMapVisualTuning();
+      renderMapView();
+      revealRails();
+      return;
+    }
     const range = event.target.closest("[data-map-physics]");
     if (!range) return;
     const key = range.dataset.mapPhysics;
