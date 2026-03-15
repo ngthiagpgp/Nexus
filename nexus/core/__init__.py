@@ -13,6 +13,16 @@ from nexus.core.read_models import (
     WorkspaceStatusReadModel,
     inspect_workspace_read_model,
 )
+from nexus.core.mutations import (
+    MutationContext,
+    MutationResult,
+    build_mutation_context,
+    ensure_type_supports_integrity,
+    ensure_type_supports_lifecycle,
+    ensure_type_supports_status_transitions,
+    validate_status_transition,
+    write_mutation_audit,
+)
 from nexus.core.registry import (
     TypeCapabilities,
     get_type_capabilities,
@@ -52,6 +62,8 @@ __all__ = [
     "DATABASE_FILENAME",
     "DOCUMENTS_DIRNAME",
     "DOCUMENT_CYCLE_DIRS",
+    "MutationContext",
+    "MutationResult",
     "SCHEMA_COMPATIBILITY_NOTE",
     "TypeCapabilities",
     "WORKSPACE_CONFIG_FILENAME",
@@ -65,9 +77,13 @@ __all__ = [
     "WorkspaceStatusReadModel",
     "connect_workspace_database",
     "ensure_workspace_system_state",
+    "ensure_type_supports_integrity",
+    "ensure_type_supports_lifecycle",
+    "ensure_type_supports_status_transitions",
     "execute_sql_script",
     "fetch_config_value",
     "fetch_system_state_value",
+    "build_mutation_context",
     "get_type_capabilities",
     "initialize_workspace",
     "inspect_workspace",
@@ -78,5 +94,7 @@ __all__ = [
     "require_workspace",
     "split_sql_statements",
     "utc_now",
+    "validate_status_transition",
+    "write_mutation_audit",
     "workspace_layout",
 ]

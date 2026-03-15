@@ -9,6 +9,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from nexus.core.mutations import (
+    MutationResult,
+    build_mutation_context,
+    ensure_type_supports_integrity,
+    ensure_type_supports_lifecycle,
+    validate_status_transition,
+    write_mutation_audit,
+)
 from nexus.entities import normalize_optional_text, validate_required_text
 from nexus.core.workspace import (
     WorkspaceBootstrapError,
@@ -350,14 +358,37 @@ def reconcile_document(
     cli_id: str = "local",
     allow_title_lookup: bool = True,
 ) -> DocumentReconciliationResult:
+    return reconcile_document_mutation(
+        workspace_root,
+        selector=selector,
+        actor=actor,
+        reason=reason,
+        cli_id=cli_id,
+        allow_title_lookup=allow_title_lookup,
+    ).payload
+
+
+def reconcile_document_mutation(
+    workspace_root: Path,
+    *,
+    selector: str,
+    actor: str = "user",
+    reason: str = "Document reconcile",
+    cli_id: str = "local",
+    allow_title_lookup: bool = True,
+) -> MutationResult[DocumentReconciliationResult]:
     workspace = require_workspace(workspace_root)
+    ensure_type_supports_integrity("document")
     normalized_selector = validate_required_text("Document selector", selector)
-    normalized_actor = validate_required_text("Actor", actor)
-    normalized_reason = validate_required_text("Reason", reason)
-    timestamp = utc_now()
 
     with connect_workspace_database(workspace.database_path) as connection:
-        workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
+        mutation = build_mutation_context(
+            connection,
+            entity_type="document",
+            actor=actor,
+            reason=reason,
+            cli_id=cli_id,
+        )
         old_row = fetch_document_row(
             connection,
             normalized_selector,
@@ -392,9 +423,9 @@ def reconcile_document(
 
         reconciled_fields: list[str] = []
         updates: dict[str, object] = {
-            "modified_by": normalized_actor,
-            "modified_at": timestamp,
-            "id_cli": cli_id,
+            "modified_by": mutation.actor,
+            "modified_at": mutation.timestamp,
+            "id_cli": mutation.cli_id,
         }
         current_content_hash = compute_content_hash(current_content)
         if current_content_hash != old_record.content_hash:
@@ -419,10 +450,15 @@ def reconcile_document(
                 old_record,
                 workspace_root=workspace.workspace_root,
             )
-            return DocumentReconciliationResult(
-                record=old_record,
-                integrity=integrity,
-                reconciled_fields=[],
+            return MutationResult(
+                entity_type="document",
+                entity_id=old_record.id,
+                action="reconcile",
+                payload=DocumentReconciliationResult(
+                    record=old_record,
+                    integrity=integrity,
+                    reconciled_fields=[],
+                ),
             )
 
         set_clause = ", ".join(f"{column} = ?" for column in updates)
@@ -434,46 +470,28 @@ def reconcile_document(
         new_row = fetch_document_row(connection, old_record.id, allow_title_lookup=False)
         new_record = document_record_from_row(new_row)
 
-        connection.execute(
-            """
-            INSERT INTO audit_log (
-                id,
-                action,
-                entity_type,
-                entity_id,
-                old_state,
-                new_state,
-                agent,
-                reason,
-                timestamp,
-                id_workspace,
-                id_cli
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                str(uuid4()),
-                "reconcile",
-                "document",
-                old_record.id,
-                json.dumps(document_state_payload(old_record), ensure_ascii=True),
-                json.dumps(document_state_payload(new_record), ensure_ascii=True),
-                normalized_actor,
-                normalized_reason,
-                timestamp,
-                workspace_id,
-                cli_id,
-            ],
+        write_mutation_audit(
+            connection,
+            context=mutation,
+            action="reconcile",
+            entity_id=old_record.id,
+            old_state=document_state_payload(old_record),
+            new_state=document_state_payload(new_record),
         )
 
     integrity = build_document_integrity_result(
         new_record,
         workspace_root=workspace.workspace_root,
     )
-    return DocumentReconciliationResult(
-        record=new_record,
-        integrity=integrity,
-        reconciled_fields=reconciled_fields,
+    return MutationResult(
+        entity_type="document",
+        entity_id=new_record.id,
+        action="reconcile",
+        payload=DocumentReconciliationResult(
+            record=new_record,
+            integrity=integrity,
+            reconciled_fields=reconciled_fields,
+        ),
     )
 
 
@@ -487,15 +505,40 @@ def update_document_status(
     cli_id: str = "local",
     allow_title_lookup: bool = True,
 ) -> DocumentRecord:
+    return update_document_status_mutation(
+        workspace_root,
+        selector=selector,
+        status=status,
+        actor=actor,
+        reason=reason,
+        cli_id=cli_id,
+        allow_title_lookup=allow_title_lookup,
+    ).payload
+
+
+def update_document_status_mutation(
+    workspace_root: Path,
+    *,
+    selector: str,
+    status: str,
+    actor: str = "user",
+    reason: str = "Document status update",
+    cli_id: str = "local",
+    allow_title_lookup: bool = True,
+) -> MutationResult[DocumentRecord]:
     workspace = require_workspace(workspace_root)
+    ensure_type_supports_lifecycle("document")
     normalized_selector = validate_required_text("Document selector", selector)
     normalized_status = validate_document_status(status)
-    normalized_actor = validate_required_text("Actor", actor)
-    normalized_reason = validate_required_text("Reason", reason)
-    timestamp = utc_now()
 
     with connect_workspace_database(workspace.database_path) as connection:
-        workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
+        mutation = build_mutation_context(
+            connection,
+            entity_type="document",
+            actor=actor,
+            reason=reason,
+            cli_id=cli_id,
+        )
         old_row = fetch_document_row(
             connection,
             normalized_selector,
@@ -509,20 +552,23 @@ def update_document_status(
             )
 
         if old_record.status == normalized_status:
-            return old_record
-
-        allowed_statuses = ALLOWED_DOCUMENT_STATUS_TRANSITIONS.get(old_record.status, set())
-        if normalized_status not in allowed_statuses:
-            allowed_display = ", ".join(sorted(allowed_statuses)) or "no further transitions"
-            raise WorkspaceBootstrapError(
-                "Invalid document status transition: "
-                f"{old_record.status} -> {normalized_status}. "
-                f"Allowed: {allowed_display}."
+            return MutationResult(
+                entity_type="document",
+                entity_id=old_record.id,
+                action="update",
+                payload=old_record,
             )
+
+        validate_status_transition(
+            entity_type="document",
+            current_status=old_record.status,
+            target_status=normalized_status,
+            allowed_transitions=ALLOWED_DOCUMENT_STATUS_TRANSITIONS,
+        )
 
         approved_at = old_record.approved_at
         if normalized_status == "approved":
-            approved_at = timestamp
+            approved_at = mutation.timestamp
 
         connection.execute(
             """
@@ -534,9 +580,9 @@ def update_document_status(
                 normalized_status,
                 bump_major_version(old_record.version),
                 approved_at,
-                normalized_actor,
-                timestamp,
-                cli_id,
+                mutation.actor,
+                mutation.timestamp,
+                mutation.cli_id,
                 old_record.id,
             ],
         )
@@ -544,39 +590,21 @@ def update_document_status(
         new_row = fetch_document_row(connection, old_record.id, allow_title_lookup=False)
         new_record = document_record_from_row(new_row)
 
-        connection.execute(
-            """
-            INSERT INTO audit_log (
-                id,
-                action,
-                entity_type,
-                entity_id,
-                old_state,
-                new_state,
-                agent,
-                reason,
-                timestamp,
-                id_workspace,
-                id_cli
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                str(uuid4()),
-                "update",
-                "document",
-                old_record.id,
-                json.dumps(document_state_payload(old_record), ensure_ascii=True),
-                json.dumps(document_state_payload(new_record), ensure_ascii=True),
-                normalized_actor,
-                normalized_reason,
-                timestamp,
-                workspace_id,
-                cli_id,
-            ],
+        write_mutation_audit(
+            connection,
+            context=mutation,
+            action="update",
+            entity_id=old_record.id,
+            old_state=document_state_payload(old_record),
+            new_state=document_state_payload(new_record),
         )
 
-    return new_record
+    return MutationResult(
+        entity_type="document",
+        entity_id=new_record.id,
+        action="update",
+        payload=new_record,
+    )
 
 
 def build_document_relative_path(document_type: str, title: str) -> Path:

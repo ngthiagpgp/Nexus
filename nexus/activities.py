@@ -6,6 +6,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
+from nexus.core.mutations import (
+    MutationResult,
+    build_mutation_context,
+    validate_status_transition,
+    write_mutation_audit,
+)
 from nexus.entities import validate_required_text
 from nexus.core.workspace import (
     WorkspaceBootstrapError,
@@ -183,29 +189,54 @@ def update_activity_status(
     reason: str = "Activity status update",
     cli_id: str = "local",
 ) -> ActivityRecord:
+    return update_activity_status_mutation(
+        workspace_root,
+        activity_id=activity_id,
+        status=status,
+        actor=actor,
+        reason=reason,
+        cli_id=cli_id,
+    ).payload
+
+
+def update_activity_status_mutation(
+    workspace_root: Path,
+    *,
+    activity_id: str,
+    status: str,
+    actor: str = "user",
+    reason: str = "Activity status update",
+    cli_id: str = "local",
+) -> MutationResult[ActivityRecord]:
     workspace = require_workspace(workspace_root)
     normalized_activity_id = validate_required_text("Activity id", activity_id)
     normalized_status = validate_activity_status(status)
-    normalized_actor = validate_required_text("Actor", actor)
-    normalized_reason = validate_required_text("Reason", reason)
-    timestamp = utc_now()
 
     with connect_workspace_database(workspace.database_path) as connection:
-        workspace_id = fetch_system_state_value(connection, "default_workspace") or "default"
+        mutation = build_mutation_context(
+            connection,
+            entity_type="activity",
+            actor=actor,
+            reason=reason,
+            cli_id=cli_id,
+        )
         old_row = fetch_activity_row(connection, normalized_activity_id)
         old_record = activity_record_from_row(old_row)
 
         if old_record.status == normalized_status:
-            return old_record
-
-        allowed_statuses = ALLOWED_ACTIVITY_STATUS_TRANSITIONS.get(old_record.status, set())
-        if normalized_status not in allowed_statuses:
-            allowed_display = ", ".join(sorted(allowed_statuses))
-            raise WorkspaceBootstrapError(
-                "Invalid activity status transition: "
-                f"{old_record.status} -> {normalized_status}. "
-                f"Allowed: {allowed_display}."
+            return MutationResult(
+                entity_type="activity",
+                entity_id=old_record.id,
+                action="update",
+                payload=old_record,
             )
+
+        validate_status_transition(
+            entity_type="activity",
+            current_status=old_record.status,
+            target_status=normalized_status,
+            allowed_transitions=ALLOWED_ACTIVITY_STATUS_TRANSITIONS,
+        )
 
         connection.execute(
             """
@@ -215,9 +246,9 @@ def update_activity_status(
             """,
             [
                 normalized_status,
-                normalized_actor,
-                timestamp,
-                cli_id,
+                mutation.actor,
+                mutation.timestamp,
+                mutation.cli_id,
                 normalized_activity_id,
             ],
         )
@@ -225,39 +256,21 @@ def update_activity_status(
         new_row = fetch_activity_row(connection, normalized_activity_id)
         new_record = activity_record_from_row(new_row)
 
-        connection.execute(
-            """
-            INSERT INTO audit_log (
-                id,
-                action,
-                entity_type,
-                entity_id,
-                old_state,
-                new_state,
-                agent,
-                reason,
-                timestamp,
-                id_workspace,
-                id_cli
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                str(uuid4()),
-                "update",
-                "activity",
-                normalized_activity_id,
-                json.dumps(activity_state_payload(old_record), ensure_ascii=True),
-                json.dumps(activity_state_payload(new_record), ensure_ascii=True),
-                normalized_actor,
-                normalized_reason,
-                timestamp,
-                workspace_id,
-                cli_id,
-            ],
+        write_mutation_audit(
+            connection,
+            context=mutation,
+            action="update",
+            entity_id=normalized_activity_id,
+            old_state=activity_state_payload(old_record),
+            new_state=activity_state_payload(new_record),
         )
 
-    return new_record
+    return MutationResult(
+        entity_type="activity",
+        entity_id=new_record.id,
+        action="update",
+        payload=new_record,
+    )
 
 
 def fetch_activity_rows(
