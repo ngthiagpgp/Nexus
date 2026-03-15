@@ -1237,74 +1237,247 @@ button, input, select { font: inherit; }
 }
 
 .graph-stage {
-  min-height: 760px;
-  border-radius: 28px;
-}
-
-.graph-toolbar {
-  gap: 6px;
-  padding: 7px;
-  background: rgba(7, 12, 18, 0.58);
-  border-color: rgba(141, 182, 255, 0.08);
-}
-
-.graph-tool-button {
-  width: 34px;
-  height: 34px;
-  background: rgba(10, 16, 23, 0.42);
-  border-color: rgba(141, 182, 255, 0.06);
+  min-height: 780px;
+  border-radius: 30px;
 }
 
 .graph-stage::after {
-  opacity: 0.14;
+  opacity: 0.12;
 }
 
 .map-stage-overlay {
-  max-width: 320px;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, rgba(9, 15, 22, 0.48), rgba(7, 12, 18, 0.24));
-  border-color: rgba(141, 182, 255, 0.1);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  max-width: 340px;
+  padding: 13px 15px;
+  background: linear-gradient(180deg, rgba(9, 15, 22, 0.42), rgba(7, 12, 18, 0.18));
+  border-color: rgba(141, 182, 255, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+}
+
+.graph-toolbar {
+  left: 18px;
+  bottom: 18px;
+  display: grid;
+  gap: 10px;
+  min-width: 292px;
+  padding: 12px;
+  background: rgba(7, 12, 18, 0.42);
+  border-color: rgba(141, 182, 255, 0.08);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+.graph-toolbar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.graph-toolbar-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+
+.graph-toolbar-copy {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.graph-control-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.graph-control-row {
+  display: grid;
+  gap: 8px;
+}
+
+.graph-control-label {
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.graph-control-group,
+.graph-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.graph-filter-grid {
+  gap: 6px;
+}
+
+.graph-tool-button,
+.graph-chip,
+.graph-filter-chip {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(141, 182, 255, 0.08);
+  background: rgba(10, 16, 23, 0.42);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: 120ms ease;
+}
+
+.graph-tool-button:hover,
+.graph-chip:hover,
+.graph-filter-chip:hover {
+  color: var(--text);
+  border-color: rgba(141, 182, 255, 0.18);
+}
+
+.graph-tool-button.active,
+.graph-chip.active,
+.graph-filter-chip.active {
+  background: rgba(141, 182, 255, 0.12);
+  color: var(--accent-strong);
+  border-color: rgba(141, 182, 255, 0.28);
+}
+
+.graph-tool-button {
+  width: auto;
+  height: 32px;
+}
+
+.graph-chip,
+.graph-filter-chip {
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graph-toolbar details {
+  border-top: 1px solid rgba(114, 141, 173, 0.08);
+  padding-top: 10px;
+}
+
+.graph-toolbar summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.graph-toolbar summary::-webkit-details-marker { display: none; }
+
+.graph-advanced-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.graph-range {
+  display: grid;
+  gap: 6px;
+}
+
+.graph-range-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.graph-range input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
 }
 
 #map-legend {
-  display: none;
+  display: grid;
+  gap: 8px;
+}
+
+.map-legend-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.map-legend-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.map-legend-row strong {
+  color: var(--text-soft);
+  font-weight: 600;
 }
 
 .graph-link {
-  stroke-width: 1.04;
-  opacity: 0.22;
+  stroke-width: 0.92;
+  opacity: 0.2;
   filter: none;
 }
 
 .graph-link.active {
-  stroke-width: 1.8;
+  stroke-width: 1.54;
   opacity: 1;
 }
 
-.graph-link.blocks { stroke: rgba(255, 154, 147, 0.78); }
-.graph-link.supports { stroke: rgba(117, 176, 255, 0.54); }
-.graph-link.requires { stroke: rgba(191, 205, 231, 0.4); stroke-dasharray: 9 7; }
-.graph-link.impacts { stroke: rgba(240, 195, 122, 0.54); animation: lowPulse 4.8s ease-in-out infinite; }
-.graph-link.references { stroke: rgba(155, 170, 189, 0.3); stroke-dasharray: 2 6; }
+.graph-link.blocks {
+  stroke: rgba(255, 154, 147, 0.86);
+  stroke-width: 1.2;
+}
+
+.graph-link.supports {
+  stroke: rgba(117, 176, 255, 0.54);
+  stroke-linecap: round;
+}
+
+.graph-link.requires {
+  stroke: rgba(191, 205, 231, 0.42);
+  stroke-dasharray: 9 8;
+}
+
+.graph-link.impacts {
+  stroke: rgba(240, 195, 122, 0.58);
+  stroke-dasharray: 12 10;
+  animation: lowPulse 4.8s ease-in-out infinite;
+}
+
+.graph-link.references {
+  stroke: rgba(155, 170, 189, 0.28);
+  stroke-dasharray: 2 8;
+}
+
 .graph-link.owns,
-.graph-link.ownership { stroke: rgba(166, 179, 196, 0.44); stroke-width: 1.8; }
-.graph-link.muted { opacity: 0.08; }
+.graph-link.ownership {
+  stroke: rgba(166, 179, 196, 0.44);
+  stroke-width: 1.34;
+}
+
+.graph-link.muted { opacity: 0.06; }
+
+.graph-link.contextual { opacity: 0.2; }
+.graph-link.secondary { opacity: 0.45; }
+.graph-link.primary-tone { opacity: 1; }
 
 .graph-link-label {
   opacity: 0;
-  font-size: 2px;
+  font-size: 1.8px;
 }
 
 .graph-link-label.visible,
 .graph-link-label.active {
-  opacity: 0.9;
+  opacity: 0.84;
 }
 
 .graph-node {
   min-width: 0;
-  max-width: 150px;
-  padding: 8px 10px;
+  max-width: 160px;
+  padding: 0;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -1314,16 +1487,16 @@ button, input, select { font: inherit; }
 .graph-node::before {
   content: "";
   position: absolute;
-  inset: 7px 10px;
+  inset: 8px 12px;
   border-radius: 999px;
-  background: rgba(17, 28, 40, 0.18);
-  box-shadow: 0 0 0 14px rgba(141, 182, 255, 0.015);
+  background: rgba(17, 28, 40, 0.12);
+  box-shadow: 0 0 0 18px rgba(141, 182, 255, 0.012);
 }
 
 .graph-node.primary::before {
-  inset: -2px;
-  background: radial-gradient(circle, rgba(169, 143, 255, 0.18), rgba(32, 26, 53, 0.12) 58%, transparent 72%);
-  box-shadow: 0 0 0 26px rgba(151, 134, 255, 0.08), 0 0 42px rgba(151, 134, 255, 0.14);
+  inset: -6px;
+  background: radial-gradient(circle, rgba(169, 143, 255, 0.2), rgba(32, 26, 53, 0.1) 58%, transparent 76%);
+  box-shadow: 0 0 0 34px rgba(151, 134, 255, 0.08), 0 0 48px rgba(151, 134, 255, 0.16);
 }
 
 .graph-node:hover,
@@ -1332,35 +1505,52 @@ button, input, select { font: inherit; }
 }
 
 .graph-node.focused::before {
-  box-shadow: 0 0 0 22px rgba(141, 182, 255, 0.05), 0 0 28px rgba(141, 182, 255, 0.16);
+  box-shadow: 0 0 0 26px rgba(141, 182, 255, 0.05), 0 0 28px rgba(141, 182, 255, 0.18);
 }
 
+.graph-node-shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+}
+
+.graph-node-glyph {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: rgba(141, 182, 255, 0.72);
+  box-shadow: 0 0 0 6px rgba(141, 182, 255, 0.08);
+}
+
+.graph-node.cycle .graph-node-glyph { background: rgba(170, 143, 255, 0.92); }
+.graph-node.activity .graph-node-glyph { background: rgba(111, 177, 255, 0.82); }
+.graph-node.document .graph-node-glyph { background: rgba(240, 195, 122, 0.82); }
+.graph-node.entity .graph-node-glyph { background: rgba(143, 176, 159, 0.78); }
+.graph-node.risk .graph-node-glyph { background: rgba(255, 154, 147, 0.88); }
+
 .graph-node-title,
-.graph-node-state,
-.graph-node .card-kicker {
+.graph-node-state {
   position: relative;
   z-index: 1;
 }
 
-.graph-node .card-kicker {
-  margin-bottom: 3px;
-  color: rgba(193, 208, 227, 0.58);
-}
-
 .graph-node-title {
-  font-size: 0.86rem;
-  line-height: 1.26;
+  font-size: 0.84rem;
+  line-height: 1.24;
 }
 
 .graph-node.primary .graph-node-title {
-  font-size: 1.02rem;
+  font-size: 1.04rem;
 }
 
 .graph-node-state {
-  margin-top: 6px;
+  margin-top: 2px;
   padding: 3px 8px;
-  background: rgba(15, 24, 35, 0.34);
-  color: rgba(237, 243, 248, 0.7);
+  background: rgba(15, 24, 35, 0.24);
+  color: rgba(237, 243, 248, 0.66);
 }
 
 .flow-grid {
@@ -1665,13 +1855,7 @@ def _body() -> str:
           <section id="graph-stage" class="surface graph-stage">
             <div class="graph-viewport"><div id="graph-world" class="graph-world"></div></div>
             <div id="hover-probe" class="hover-probe" hidden></div>
-            <div class="graph-toolbar">
-              <button class="graph-tool-button" type="button" data-map-density="compact" data-map-zoom="out" aria-label="Compact field">-</button>
-              <button class="graph-tool-button" type="button" data-map-density="spread" data-map-zoom="in" aria-label="Spread field">+</button>
-              <button class="graph-tool-button" type="button" data-map-labels aria-label="Toggle labels">L</button>
-              <button class="graph-tool-button" type="button" data-map-isolate aria-label="Isolate focus">I</button>
-              <button class="graph-tool-button" type="button" data-map-reset aria-label="Reset view">R</button>
-            </div>
+            <div id="map-field-controls" class="graph-toolbar"></div>
           </section>
           <aside class="map-aside">
             <article class="surface inspect-card">
@@ -1846,12 +2030,49 @@ const api = {
   audit: "/api/audit-log?limit=40"
 };
 
+function defaultMapEntityFilters() {
+  return {
+    cycles: true,
+    activities: true,
+    documents: true,
+    entities: true,
+    risks: true
+  };
+}
+
+function defaultMapRelationFilters() {
+  return {
+    blocks: true,
+    supports: true,
+    requires: true,
+    impacts: true,
+    references: true,
+    owns: true
+  };
+}
+
+function defaultMapPhysics() {
+  return {
+    center: 0.58,
+    repel: 0.52,
+    link: 0.56,
+    distance: 0.54
+  };
+}
+
 const state = {
   view: "map",
   inspectTab: "context",
   mapMode: "signal",
-  mapLabelDensity: "focus",
-  mapSpread: "compact",
+  mapLabelDensity: "balanced",
+  mapSpread: "balanced",
+  mapFieldRegime: "global",
+  mapDepth: "all",
+  mapEntityFilters: defaultMapEntityFilters(),
+  mapRelationFilters: defaultMapRelationFilters(),
+  mapShowIsolated: false,
+  mapControlsAdvanced: false,
+  mapPhysics: defaultMapPhysics(),
   status: null,
   entities: [],
   relations: [],
@@ -1866,6 +2087,7 @@ const state = {
   isolatedNodeId: null,
   mapScale: 1,
   mapOffset: { x: 0, y: 0 },
+  mapPositions: {},
   dragState: null,
   railSoftTimer: null,
   mapModel: null,
@@ -2056,7 +2278,7 @@ function selectObject(type, id) {
 
 function currentMapAnchorKey() {
   const cycle = pickFocusedCycle();
-  if (state.focusedNodeId) return state.focusedNodeId;
+  if (state.mapFieldRegime === "focused" && state.focusedNodeId) return state.focusedNodeId;
   if (cycle) return nodeKey("cycle", cycle.id);
   return null;
 }
@@ -2612,25 +2834,37 @@ function graphNodeMarkup(node) {
       data-select="${escapeHtml(node.kind)}:${escapeHtml(node.id)}"
       data-node-key="${escapeHtml(node.key)}"
       data-node-summary="${escapeHtml(node.summary)}"
+      data-node-depth="${escapeHtml(String(node.depth ?? 99))}"
     >
-      <div class="card-kicker">${escapeHtml(node.kicker)}</div>
-      <div class="graph-node-title">${escapeHtml(node.title)}</div>
-      <div class="graph-node-state">${escapeHtml(node.stateLabel)}</div>
+      <div class="graph-node-shell">
+        <div class="graph-node-glyph" aria-hidden="true"></div>
+        <div class="graph-node-title">${escapeHtml(node.title)}</div>
+        <div class="graph-node-state">${escapeHtml(node.stateLabel)}</div>
+      </div>
     </button>
   `;
 }
 
-function graphLinkPath(from, to) {
+function graphLinkPath(from, to, type) {
   const x1 = from.x;
   const y1 = from.y;
   const x2 = to.x;
   const y2 = to.y;
   const dx = x2 - x1;
-  const curvature = Math.max(8, Math.min(18, Math.abs(dx) * 0.22));
+  const dy = y2 - y1;
+  const relation = relationTone(type);
+  const curveBias =
+    relation === "blocks" ? 1.18 :
+    relation === "supports" ? 0.82 :
+    relation === "requires" ? 0.92 :
+    relation === "impacts" ? 1.06 :
+    relation === "owns" ? 0.68 :
+    0.74;
+  const curvature = Math.max(6, Math.min(22, (Math.abs(dx) * 0.18 + Math.abs(dy) * 0.12) * curveBias));
   const c1x = x1 + dx * 0.28;
   const c2x = x2 - dx * 0.24;
   const c1y = y1 - curvature;
-  const c2y = y2 + curvature;
+  const c2y = y2 + curvature * 0.76;
   return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
 }
 
@@ -2639,7 +2873,7 @@ function relationTone(type) {
   if (type === "supports") return "supports";
   if (type === "requires") return "requires";
   if (type === "impacts") return "impacts";
-  if (["owns", "owner_of"].includes(type)) return "owns";
+  if (["owns", "owner_of", "ownership"].includes(type)) return "owns";
   return "references";
 }
 
@@ -2653,8 +2887,28 @@ function clamp(value, min, max) {
 
 function relationPriority(type) {
   if (["blocks", "impacts"].includes(type)) return "primary";
-  if (["supports", "requires", "owns", "owner_of"].includes(type)) return "secondary";
+  if (["supports", "requires", "owns", "owner_of", "ownership"].includes(type)) return "secondary";
   return "contextual";
+}
+
+function depthLimitValue() {
+  return state.mapDepth === "all" ? Number.POSITIVE_INFINITY : Number(state.mapDepth);
+}
+
+function kindFilterKey(kind) {
+  if (kind === "risk") return "risks";
+  if (kind === "entity") return "entities";
+  if (kind === "cycle") return "cycles";
+  if (kind === "activity") return "activities";
+  return "documents";
+}
+
+function relationFilterEnabled(type) {
+  return state.mapRelationFilters[relationTone(type)] !== false;
+}
+
+function nodeFilterEnabled(kind) {
+  return state.mapEntityFilters[kindFilterKey(kind)] !== false;
 }
 
 function neighborhoodDepthMap(model, anchorKey) {
@@ -2668,7 +2922,7 @@ function neighborhoodDepthMap(model, anchorKey) {
   });
   const depth = new Map();
   if (!anchorKey || !adjacency.has(anchorKey)) {
-    model.nodes.forEach((node) => depth.set(node.key, 99));
+    model.nodes.forEach((node) => depth.set(node.key, Number.POSITIVE_INFINITY));
     return depth;
   }
   const queue = [[anchorKey, 0]];
@@ -2683,25 +2937,227 @@ function neighborhoodDepthMap(model, anchorKey) {
     });
   }
   model.nodes.forEach((node) => {
-    if (!depth.has(node.key)) depth.set(node.key, 99);
+    if (!depth.has(node.key)) depth.set(node.key, Number.POSITIVE_INFINITY);
   });
   return depth;
 }
 
 function modeAllowsRelation(type) {
-  if (state.mapMode === "signal") return ["blocks", "impacts", "supports", "requires"].includes(type);
-  if (state.mapMode === "structure") return ["owns", "owner_of", "references"].includes(type);
-  if (state.mapMode === "pressure") return ["blocks", "impacts", "requires"].includes(type);
-  if (state.mapMode === "trace") return ["supports", "references", "requires", "impacts"].includes(type);
+  const normalized = relationTone(type);
+  if (state.mapMode === "signal") return ["blocks", "impacts", "supports", "requires"].includes(normalized);
+  if (state.mapMode === "structure") return ["owns", "references"].includes(normalized);
+  if (state.mapMode === "pressure") return ["blocks", "impacts", "requires"].includes(normalized);
+  if (state.mapMode === "trace") return ["supports", "references", "requires", "impacts"].includes(normalized);
   return true;
 }
 
 function modeHighlightsNode(node) {
-  if (state.mapMode === "signal") return node.kind === "risk" || (node.kind === "document" && /error|drift|fragile/i.test(node.stateLabel || ""));
+  if (state.mapMode === "signal") return node.kind === "risk" || (node.kind === "document" && /error|drift|fragile|degraded/i.test(node.stateLabel || ""));
   if (state.mapMode === "structure") return node.kind === "entity" || node.kind === "cycle";
   if (state.mapMode === "pressure") return node.kind === "activity" || node.kind === "risk";
   if (state.mapMode === "trace") return node.kind === "document" || node.kind === "activity";
   return true;
+}
+
+function buildRiskNodes(cycle) {
+  const summary = summarizeCycle(cycle);
+  const riskNodes = [];
+  if (cycle.blocked_count > 0) {
+    riskNodes.push({
+      kind: "risk",
+      id: `${cycle.id}-blocked`,
+      key: nodeKey("risk", `${cycle.id}-blocked`),
+      title: "Blocked pressure",
+      stateLabel: `${cycle.blocked_count} blocked`,
+      summary: "Blocked work is constraining the cycle and should be treated as immediate operational pressure."
+    });
+  }
+  if (summary.integrityIssues > 0) {
+    riskNodes.push({
+      kind: "risk",
+      id: `${cycle.id}-evidence`,
+      key: nodeKey("risk", `${cycle.id}-evidence`),
+      title: "Evidence drift",
+      stateLabel: summary.integrityIssues > 1 ? "degraded" : "fragile",
+      summary: "Supporting evidence is drifting away from the stored record and can invalidate action."
+    });
+  }
+  return riskNodes;
+}
+
+function resolveMapAnchorKey(rawModel, cycle) {
+  const cycleKey = nodeKey("cycle", cycle.id);
+  if (state.mapFieldRegime === "focused" && state.focusedNodeId && rawModel.nodes.some((node) => node.key === state.focusedNodeId)) {
+    return state.focusedNodeId;
+  }
+  return cycleKey;
+}
+
+function pruneIsolatedNodes(nodes, links, anchorKey) {
+  const connected = new Set([anchorKey]);
+  links.forEach((link) => {
+    connected.add(link.from);
+    connected.add(link.to);
+  });
+  return nodes.filter((node) => connected.has(node.key));
+}
+
+function preferredAngleForKind(kind) {
+  if (kind === "risk") return -82;
+  if (kind === "document") return -18;
+  if (kind === "cycle") return -138;
+  if (kind === "entity") return 56;
+  return 176;
+}
+
+function spreadMultiplier() {
+  return state.mapSpread === "compact" ? 0.84 : state.mapSpread === "spread" ? 1.18 : 1;
+}
+
+function blendNodePosition(key, target) {
+  const previous = state.mapPositions[key];
+  if (!previous) return target;
+  const keep = clamp(0.34 + state.mapPhysics.link * 0.28, 0.24, 0.68);
+  return {
+    x: Number((previous.x * keep + target.x * (1 - keep)).toFixed(2)),
+    y: Number((previous.y * keep + target.y * (1 - keep)).toFixed(2))
+  };
+}
+
+function layoutMapNodes(nodes, anchorKey, depthMap) {
+  const center = { x: 50, y: 51.5 };
+  const positioned = [];
+  const nextPositions = {};
+  const anchor = nodes.find((node) => node.key === anchorKey);
+  if (anchor) {
+    const target = blendNodePosition(anchor.key, center);
+    nextPositions[anchor.key] = target;
+    positioned.push({ ...anchor, ...target, depth: 0, primary: true });
+  }
+  const density = spreadMultiplier();
+  const rings = new Map();
+  nodes.forEach((node) => {
+    if (node.key === anchorKey) return;
+    const depth = depthMap.get(node.key);
+    const ringKey = Number.isFinite(depth) ? Math.min(depth, 3) : 3;
+    if (!rings.has(ringKey)) rings.set(ringKey, []);
+    rings.get(ringKey).push(node);
+  });
+
+  Array.from(rings.entries()).sort((a, b) => a[0] - b[0]).forEach(([ring, ringNodes]) => {
+    const radiusBase = (ring === 1 ? 23 : ring === 2 ? 35 : 47) * density;
+    const radius = radiusBase + state.mapPhysics.distance * 10 - state.mapPhysics.center * 4;
+    const groups = new Map();
+    ringNodes
+      .sort((left, right) => left.kind.localeCompare(right.kind) || left.title.localeCompare(right.title))
+      .forEach((node) => {
+        if (!groups.has(node.kind)) groups.set(node.kind, []);
+        groups.get(node.kind).push(node);
+      });
+    groups.forEach((items, kind) => {
+      const centerAngle = preferredAngleForKind(kind);
+      const band = 16 + Math.max(0, items.length - 1) * (8 + state.mapPhysics.repel * 6);
+      items.forEach((node, index) => {
+        const offset = items.length === 1 ? 0 : -band / 2 + (band / Math.max(items.length - 1, 1)) * index;
+        const radians = (centerAngle + offset) * (Math.PI / 180);
+        const target = {
+          x: clamp(50 + Math.cos(radians) * radius, 8, 92),
+          y: clamp(51.5 + Math.sin(radians) * radius * 0.74, 10, 90)
+        };
+        const blended = blendNodePosition(node.key, target);
+        nextPositions[node.key] = blended;
+        positioned.push({ ...node, ...blended, depth: ring, primary: false });
+      });
+    });
+  });
+
+  state.mapPositions = nextPositions;
+  return positioned;
+}
+
+function buildRawMapModel(cycle) {
+  const activities = relatedActivities(cycle.id);
+  const documents = relatedDocuments(cycle.id);
+  const contextualCycles = state.cycles.filter((item) => item.id !== cycle.id).slice(0, 4);
+  const entities = state.entities.slice(0, 6);
+  const riskNodes = buildRiskNodes(cycle);
+  const nodes = [
+    {
+      kind: "cycle",
+      id: cycle.id,
+      key: nodeKey("cycle", cycle.id),
+      title: cycleLabel(cycle),
+      stateLabel: statusLabel(cycle.status),
+      summary: cycleNarrative(cycle),
+      selected: state.selected.type === "cycle" && state.selected.id === cycle.id
+    },
+    ...contextualCycles.map((item) => ({
+      kind: "cycle",
+      id: item.id,
+      key: nodeKey("cycle", item.id),
+      title: cycleLabel(item),
+      stateLabel: statusLabel(item.status),
+      summary: cycleNarrative(item),
+      selected: state.selected.type === "cycle" && state.selected.id === item.id
+    })),
+    ...activities.map((item) => ({
+      kind: "activity",
+      id: item.id,
+      key: nodeKey("activity", item.id),
+      title: item.title,
+      stateLabel: statusLabel(item.status),
+      summary: activityNarrative(item),
+      selected: state.selected.type === "activity" && state.selected.id === item.id
+    })),
+    ...documents.map((item) => ({
+      kind: "document",
+      id: item.id,
+      key: nodeKey("document", item.id),
+      title: item.title,
+      stateLabel: statusLabel(item.status),
+      summary: documentNarrative(item),
+      selected: state.selected.type === "document" && state.selected.id === item.id
+    })),
+    ...entities.map((item) => ({
+      kind: "entity",
+      id: item.id,
+      key: nodeKey("entity", item.id),
+      title: item.name,
+      stateLabel: titleCase(item.type),
+      summary: `${item.name} remains part of the structural context around the focused cycle.`,
+      selected: false
+    })),
+    ...riskNodes
+  ];
+
+  const links = [];
+  contextualCycles.forEach((item) => {
+    links.push({ id: `${cycle.id}:${item.id}:context`, from: nodeKey("cycle", cycle.id), to: nodeKey("cycle", item.id), type: "references" });
+  });
+  activities.forEach((item) => {
+    links.push({ id: `${cycle.id}:${item.id}:activity`, from: nodeKey("cycle", cycle.id), to: nodeKey("activity", item.id), type: item.status === "blocked" ? "blocks" : "impacts" });
+  });
+  documents.forEach((item) => {
+    links.push({ id: `${cycle.id}:${item.id}:document`, from: nodeKey("cycle", cycle.id), to: nodeKey("document", item.id), type: "supports" });
+  });
+  entities.forEach((item) => {
+    links.push({ id: `${cycle.id}:${item.id}:entity`, from: nodeKey("cycle", cycle.id), to: nodeKey("entity", item.id), type: "owns" });
+  });
+  riskNodes.forEach((item) => {
+    links.push({ id: `${cycle.id}:${item.id}:risk`, from: nodeKey("cycle", cycle.id), to: item.key, type: item.id.endsWith("-evidence") ? "impacts" : "blocks" });
+  });
+  activities.forEach((activity) => {
+    const supportingDocument = supportingDocumentForActivity(activity);
+    if (!supportingDocument) return;
+    links.push({ id: `${activity.id}:${supportingDocument.id}:support`, from: nodeKey("activity", activity.id), to: nodeKey("document", supportingDocument.id), type: activity.status === "blocked" ? "requires" : "supports" });
+  });
+  state.relations.forEach((relation) => {
+    const from = nodeKey("entity", relation.entity_a_id);
+    const to = nodeKey("entity", relation.entity_b_id);
+    if (!nodes.some((node) => node.key === from) || !nodes.some((node) => node.key === to)) return;
+    links.push({ id: relation.id, from, to, type: relationTone(relation.type) });
+  });
+  return { nodes, links };
 }
 
 function renderMiniMapField(targetId, cycle, copy) {
@@ -2712,9 +3168,8 @@ function renderMiniMapField(targetId, cycle, copy) {
     return;
   }
   const model = buildMapModel(cycle);
-  const anchorKey = currentMapAnchorKey() || nodeKey("cycle", cycle.id);
-  const depth = neighborhoodDepthMap(model, anchorKey);
-  const nodes = model.nodes.filter((node) => depth.get(node.key) <= 2);
+  const anchorKey = model.anchorKey || currentMapAnchorKey() || nodeKey("cycle", cycle.id);
+  const nodes = model.nodes.filter((node) => (node.depth ?? 99) <= 2);
   const allowed = new Set(nodes.map((node) => node.key));
   const links = model.links.filter((link) => allowed.has(link.from) && allowed.has(link.to));
   const positions = Object.fromEntries(nodes.map((node) => [node.key, node]));
@@ -2722,10 +3177,10 @@ function renderMiniMapField(targetId, cycle, copy) {
     const from = positions[link.from];
     const to = positions[link.to];
     if (!from || !to) return "";
-    return `<path class="mini-map-link ${escapeHtml(relationTone(link.type))}" d="${graphLinkPath(from, to)}"></path>`;
+    return `<path class="mini-map-link ${escapeHtml(relationTone(link.type))}" d="${graphLinkPath(from, to, link.type)}"></path>`;
   }).join("");
   const nodeMarkup = nodes.map((node) => {
-    const dim = depth.get(node.key) === 2 ? "dim" : "";
+    const dim = (node.depth ?? 99) === 2 ? "dim" : "";
     const showLabel = node.kind === "cycle" || node.key === anchorKey;
     return `
       <button
@@ -2751,191 +3206,55 @@ function renderMiniMapField(targetId, cycle, copy) {
 }
 
 function buildMapModel(cycle) {
-  const activities = relatedActivities(cycle.id);
-  const documents = relatedDocuments(cycle.id);
-  const otherCycles = state.cycles.filter((item) => item.id !== cycle.id).slice(0, 3);
-  const entities = state.entities.slice(0, 4);
-  const riskNodes = [];
-  const summary = summarizeCycle(cycle);
-  if (cycle.blocked_count > 0) {
-    riskNodes.push({
-      kind: "risk",
-      id: `${cycle.id}-blocked`,
-      key: nodeKey("risk", `${cycle.id}-blocked`),
-      kicker: "Risk",
-      title: "Blocked work pressure",
-      stateLabel: `${cycle.blocked_count} blocked`,
-      summary: "Blocked work is constraining the cycle and should be treated as immediate operational pressure.",
-      x: 20,
-      y: 18,
-      selected: false
-    });
-  }
-  if (summary.integrityIssues > 0) {
-    riskNodes.push({
-      kind: "risk",
-      id: `${cycle.id}-evidence`,
-      key: nodeKey("risk", `${cycle.id}-evidence`),
-      kicker: "Risk",
-      title: "Evidence drift",
-      stateLabel: summary.integrityIssues > 1 ? "degraded" : "fragile",
-      summary: "Supporting evidence is drifting away from the stored record and can invalidate action.",
-      x: 80,
-      y: 18,
-      selected: false
-    });
+  const raw = buildRawMapModel(cycle);
+  const anchorKey = resolveMapAnchorKey(raw, cycle);
+  const filteredNodes = raw.nodes.filter((node) => nodeFilterEnabled(node.kind));
+  const allowedNodeKeys = new Set(filteredNodes.map((node) => node.key));
+  let filteredLinks = raw.links.filter((link) => {
+    return allowedNodeKeys.has(link.from) && allowedNodeKeys.has(link.to) && relationFilterEnabled(link.type);
+  });
+
+  const filteredModel = { nodes: filteredNodes, links: filteredLinks };
+  const depthMap = neighborhoodDepthMap(filteredModel, anchorKey);
+  const depthLimit = depthLimitValue();
+  let visibleNodes = filteredNodes.filter((node) => {
+    const level = depthMap.get(node.key);
+    if (state.mapFieldRegime === "global" && depthLimit === Number.POSITIVE_INFINITY) return true;
+    if (state.mapFieldRegime === "focused" && depthLimit === Number.POSITIVE_INFINITY) return Number.isFinite(level);
+    return level <= depthLimit;
+  });
+
+  let visibleNodeKeys = new Set(visibleNodes.map((node) => node.key));
+  filteredLinks = filteredLinks.filter((link) => visibleNodeKeys.has(link.from) && visibleNodeKeys.has(link.to));
+
+  if (!state.mapShowIsolated || state.mapFieldRegime === "focused") {
+    visibleNodes = pruneIsolatedNodes(visibleNodes, filteredLinks, anchorKey);
+    visibleNodeKeys = new Set(visibleNodes.map((node) => node.key));
+    filteredLinks = filteredLinks.filter((link) => visibleNodeKeys.has(link.from) && visibleNodeKeys.has(link.to));
   }
 
-  const nodes = [
-    {
-      kind: "cycle",
-      id: cycle.id,
-      key: nodeKey("cycle", cycle.id),
-      kicker: "Cycle",
-      title: cycleLabel(cycle),
-      stateLabel: statusLabel(cycle.status),
-      summary: cycleNarrative(cycle),
-      x: 51,
-      y: 52,
-      primary: true,
-      selected: state.selected.type === "cycle" && state.selected.id === cycle.id
-    },
-    ...otherCycles.map((item, index) => ({
-      kind: "cycle",
-      id: item.id,
-      key: nodeKey("cycle", item.id),
-      kicker: "Adjacent cycle",
-      title: cycleLabel(item),
-      stateLabel: statusLabel(item.status),
-      summary: cycleNarrative(item),
-      x: [18, 50, 82][index] || 18 + index * 22,
-      y: 16,
-      selected: state.selected.type === "cycle" && state.selected.id === item.id
-    })),
-    ...activities.map((item, index) => ({
-      kind: "activity",
-      id: item.id,
-      key: nodeKey("activity", item.id),
-      kicker: "Activity",
-      title: item.title,
-      stateLabel: statusLabel(item.status),
-      summary: activityNarrative(item),
-      x: 17,
-      y: 28 + index * (activities.length > 1 ? 18 : 0),
-      selected: state.selected.type === "activity" && state.selected.id === item.id
-    })),
-    ...documents.map((item, index) => ({
-      kind: "document",
-      id: item.id,
-      key: nodeKey("document", item.id),
-      kicker: "Document",
-      title: item.title,
-      stateLabel: statusLabel(item.status),
-      summary: documentNarrative(item),
-      x: 84,
-      y: 26 + index * (documents.length > 1 ? 18 : 0),
-      selected: state.selected.type === "document" && state.selected.id === item.id
-    })),
-    ...entities.map((item, index) => ({
-      kind: "entity",
-      id: item.id,
-      key: nodeKey("entity", item.id),
-      kicker: "Entity",
-      title: item.name,
-      stateLabel: titleCase(item.type),
-      summary: `${item.name} remains part of the structural context around the focused cycle.`,
-      x: 18 + index * 20,
-      y: 88,
-      selected: false
-    })),
-    ...riskNodes
-  ];
-
-  const links = [];
-  nodes.filter((node) => node.kind === "activity").forEach((node) => {
-    links.push({
-      id: `${cycle.id}:${node.id}:activity`,
-      from: nodeKey("cycle", cycle.id),
-      to: node.key,
-      type: node.stateLabel === "Blocked" ? "blocks" : "impacts",
-      tone: node.stateLabel === "Blocked" ? "blocks" : "impacts"
-    });
-  });
-  nodes.filter((node) => node.kind === "document").forEach((node) => {
-    links.push({
-      id: `${cycle.id}:${node.id}:document`,
-      from: nodeKey("cycle", cycle.id),
-      to: node.key,
-      type: "supports",
-      tone: "supports"
-    });
-  });
-  nodes.filter((node) => node.kind === "entity").forEach((node) => {
-    links.push({
-      id: `${cycle.id}:${node.id}:entity`,
-      from: nodeKey("cycle", cycle.id),
-      to: node.key,
-      type: "owns",
-      tone: "owns"
-    });
-  });
-  riskNodes.forEach((node) => {
-    links.push({
-      id: `${cycle.id}:${node.id}:risk`,
-      from: nodeKey("cycle", cycle.id),
-      to: node.key,
-      type: "blocks",
-      tone: "blocks"
-    });
-  });
-  activities.forEach((activity) => {
-    const supportingDocument = supportingDocumentForActivity(activity);
-    if (!supportingDocument) return;
-    links.push({
-      id: `${activity.id}:${supportingDocument.id}:support`,
-      from: nodeKey("activity", activity.id),
-      to: nodeKey("document", supportingDocument.id),
-      type: activity.status === "blocked" ? "requires" : "supports",
-      tone: activity.status === "blocked" ? "requires" : "supports"
-    });
-  });
-  state.relations.forEach((relation) => {
-    const from = nodeKey("entity", relation.entity_a_id);
-    const to = nodeKey("entity", relation.entity_b_id);
-    if (!nodes.some((node) => node.key === from) || !nodes.some((node) => node.key === to)) {
-      return;
-    }
-    links.push({
-      id: relation.id,
-      from,
-      to,
-      type: relation.type,
-      tone: relationTone(relation.type)
-    });
-  });
-  return { nodes, links };
+  const visibleModel = { nodes: visibleNodes, links: filteredLinks };
+  const visibleDepth = neighborhoodDepthMap(visibleModel, anchorKey);
+  return {
+    anchorKey,
+    nodes: layoutMapNodes(visibleNodes, anchorKey, visibleDepth),
+    links: filteredLinks.map((link) => ({ ...link, tone: relationTone(link.type), priority: relationPriority(link.type) })),
+    depthMap: visibleDepth
+  };
 }
 
 function activeMapNodeKey() {
-  return state.hoveredNodeId || currentMapAnchorKey();
+  return state.hoveredNodeId || state.isolatedNodeId || state.focusedNodeId || currentMapAnchorKey();
 }
 
-function visibleMapNodeKeys(model, activeKey) {
-  const centerKey = state.isolatedNodeId || currentMapAnchorKey() || activeKey;
-  const depth = neighborhoodDepthMap(model, centerKey);
-  const visible = new Set();
-  depth.forEach((level, key) => {
-    if (level <= 2) visible.add(key);
-  });
-  return visible;
+function visibleMapNodeKeys(model) {
+  return new Set(model.nodes.map((node) => node.key));
 }
 
-function fadedMapNodeKeys(model, activeKey) {
-  const centerKey = state.isolatedNodeId || currentMapAnchorKey() || activeKey;
-  const depth = neighborhoodDepthMap(model, centerKey);
+function fadedMapNodeKeys(model) {
   const faded = new Set();
-  depth.forEach((level, key) => {
-    if (level === 2) faded.add(key);
+  model.nodes.forEach((node) => {
+    if ((node.depth ?? 99) >= 2) faded.add(node.key);
   });
   return faded;
 }
@@ -2982,6 +3301,14 @@ function resetMapView() {
   state.mapOffset = { x: 0, y: 0 };
   state.isolatedNodeId = null;
   state.hoveredNodeId = null;
+  state.mapFieldRegime = "global";
+  state.mapDepth = "all";
+  state.mapSpread = "balanced";
+  state.mapLabelDensity = "balanced";
+  state.mapEntityFilters = defaultMapEntityFilters();
+  state.mapRelationFilters = defaultMapRelationFilters();
+  state.mapPhysics = defaultMapPhysics();
+  state.mapShowIsolated = false;
   renderMapView();
 }
 
@@ -2989,7 +3316,124 @@ function toggleMapIsolation() {
   const activeKey = state.focusedNodeId || activeMapNodeKey();
   if (!activeKey) return;
   state.isolatedNodeId = state.isolatedNodeId === activeKey ? null : activeKey;
-  syncGraphAttention();
+  renderMapView();
+}
+
+function labelVisibilityForNode(node, activeKey) {
+  if (state.mapLabelDensity === "full") return true;
+  if (state.mapLabelDensity === "balanced") {
+    return node.primary || node.key === activeKey || (node.depth ?? 99) <= 1;
+  }
+  return node.primary || node.key === activeKey;
+}
+
+function renderMapLegend(model) {
+  const totalNodes = model.nodes.length;
+  const totalLinks = model.links.length;
+  const activeRelations = Object.entries(state.mapRelationFilters)
+    .filter(([, enabled]) => enabled)
+    .map(([type]) => titleCase(type))
+    .join(" • ");
+  return `
+    <div class="map-legend-grid">
+      <div class="map-legend-row"><span>Regime</span><strong>${escapeHtml(state.mapFieldRegime === "focused" ? "Focused field" : "Global field")}</strong></div>
+      <div class="map-legend-row"><span>Depth</span><strong>${escapeHtml(state.mapDepth === "all" ? "All visible topology" : `${state.mapDepth} hops`)}</strong></div>
+      <div class="map-legend-row"><span>Field</span><strong>${totalNodes} nodes • ${totalLinks} relations</strong></div>
+      <div class="map-legend-row"><span>Preset</span><strong>${escapeHtml(titleCase(state.mapMode))}</strong></div>
+      <div class="map-legend-row"><span>Relations</span><strong>${escapeHtml(activeRelations || "None")}</strong></div>
+    </div>
+  `;
+}
+
+function renderMapToolbar(model, cycle) {
+  return `
+    <div class="graph-toolbar-header">
+      <div>
+        <div class="graph-toolbar-title">Field controls</div>
+        <div class="graph-toolbar-copy">Shape the neighborhood without leaving the field.</div>
+      </div>
+      <div class="badge-row">
+        <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+      </div>
+    </div>
+    <div class="graph-control-stack">
+      <div class="graph-control-row">
+        <div class="graph-control-label">Regime</div>
+        <div class="graph-control-group">
+          <button class="graph-chip ${state.mapFieldRegime === "global" ? "active" : ""}" type="button" data-map-field="global">Global field</button>
+          <button class="graph-chip ${state.mapFieldRegime === "focused" ? "active" : ""}" type="button" data-map-field="focused">Focused field</button>
+        </div>
+      </div>
+      <div class="graph-control-row">
+        <div class="graph-control-label">Depth</div>
+        <div class="graph-control-group">
+          ${["all", "1", "2", "3"].map((value) => `<button class="graph-chip ${state.mapDepth === value ? "active" : ""}" type="button" data-map-depth="${escapeHtml(value)}">${escapeHtml(value === "all" ? "All" : `${value} hop${value === "1" ? "" : "s"}`)}</button>`).join("")}
+        </div>
+      </div>
+      <div class="graph-control-row">
+        <div class="graph-control-label">Density</div>
+        <div class="graph-control-group">
+          ${["compact", "balanced", "spread"].map((value) => `<button class="graph-chip ${state.mapSpread === value ? "active" : ""}" type="button" data-map-density="${escapeHtml(value)}">${escapeHtml(titleCase(value))}</button>`).join("")}
+        </div>
+      </div>
+      <div class="graph-control-row">
+        <div class="graph-control-label">Labels</div>
+        <div class="graph-control-group">
+          ${["sparse", "balanced", "full"].map((value) => `<button class="graph-chip ${state.mapLabelDensity === value ? "active" : ""}" type="button" data-map-label-density="${escapeHtml(value)}">${escapeHtml(titleCase(value))}</button>`).join("")}
+        </div>
+      </div>
+      <div class="graph-control-row">
+        <div class="graph-control-label">Node filters</div>
+        <div class="graph-filter-grid">
+          ${Object.entries({
+            cycles: "Cycles",
+            activities: "Activities",
+            documents: "Documents",
+            risks: "Risks",
+            entities: "Entities"
+          }).map(([key, label]) => `<button class="graph-filter-chip ${state.mapEntityFilters[key] ? "active" : ""}" type="button" data-map-entity-filter="${escapeHtml(key)}">${escapeHtml(label)}</button>`).join("")}
+        </div>
+      </div>
+      <div class="graph-control-row">
+        <div class="graph-control-label">Relation filters</div>
+        <div class="graph-filter-grid">
+          ${Object.entries({
+            blocks: "Blocks",
+            supports: "Supports",
+            requires: "Requires",
+            impacts: "Impacts",
+            references: "References",
+            owns: "Owns"
+          }).map(([key, label]) => `<button class="graph-filter-chip ${state.mapRelationFilters[key] ? "active" : ""}" type="button" data-map-relation-filter="${escapeHtml(key)}">${escapeHtml(label)}</button>`).join("")}
+        </div>
+      </div>
+      <div class="graph-control-row">
+        <div class="graph-control-group">
+          <button class="graph-tool-button ${state.isolatedNodeId ? "active" : ""}" type="button" data-map-isolate>Isolate</button>
+          <button class="graph-tool-button ${state.mapShowIsolated ? "active" : ""}" type="button" data-map-show-isolated>Keep isolated</button>
+          <button class="graph-tool-button" type="button" data-map-zoom="out">-</button>
+          <button class="graph-tool-button" type="button" data-map-zoom="in">+</button>
+          <button class="graph-tool-button" type="button" data-map-reset>Reset view</button>
+        </div>
+      </div>
+    </div>
+    <details ${state.mapControlsAdvanced ? "open" : ""} data-map-advanced>
+      <summary data-map-advanced-toggle>Advanced field physics</summary>
+      <div class="graph-advanced-grid">
+        ${[
+          ["center", "Center force"],
+          ["repel", "Repel force"],
+          ["link", "Link force"],
+          ["distance", "Link distance"]
+        ].map(([key, label]) => `
+          <label class="graph-range">
+            <div class="graph-range-head"><span>${escapeHtml(label)}</span><span>${escapeHtml(String(Math.round(state.mapPhysics[key] * 100)))}</span></div>
+            <input type="range" min="0" max="100" value="${escapeHtml(String(Math.round(state.mapPhysics[key] * 100)))}" data-map-physics="${escapeHtml(key)}" />
+          </label>
+        `).join("")}
+      </div>
+    </details>
+  `;
 }
 
 function syncGraphAttention() {
@@ -2997,8 +3441,8 @@ function syncGraphAttention() {
   const stage = document.getElementById("graph-stage");
   if (!model || !stage) return;
   const activeKey = activeMapNodeKey();
-  const visibleKeys = visibleMapNodeKeys(model, activeKey);
-  const fadedKeys = fadedMapNodeKeys(model, activeKey);
+  const visibleKeys = visibleMapNodeKeys(model);
+  const fadedKeys = fadedMapNodeKeys(model);
   stage.querySelectorAll(".graph-node").forEach((element) => {
     const key = element.dataset.nodeKey;
     const hidden = key && !visibleKeys.has(key);
@@ -3006,6 +3450,10 @@ function syncGraphAttention() {
     element.hidden = hidden;
     element.classList.toggle("focused", Boolean(key && activeKey && key === activeKey));
     element.classList.toggle("muted", Boolean(key && !hidden && (fadedKeys.has(key) || (activeKey && key !== activeKey && !modeHighlightsNode(node)))));
+    const stateLabel = element.querySelector(".graph-node-state");
+    if (stateLabel) {
+      stateLabel.hidden = !labelVisibilityForNode(node || { primary: false }, activeKey);
+    }
   });
   stage.querySelectorAll(".graph-link").forEach((element) => {
     const from = element.dataset.fromKey;
@@ -3016,7 +3464,10 @@ function syncGraphAttention() {
     const active = Boolean(activeKey && (from === activeKey || to === activeKey));
     const allowedByMode = modeAllowsRelation(type);
     const priority = relationPriority(type);
-    element.style.opacity = hidden ? "0" : !allowedByMode ? "0.06" : priority === "primary" ? "1" : priority === "secondary" ? "0.45" : "0.2";
+    element.style.opacity = hidden ? "0" : !allowedByMode ? "0.08" : priority === "primary" ? "1" : priority === "secondary" ? "0.45" : "0.2";
+    element.classList.toggle("primary-tone", priority === "primary");
+    element.classList.toggle("secondary", priority === "secondary");
+    element.classList.toggle("contextual", priority === "contextual");
     element.classList.toggle("active", active);
     element.classList.toggle("muted", !active && !hidden && Boolean(activeKey && (!allowedByMode || fadedKeys.has(from) || fadedKeys.has(to))));
   });
@@ -3027,7 +3478,7 @@ function syncGraphAttention() {
     const hidden = !visibleKeys.has(from) || !visibleKeys.has(to);
     element.hidden = hidden;
     const active = Boolean(activeKey && (from === activeKey || to === activeKey));
-    const showByDensity = state.mapLabelDensity === "all" || active || state.isolatedNodeId;
+    const showByDensity = state.mapLabelDensity === "full" || (state.mapLabelDensity === "balanced" ? active || state.isolatedNodeId : active);
     element.classList.toggle("active", active);
     element.classList.toggle("visible", showByDensity && modeAllowsRelation(type));
   });
@@ -3051,7 +3502,7 @@ function renderMapView() {
   const summary = summarizeCycle(cycle);
   const positions = Object.fromEntries(model.nodes.map((node) => [node.key, node]));
   const activeKey = activeMapNodeKey();
-  const visibleKeys = visibleMapNodeKeys(model, activeKey);
+  const visibleKeys = visibleMapNodeKeys(model);
   const links = model.links
     .map((link) => {
       const from = positions[link.from];
@@ -3068,7 +3519,7 @@ function renderMapView() {
           data-to-key="${escapeHtml(link.to)}"
           data-relation-type="${escapeHtml(link.type)}"
           ${hidden ? "hidden" : ""}
-          d="${graphLinkPath(from, to)}"
+          d="${graphLinkPath(from, to, link.type)}"
         ></path>
         <text
           class="graph-link-label ${active ? "active" : ""}"
@@ -3087,7 +3538,7 @@ function renderMapView() {
     "graph-stage",
     `
       <div class="map-stage-overlay">
-        <div class="map-stage-kicker">System reality</div>
+        <div class="map-stage-kicker">${escapeHtml(state.mapFieldRegime === "focused" ? "Focused field" : "Global field")}</div>
         <div class="map-stage-title">${escapeHtml(cycleLabel(cycle))}</div>
         <div class="map-stage-copy">${escapeHtml(cycleNarrative(cycle))}</div>
         <div class="map-stage-metrics">
@@ -3103,17 +3554,11 @@ function renderMapView() {
         </div>
       </div>
       <div id="hover-probe" class="hover-probe" hidden></div>
-      <div class="graph-toolbar">
-        <button class="graph-tool-button ${state.mapSpread === "compact" ? "active" : ""}" type="button" data-map-density="compact" data-map-zoom="out" aria-label="Compact field">-</button>
-        <button class="graph-tool-button ${state.mapSpread === "spread" ? "active" : ""}" type="button" data-map-density="spread" data-map-zoom="in" aria-label="Spread field">+</button>
-        <button class="graph-tool-button ${state.mapLabelDensity === "all" ? "active" : ""}" type="button" data-map-labels aria-label="Toggle labels">L</button>
-        <button class="graph-tool-button ${state.isolatedNodeId ? "active" : ""}" type="button" data-map-isolate aria-label="Isolate focus">I</button>
-        <button class="graph-tool-button" type="button" data-map-reset aria-label="Reset view">R</button>
-      </div>
+      <div id="map-field-controls" class="graph-toolbar">${renderMapToolbar(model, cycle)}</div>
     `
   );
-  setHtml("map-legend", "");
-  setText("map-guide-copy", "Start at the cycle, then read pressure, support, structure, and risk.");
+  setHtml("map-legend", renderMapLegend(model));
+  setText("map-guide-copy", "Start with the cycle, then narrow the field through depth, filters, and focus.");
   setText("map-cycle-narrative", cycleNarrative(cycle));
   applyMapTransform();
   syncGraphAttention();
@@ -3750,6 +4195,8 @@ function bindEvents() {
     }
     const cycleButton = event.target.closest("[data-select-cycle]");
     if (cycleButton) {
+      state.mapFieldRegime = "global";
+      state.focusedNodeId = nodeKey("cycle", cycleButton.dataset.selectCycle);
       selectObject("cycle", cycleButton.dataset.selectCycle);
       return;
     }
@@ -3768,9 +4215,15 @@ function bindEvents() {
     const graphButton = event.target.closest("[data-select]");
     if (graphButton) {
       const [type, id] = graphButton.dataset.select.split(":");
-      if (type === "entity" || type === "risk") return;
-      selectObject(type === "cycle" ? "cycle" : type, id);
-      if (type !== "cycle") activateView("inspect");
+      state.mapFieldRegime = "focused";
+      state.focusedNodeId = nodeKey(type, id);
+      if (type === "cycle" || type === "activity" || type === "document") {
+        state.selected = { type: type === "cycle" ? "cycle" : type, id };
+        if (type === "cycle") {
+          state.focusedCycleId = id;
+        }
+      }
+      void renderEverything();
       return;
     }
     const tabButton = event.target.closest("[data-inspect-tab]");
@@ -3810,19 +4263,61 @@ function bindEvents() {
       renderMapView();
       return;
     }
+    const fieldButton = event.target.closest("[data-map-field]");
+    if (fieldButton) {
+      state.mapFieldRegime = fieldButton.dataset.mapField;
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const depthButton = event.target.closest("[data-map-depth]");
+    if (depthButton) {
+      state.mapDepth = depthButton.dataset.mapDepth;
+      renderMapView();
+      revealRails();
+      return;
+    }
     const densityButton = event.target.closest("[data-map-density]");
     if (densityButton) {
       state.mapSpread = densityButton.dataset.mapDensity;
-      state.mapScale = state.mapSpread === "spread" ? 1.18 : 0.92;
-      applyMapTransform();
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const labelButton = event.target.closest("[data-map-label-density]");
+    if (labelButton) {
+      state.mapLabelDensity = labelButton.dataset.mapLabelDensity;
       syncGraphAttention();
       revealRails();
       return;
     }
-    const labelButton = event.target.closest("[data-map-labels]");
-    if (labelButton) {
-      state.mapLabelDensity = state.mapLabelDensity === "all" ? "focus" : "all";
-      syncGraphAttention();
+    const entityFilterButton = event.target.closest("[data-map-entity-filter]");
+    if (entityFilterButton) {
+      const key = entityFilterButton.dataset.mapEntityFilter;
+      state.mapEntityFilters[key] = !state.mapEntityFilters[key];
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const relationFilterButton = event.target.closest("[data-map-relation-filter]");
+    if (relationFilterButton) {
+      const key = relationFilterButton.dataset.mapRelationFilter;
+      state.mapRelationFilters[key] = !state.mapRelationFilters[key];
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const showIsolatedButton = event.target.closest("[data-map-show-isolated]");
+    if (showIsolatedButton) {
+      state.mapShowIsolated = !state.mapShowIsolated;
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const advancedToggle = event.target.closest("[data-map-advanced-toggle]");
+    if (advancedToggle) {
+      state.mapControlsAdvanced = !state.mapControlsAdvanced;
+      renderMapView();
       revealRails();
       return;
     }
@@ -3869,6 +4364,15 @@ function bindEvents() {
       y: state.dragState.originOffset.y + (event.clientY - state.dragState.startY)
     };
     applyMapTransform();
+    revealRails();
+  });
+
+  document.addEventListener("input", (event) => {
+    const range = event.target.closest("[data-map-physics]");
+    if (!range) return;
+    const key = range.dataset.mapPhysics;
+    state.mapPhysics[key] = Number(range.value) / 100;
+    renderMapView();
     revealRails();
   });
 
