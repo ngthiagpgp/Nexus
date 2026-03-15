@@ -156,6 +156,44 @@ class NexusCliSmokeTest(unittest.TestCase):
             self.assertIn("Demo seed already present:", second_run.stdout)
             self.assertIn("cycles 1", second_run.stdout)
 
+    def test_nexus_audit_lists_recent_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            self.run_cli("init", str(workspace_root))
+            self.run_cli(
+                "entity",
+                "create",
+                "--name",
+                "Projeto X",
+                "--type",
+                "project",
+                cwd=workspace_root,
+            )
+            self.run_cli(
+                "document",
+                "create",
+                "--type",
+                "daily",
+                "--title",
+                "Daily 2026-03-13",
+                cwd=workspace_root,
+            )
+
+            audit_run = self.run_cli("audit", "--limit", "5", cwd=workspace_root)
+            self.assertEqual(audit_run.returncode, 0, audit_run.stdout + audit_run.stderr)
+            self.assertIn("Timestamp | Action | Entity Type | Entity ID | Agent", audit_run.stdout)
+            self.assertIn("create | entity |", audit_run.stdout)
+            self.assertIn("create | document |", audit_run.stdout)
+
+    def test_nexus_audit_fails_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            outside_root = Path(temp_dir) / "outside"
+            outside_root.mkdir(parents=True, exist_ok=True)
+
+            audit_run = self.run_cli("audit", cwd=outside_root)
+            self.assertEqual(audit_run.returncode, 1, audit_run.stdout + audit_run.stderr)
+            self.assertIn("Current directory is not a Nexus workspace", audit_run.stderr)
+
     def test_serve_command_runs_uvicorn_for_current_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir) / "workspace"

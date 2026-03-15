@@ -9,6 +9,7 @@ from fastapi import Body, FastAPI, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from nexus.activities import ActivityRecord, get_activity, list_activities, update_activity_status
+from nexus.audit import AuditLogRecord, list_audit_log
 from nexus.cockpit import render_cockpit_page
 from nexus.cycles import CycleRecord, get_cycle, list_cycles
 from nexus.documents import (
@@ -124,6 +125,11 @@ def create_app(*, workspace_root: Path | None = None) -> FastAPI:
                 },
             },
         }
+
+    @app.get(f"{API_PREFIX}/audit-log")
+    def audit_log(limit: int = Query(50, ge=1, le=200)) -> dict[str, object]:
+        records = api_call(lambda: list_audit_log(resolve_workspace_root(), limit=limit))
+        return {"status": "ok", "data": [serialize_audit_log_record(record) for record in records]}
 
     @app.get(f"{API_PREFIX}/entities")
     def entity_list(
@@ -355,6 +361,10 @@ def serialize_cycle(record: CycleRecord) -> dict[str, Any]:
 
 
 def serialize_activity(record: ActivityRecord) -> dict[str, Any]:
+    return asdict(record)
+
+
+def serialize_audit_log_record(record: AuditLogRecord) -> dict[str, Any]:
     return asdict(record)
 
 

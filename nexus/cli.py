@@ -6,6 +6,7 @@ from typing import Callable, TypeVar
 import typer
 
 from nexus.activities import create_activity, list_activities, update_activity_status
+from nexus.audit import list_audit_log
 from nexus.cycles import create_cycle, list_cycles
 from nexus.demo_seed import seed_demo_workspace
 from nexus.documents import (
@@ -214,6 +215,38 @@ def demo_seed_command() -> None:
         f"entities {result.entity_count}, "
         f"documents {result.document_count}, "
         f"relations {result.relation_count}"
+    )
+
+
+@app.command("audit")
+def audit_command(
+    limit: int = typer.Option(
+        20,
+        "--limit",
+        min=1,
+        help="How many audit rows to show. Max 200.",
+    ),
+) -> None:
+    """Show recent audit_log entries for the current Nexus workspace."""
+
+    records = _run_or_exit(lambda: list_audit_log(Path.cwd(), limit=limit))
+
+    if not records:
+        typer.echo("No audit entries found.")
+        return
+
+    _print_table(
+        ["Timestamp", "Action", "Entity Type", "Entity ID", "Agent"],
+        [
+            [
+                record.timestamp,
+                record.action,
+                record.entity_type,
+                record.entity_id or "-",
+                record.agent,
+            ]
+            for record in records
+        ],
     )
 
 

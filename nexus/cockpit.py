@@ -345,6 +345,16 @@ def render_cockpit_page() -> str:
           </article>
 
           <article class="panel">
+            <h2>Recent Audit</h2>
+            <p class="inline-note">
+              Latest operational mutations recorded in the local workspace audit trail.
+            </p>
+            <ul class="resource-list" id="audit-log-list">
+              <li class="resource-meta">Loading audit trail...</li>
+            </ul>
+          </article>
+
+          <article class="panel">
             <nav class="tabs" id="cockpit-tabs" aria-label="Cockpit views">
               <button class="tab-button active" id="tab-cycles" type="button" data-view="cycles-view">Cycles</button>
               <button class="tab-button" id="tab-activities" type="button" data-view="activities-view">Activities</button>
@@ -476,6 +486,7 @@ def render_cockpit_page() -> str:
     <script>
       const api = {
         status: "/api/system/status",
+        auditLog: "/api/audit-log",
         entities: "/api/entities",
         documents: "/api/documents",
         documentIntegrity: "/api/document-integrity",
@@ -489,6 +500,7 @@ def render_cockpit_page() -> str:
         entities: [],
         documents: [],
         documentIntegrity: {},
+        auditLog: [],
         cycles: [],
         activities: [],
         activeView: "cycles-view",
@@ -567,6 +579,24 @@ def render_cockpit_page() -> str:
             ? "warning"
             : "danger";
         return `<span class="badge ${badgeClass}">integrity ${escapeHtml(integrity.integrity_state)}</span>`;
+      }
+
+      function renderAuditLog() {
+        const list = document.getElementById("audit-log-list");
+        if (!state.auditLog.length) {
+          list.innerHTML = '<li class="empty">No audit entries recorded yet.</li>';
+          return;
+        }
+
+        list.innerHTML = state.auditLog.map((entry) => `
+          <li class="resource-item">
+            <div class="resource-title">${escapeHtml(entry.action)} | ${escapeHtml(entry.entity_type)}</div>
+            <div class="resource-meta">
+              ${escapeHtml(entry.timestamp)} | ${escapeHtml(entry.entity_id || "-")} | ${escapeHtml(entry.agent)}
+            </div>
+            <div class="resource-meta">${escapeHtml(entry.reason || "No reason recorded")}</div>
+          </li>
+        `).join("");
       }
 
       function activateView(viewId) {
@@ -943,14 +973,17 @@ def render_cockpit_page() -> str:
       }
 
       async function refreshOperationalData() {
-        const [status, documents, documentIntegrity, cycles, activities] = await Promise.all([
+        const [status, auditLog, documents, documentIntegrity, cycles, activities] = await Promise.all([
           fetchJson(api.status),
+          fetchJson(`${api.auditLog}?limit=10`),
           fetchJson(api.documents),
           fetchJson(api.documentIntegrity),
           fetchJson(api.cycles),
           fetchJson(api.activities)
         ]);
         renderWorkspaceStatus(status);
+        state.auditLog = auditLog;
+        renderAuditLog();
         state.documents = documents;
         state.documentIntegrity = indexDocumentIntegrity(documentIntegrity);
         state.cycles = cycles;
@@ -1273,7 +1306,7 @@ def render_cockpit_page() -> str:
       }
 
       function setWorkspaceEmptyState() {
-        ["entities-list", "documents-list", "cycles-list", "activities-list"].forEach((id) => {
+        ["entities-list", "documents-list", "cycles-list", "activities-list", "audit-log-list"].forEach((id) => {
           setHtml(id, '<li class="empty">Workspace is not initialized.</li>');
         });
         setHtml("activities-breakdown", "");
@@ -1305,10 +1338,11 @@ def render_cockpit_page() -> str:
             return;
           }
 
-          const [entities, documents, documentIntegrity, cycles, activities] = await Promise.all([
+          const [entities, documents, documentIntegrity, auditLog, cycles, activities] = await Promise.all([
             fetchJson(api.entities),
             fetchJson(api.documents),
             fetchJson(api.documentIntegrity),
+            fetchJson(`${api.auditLog}?limit=10`),
             fetchJson(api.cycles),
             fetchJson(api.activities)
           ]);
@@ -1316,8 +1350,10 @@ def render_cockpit_page() -> str:
           state.entities = entities;
           state.documents = documents;
           state.documentIntegrity = indexDocumentIntegrity(documentIntegrity);
+          state.auditLog = auditLog;
           state.cycles = cycles;
           state.activities = activities;
+          renderAuditLog();
           populateCycleFilterOptions();
           renderAllLists();
           activateView("cycles-view");

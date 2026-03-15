@@ -60,6 +60,48 @@ class NexusApiSmokeTest(unittest.TestCase):
             self.assertIn("/api/activities", response.text)
             self.assertIn("/api/documents", response.text)
             self.assertIn("/api/document-integrity", response.text)
+            self.assertIn("/api/audit-log", response.text)
+            self.assertIn('id="audit-log-list"', response.text)
+
+    def test_audit_log_endpoint_exposes_recent_rows_with_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "workspace"
+            initialize_workspace(workspace_root)
+            create_entity(
+                workspace_root,
+                name="Projeto X",
+                entity_type="project",
+                context="Pesquisa em economia",
+            )
+            create_document(
+                workspace_root,
+                document_type="daily",
+                title="Daily 2026-03-13",
+                cycle_id=None,
+            )
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.get("/api/audit-log", params={"limit": 2})
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["status"], "ok")
+            self.assertEqual(len(payload["data"]), 2)
+            self.assertEqual(
+                set(payload["data"][0].keys()),
+                {"id", "action", "entity_type", "entity_id", "agent", "reason", "timestamp"},
+            )
+            self.assertTrue(all(item["action"] == "create" for item in payload["data"]))
+
+    def test_audit_log_endpoint_fails_cleanly_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace_root = Path(temp_dir) / "outside"
+            workspace_root.mkdir(parents=True, exist_ok=True)
+            client = TestClient(create_app(workspace_root=workspace_root))
+
+            response = client.get("/api/audit-log")
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.json()["status"], "error")
+            self.assertIn("Current directory is not a Nexus workspace", response.json()["message"])
 
     def test_health_and_status_in_initialized_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

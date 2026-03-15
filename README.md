@@ -1,129 +1,77 @@
 # Nexus MVP
 
-Workspace inicial do Nexus MVP com artefatos de especificacao e planejamento.
+Nexus is a local-first operational workspace built on:
 
-## Estrutura atual
+- DuckDB for structured state
+- Markdown files for living documents
+- Typer for local CLI operations
+- FastAPI for the local API and cockpit
 
-- `Plan/`: especificacoes do MVP, API, CLI, schema e artefatos visuais.
+The current MVP already supports:
 
-## Objetivo deste bootstrap
+- workspace bootstrap with `nexus init`
+- demo workspace seeding with `nexus demo-seed`
+- local API + cockpit with `nexus serve`
+- CLI/API/cockpit inspection for entities, documents, cycles, activities, relations, and audit trail
+- controlled status updates for activities and documents
+- document integrity verification and explicit reconciliation
 
-- tornar o workspace versionavel com `git`
-- preparar publicacao em repositorio GitHub
-- registrar um rastro minimo de mudancas estruturais
+## Install
+
+```bash
+python -m pip install -e .
+```
 
 ## 5-minute quickstart
 
-1. Instale o projeto localmente:
-
-```bash
-python -m pip install -e .
-```
-
-2. Inicialize um workspace de teste:
+1. Create a fresh workspace:
 
 ```bash
 nexus init ./sandbox-workspace
 cd ./sandbox-workspace
 ```
 
-3. Popule um dataset demo coerente:
+2. Seed a coherent demo dataset:
 
 ```bash
 nexus demo-seed
 ```
 
-4. Suba a API local e o cockpit:
+3. Start the local API and cockpit:
 
 ```bash
 nexus serve
 ```
 
-5. Abra no navegador:
+4. Open the cockpit:
 
 ```text
 http://127.0.0.1:3000/
 ```
 
-## Bootstrap local
-
-Para expor o comando `nexus` localmente:
+5. Inspect the workspace from the CLI:
 
 ```bash
-python -m pip install -e .
+nexus status
+nexus audit --limit 20
 ```
 
-Para inicializar um workspace Nexus:
+## Core local commands
 
 ```bash
 nexus init ./sandbox-workspace
-```
-
-Alternativamente, sem instalar o script:
-
-```bash
-python -m nexus init ./sandbox-workspace
-```
-
-Para inspecionar se o diretorio atual ja e um workspace Nexus:
-
-```bash
-python -m nexus status
 nexus demo-seed
 nexus serve
+nexus status
+nexus audit --limit 20
 ```
 
-Para criar e listar entidades no workspace atual:
+## Cockpit and API
 
-```bash
-python -m nexus entity create --name "Projeto X" --type project
-python -m nexus entity list --type project
-```
+- Cockpit: `http://127.0.0.1:3000/`
+- Health: `http://127.0.0.1:3000/api/health`
+- Workspace status: `http://127.0.0.1:3000/api/system/status`
 
-Para criar e listar documentos no workspace atual:
+## Human test guide
 
-```bash
-python -m nexus document create --type daily --title "Daily 2026-03-13"
-python -m nexus document list --type daily
-python -m nexus document show "Daily 2026-03-13"
-python -m nexus document set-status "Daily 2026-03-13" --status approved
-python -m nexus document verify "Daily 2026-03-13"
-python -m nexus document reconcile "Daily 2026-03-13"
-```
-
-Para criar e listar relacoes no workspace atual:
-
-```bash
-python -m nexus relation create --from "Projeto X" --to "Projeto Y" --type depende_de
-python -m nexus relation list --from "Projeto X"
-```
-
-Para criar e listar atividades no workspace atual:
-
-```bash
-python -m nexus activity create --title "Finish report" --cycle-id cycle-daily-2026-03-13
-python -m nexus activity list --cycle-id cycle-daily-2026-03-13
-python -m nexus activity set-status <activity-id> --status in_progress
-```
-
-Para criar e listar ciclos no workspace atual:
-
-```bash
-python -m nexus cycle create --type daily --start 2026-03-13
-python -m nexus cycle list --type daily
-```
-
-Para subir a API local e o cockpit sobre um workspace Nexus:
-
-```bash
-cd ./sandbox-workspace
-nexus serve
-```
-
-Para abrir o cockpit minimo no navegador local:
-
-```text
-http://127.0.0.1:3000/
-```
-
-O cockpit atual e um work surface local minimo, com foco operacional em cycles e inspeccao ligada a activities e documents.
+See [reports/TESTING_GUIDE.md](reports/TESTING_GUIDE.md) for the manual MVP validation script.
