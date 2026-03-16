@@ -182,7 +182,7 @@ def serve_command(
     port: int = typer.Option(3000, "--port", min=1, max=65535, help="Port for the local Nexus API."),
 ) -> None:
     """Serve the local Nexus API and cockpit for the current workspace."""
-    from nexus.api import create_app
+    from nexus.adapters.api.api import create_app
     import uvicorn
 
     workspace_status = _run_or_exit(lambda: inspect_workspace_read_model(Path.cwd()))

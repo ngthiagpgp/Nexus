@@ -1,4 +1,4 @@
-from nexus.cli import main
+from nexus.adapters.cli.cli import main
 
 
 if __name__ == "__main__":
