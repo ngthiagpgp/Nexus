@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from nexus.modules.activities import ActivityRecord, get_activity, list_activities, update_activity_status
 from nexus.audit import AuditLogRecord, list_audit_log
-from nexus.cockpit import render_cockpit_page
+from nexus.surfaces.human.cockpit.cockpit import render_cockpit_page
 from nexus.core.read_models import WorkspaceStatusReadModel, inspect_workspace_read_model
 from nexus.core.workspace import WorkspaceBootstrapError
 from nexus.modules.cycles import CycleRecord, get_cycle, list_cycles
