@@ -479,13 +479,31 @@ button, input, select { font: inherit; }
   left: 18px;
   bottom: 18px;
   z-index: 3;
-  display: inline-flex;
-  gap: 8px;
-  padding: 8px;
+  max-width: min(360px, calc(100% - 36px));
+}
+
+.graph-toolbar-collapsed,
+.graph-toolbar-panel {
   border: 1px solid rgba(141, 182, 255, 0.12);
   border-radius: 16px;
   background: rgba(8, 13, 20, 0.76);
   backdrop-filter: blur(12px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+}
+
+.graph-toolbar-collapsed {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.graph-toolbar-panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
 }
 
 .graph-tool-button {
@@ -628,11 +646,11 @@ button, input, select { font: inherit; }
 }
 
 .graph-link {
-  stroke: rgba(141, 182, 255, 0.24);
-  stroke-width: calc(1.12px * var(--graph-link-scale));
+  stroke: var(--relation-color, rgba(141, 182, 255, 0.24));
+  stroke-width: calc(0.9px * var(--graph-link-scale) * var(--relation-thickness, 1));
   stroke-linecap: round;
   fill: none;
-  filter: drop-shadow(0 0 8px rgba(141, 182, 255, 0.12));
+  filter: drop-shadow(0 0 6px rgba(141, 182, 255, 0.08));
   transition: opacity 120ms ease, stroke-width 120ms ease;
 }
 
@@ -667,7 +685,7 @@ button, input, select { font: inherit; }
   stroke-width: calc(1.46px * var(--graph-link-scale));
 }
 
-.graph-link.active { stroke-width: calc(2.2px * var(--graph-link-scale)); opacity: 1; }
+.graph-link.active { stroke-width: calc(1.65px * var(--graph-link-scale) * var(--relation-thickness, 1)); opacity: 1; }
 .graph-link.muted { opacity: 0.22; }
 
 .graph-link-label {
@@ -682,16 +700,19 @@ button, input, select { font: inherit; }
 
 .graph-node {
   --node-scale: 1;
+  --node-tint: rgba(141, 182, 255, 0.28);
   position: absolute;
   transform: translate(-50%, -50%) scale(var(--node-scale));
-  min-width: 132px;
-  max-width: 174px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 12px 13px;
-  background: linear-gradient(180deg, rgba(19, 30, 43, 0.98), rgba(8, 14, 21, 0.96));
+  min-width: 112px;
+  max-width: 150px;
+  border: 1px solid color-mix(in srgb, var(--node-tint) 48%, rgba(255,255,255,0.08));
+  border-radius: 16px;
+  padding: 10px 11px;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--node-tint) 18%, transparent), transparent 56%),
+    linear-gradient(180deg, rgba(16, 24, 35, 0.86), rgba(7, 12, 18, 0.78));
   color: var(--text);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.03);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.02);
   cursor: pointer;
   text-align: left;
   backdrop-filter: blur(8px);
@@ -704,23 +725,23 @@ button, input, select { font: inherit; }
 }
 
 .graph-node.focused {
-  border-color: rgba(141, 182, 255, 0.38);
-  box-shadow: 0 0 0 1px rgba(141, 182, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.32);
+  border-color: color-mix(in srgb, var(--node-tint) 74%, white 12%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--node-tint) 24%, transparent), 0 18px 40px rgba(0, 0, 0, 0.24);
 }
 
 .graph-node.muted { opacity: 0.34; }
 
 .graph-node.primary {
-  width: 246px;
-  min-width: 246px;
-  border-color: rgba(176, 155, 255, 0.48);
+  width: 224px;
+  min-width: 224px;
+  border-color: color-mix(in srgb, var(--node-tint) 68%, white 8%);
   background:
-    radial-gradient(circle at top, rgba(193, 168, 255, 0.16), transparent 56%),
-    linear-gradient(180deg, rgba(74, 52, 112, 0.26), rgba(16, 26, 38, 0.98));
+    radial-gradient(circle at top, color-mix(in srgb, var(--node-tint) 24%, transparent), transparent 56%),
+    linear-gradient(180deg, rgba(33, 26, 52, 0.34), rgba(11, 18, 26, 0.92));
   box-shadow:
-    0 0 0 1px rgba(176, 155, 255, 0.12),
-    0 0 36px rgba(151, 134, 255, 0.24),
-    0 20px 44px rgba(0, 0, 0, 0.34);
+    0 0 0 1px color-mix(in srgb, var(--node-tint) 18%, transparent),
+    0 0 28px color-mix(in srgb, var(--node-tint) 18%, transparent),
+    0 18px 40px rgba(0, 0, 0, 0.28);
   z-index: 3;
 }
 
@@ -728,10 +749,6 @@ button, input, select { font: inherit; }
   font-size: 1.16rem;
 }
 
-.graph-node.activity { border-color: rgba(124, 165, 223, 0.2); }
-.graph-node.document { border-color: rgba(240, 195, 122, 0.22); }
-.graph-node.entity { border-color: rgba(143, 176, 159, 0.2); }
-.graph-node.risk { border-color: rgba(255, 154, 147, 0.26); }
 .graph-node.selected {
   outline: 2px solid rgba(141, 182, 255, 0.3);
   box-shadow: 0 0 0 1px rgba(141, 182, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.28);
@@ -751,7 +768,7 @@ button, input, select { font: inherit; }
 }
 
 .graph-node-state {
-  margin-top: 10px;
+  margin-top: 8px;
   display: inline-flex;
   align-items: center;
   padding: 4px 9px;
@@ -1398,6 +1415,22 @@ button, input, select { font: inherit; }
 
 .graph-toolbar summary::-webkit-details-marker { display: none; }
 
+.graph-section {
+  border-top: 1px solid rgba(141, 182, 255, 0.08);
+  padding-top: 10px;
+}
+
+.graph-section.nested {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.graph-section-body {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .graph-advanced-grid {
   display: grid;
   gap: 10px;
@@ -1408,6 +1441,12 @@ button, input, select { font: inherit; }
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.graph-visual-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .graph-range {
@@ -1434,6 +1473,14 @@ button, input, select { font: inherit; }
 .graph-range input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
+}
+
+.graph-range input[type="color"] {
+  width: 100%;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 #map-legend {
@@ -2075,24 +2122,11 @@ const api = {
 };
 
 function defaultMapEntityFilters() {
-  return {
-    cycles: true,
-    activities: true,
-    documents: true,
-    entities: true,
-    risks: true
-  };
+  return {};
 }
 
 function defaultMapRelationFilters() {
-  return {
-    blocks: true,
-    supports: true,
-    requires: true,
-    impacts: true,
-    references: true,
-    owns: true
-  };
+  return {};
 }
 
 function defaultMapPhysics() {
@@ -2116,12 +2150,19 @@ const state = {
   mapEntityFilters: defaultMapEntityFilters(),
   mapRelationFilters: defaultMapRelationFilters(),
   mapShowIsolated: false,
+  mapControlsOpen: false,
+  mapControlsFilterOpen: false,
+  mapControlsVisualOpen: false,
+  mapControlsRelationVisualOpen: false,
+  mapControlsEntityVisualOpen: false,
   mapControlsAdvanced: false,
   mapPhysics: defaultMapPhysics(),
   mapNodeSize: 1,
   mapLinkThickness: 1,
   mapFrozen: false,
-  mapAnimate: true,
+  mapAnimate: false,
+  mapNodeVisuals: {},
+  mapRelationVisuals: {},
   status: null,
   entities: [],
   relations: [],
@@ -2138,6 +2179,7 @@ const state = {
   mapOffset: { x: 0, y: 0 },
   mapPositions: {},
   dragState: null,
+  dragSuppressUntil: 0,
   railSoftTimer: null,
   mapModel: null,
   mapSimulation: null,
@@ -2884,7 +2926,7 @@ function graphNodeMarkup(node) {
   return `
     <button
       class="graph-node ${escapeHtml(node.kind)} ${node.primary ? "primary" : ""} ${node.selected ? "selected" : ""}"
-      style="left:${node.x}%; top:${node.y}%"
+      style="left:${node.x}%; top:${node.y}%; ${nodeVisualStyle(node)}"
       type="button"
       data-select="${escapeHtml(node.kind)}:${escapeHtml(node.id)}"
       data-node-key="${escapeHtml(node.key)}"
@@ -2925,16 +2967,17 @@ function graphLinkPath(from, to, type) {
 }
 
 function relationTone(type) {
-  if (type === "blocks") return "blocks";
-  if (type === "supports") return "supports";
-  if (type === "requires") return "requires";
-  if (type === "impacts") return "impacts";
-  if (["owns", "owner_of", "ownership"].includes(type)) return "owns";
-  return "references";
+  const normalized = String(type || "references")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  if (["owns", "owner_of", "ownership"].includes(normalized)) return "owns";
+  return normalized || "references";
 }
 
 function relationLabel(type) {
-  return titleCase(type || "linked");
+  return titleCase(String(type || "linked").replaceAll("_", " "));
 }
 
 function clamp(value, min, max) {
@@ -2951,12 +2994,67 @@ function depthLimitValue() {
   return state.mapDepth === "all" ? Number.POSITIVE_INFINITY : Number(state.mapDepth);
 }
 
-function kindFilterKey(kind) {
-  if (kind === "risk") return "risks";
-  if (kind === "entity") return "entities";
-  if (kind === "cycle") return "cycles";
-  if (kind === "activity") return "activities";
-  return "documents";
+function nodeTypeColor(kind) {
+  if (kind === "cycle") return "#b59bff";
+  if (kind === "activity") return "#7eb6ff";
+  if (kind === "document") return "#f0c37a";
+  if (kind === "risk") return "#ff9a93";
+  if (kind === "entity") return "#8fbd9f";
+  return "#9fb2c8";
+}
+
+function relationTypeColor(type) {
+  const tone = relationTone(type);
+  if (tone === "blocks") return "#ff9a93";
+  if (tone === "supports") return "#f0c37a";
+  if (tone === "requires") return "#6cb5ff";
+  if (tone === "impacts") return "#b59bff";
+  if (tone === "owns") return "#8fbd9f";
+  return "#7f91a3";
+}
+
+function defaultNodeVisual(kind) {
+  return {
+    color: nodeTypeColor(kind),
+    size: 1,
+    force: 1
+  };
+}
+
+function defaultRelationVisual(type) {
+  return {
+    color: relationTypeColor(type),
+    thickness: 1,
+    force: 1
+  };
+}
+
+function nodeVisualStyle(node) {
+  const visual = state.mapNodeVisuals[node.kind] || defaultNodeVisual(node.kind);
+  return `--node-tint:${escapeHtml(visual.color)}; --node-scale:${escapeHtml(String(graphNodeScaleFor(node)))};`;
+}
+
+function relationVisualStyle(type) {
+  const visual = state.mapRelationVisuals[relationTone(type)] || defaultRelationVisual(type);
+  return `--relation-color:${escapeHtml(visual.color)}; --relation-thickness:${escapeHtml(String(visual.thickness))};`;
+}
+
+function syncDiscoveredMapControls(rawModel) {
+  const nodeKinds = Array.from(new Set(rawModel.nodes.map((node) => node.kind))).sort();
+  const relationTypes = Array.from(new Set(rawModel.links.map((link) => relationTone(link.type)))).sort();
+  state.mapEntityFilters = Object.fromEntries(
+    nodeKinds.map((kind) => [kind, state.mapEntityFilters[kind] !== false])
+  );
+  state.mapRelationFilters = Object.fromEntries(
+    relationTypes.map((type) => [type, state.mapRelationFilters[type] !== false])
+  );
+  state.mapNodeVisuals = Object.fromEntries(
+    nodeKinds.map((kind) => [kind, { ...defaultNodeVisual(kind), ...(state.mapNodeVisuals[kind] || {}) }])
+  );
+  state.mapRelationVisuals = Object.fromEntries(
+    relationTypes.map((type) => [type, { ...defaultRelationVisual(type), ...(state.mapRelationVisuals[type] || {}) }])
+  );
+  return { nodeKinds, relationTypes };
 }
 
 function relationFilterEnabled(type) {
@@ -2964,7 +3062,7 @@ function relationFilterEnabled(type) {
 }
 
 function nodeFilterEnabled(kind) {
-  return state.mapEntityFilters[kindFilterKey(kind)] !== false;
+  return state.mapEntityFilters[kind] !== false;
 }
 
 function neighborhoodDepthMap(model, anchorKey) {
@@ -3081,16 +3179,20 @@ function blendNodePosition(key, target) {
 }
 
 function graphNodeMass(kind) {
-  if (kind === "cycle") return 2.8;
-  if (kind === "risk") return 1.9;
-  if (kind === "activity") return 1.55;
-  if (kind === "document") return 1.34;
-  return 1.18;
+  const visualForce = state.mapNodeVisuals[kind]?.force ?? 1;
+  const base =
+    kind === "cycle" ? 2.8 :
+    kind === "risk" ? 1.9 :
+    kind === "activity" ? 1.55 :
+    kind === "document" ? 1.34 :
+    1.18;
+  return base * visualForce;
 }
 
 function graphNodeScaleFor(node) {
   const base = node?.primary ? 1.12 : node?.kind === "risk" ? 0.94 : 1;
-  return clamp(state.mapNodeSize * base, 0.72, 1.72);
+  const local = node?.kind ? state.mapNodeVisuals[node.kind]?.size ?? 1 : 1;
+  return clamp(state.mapNodeSize * local * base, 0.72, 1.72);
 }
 
 function baseLinkDistance(type) {
@@ -3105,22 +3207,23 @@ function baseLinkDistance(type) {
 
 function relationPhysicsProfile(type) {
   const tone = relationTone(type);
+  const forceScale = state.mapRelationVisuals[tone]?.force ?? 1;
   if (tone === "blocks") {
-    return { tension: 1.42, fromBias: 1, toBias: 1.08, alignX: 0.026, alignY: 0.012, vector: 0.005 };
+    return { tension: 1.42 * forceScale, fromBias: 1, toBias: 1.08, alignX: 0.026 * forceScale, alignY: 0.012 * forceScale, vector: 0.005 * forceScale };
   }
   if (tone === "supports") {
-    return { tension: 1, fromBias: 1, toBias: 1, cluster: 0.01 };
+    return { tension: 1 * forceScale, fromBias: 1, toBias: 1, cluster: 0.01 * forceScale };
   }
   if (tone === "requires") {
-    return { tension: 0.88, fromBias: 0.72, toBias: 1.18, directional: 0.014 };
+    return { tension: 0.88 * forceScale, fromBias: 0.72, toBias: 1.18, directional: 0.014 * forceScale };
   }
   if (tone === "impacts") {
-    return { tension: 1.16, fromBias: 0.92, toBias: 1.08, vector: 0.015 };
+    return { tension: 1.16 * forceScale, fromBias: 0.92, toBias: 1.08, vector: 0.015 * forceScale };
   }
   if (tone === "owns") {
-    return { tension: 1.12, fromBias: 0.85, toBias: 1, radial: 0.034 };
+    return { tension: 1.12 * forceScale, fromBias: 0.85, toBias: 1, radial: 0.034 * forceScale };
   }
-  return { tension: 0.58, fromBias: 1, toBias: 1 };
+  return { tension: 0.58 * forceScale, fromBias: 1, toBias: 1 };
 }
 
 function stableNodeSeed(key) {
@@ -3197,7 +3300,22 @@ function applyMapVisualTuning() {
   document.querySelectorAll(".graph-node").forEach((element) => {
     const key = element.dataset.nodeKey;
     const node = (key && liveNodes?.get(key)) || state.mapModel?.nodes.find((item) => item.key === key);
-    element.style.setProperty("--node-scale", String(graphNodeScaleFor(node)));
+    if (node) {
+      const visual = state.mapNodeVisuals[node.kind] || defaultNodeVisual(node.kind);
+      element.style.setProperty("--node-scale", String(graphNodeScaleFor(node)));
+      element.style.setProperty("--node-tint", visual.color);
+    }
+  });
+  document.querySelectorAll(".graph-link").forEach((element) => {
+    const type = element.dataset.relationType;
+    const visual = state.mapRelationVisuals[relationTone(type)] || defaultRelationVisual(type);
+    element.style.setProperty("--relation-color", visual.color);
+    element.style.setProperty("--relation-thickness", String(visual.thickness));
+  });
+  document.querySelectorAll(".graph-link-label").forEach((element) => {
+    const type = element.dataset.relationType;
+    const visual = state.mapRelationVisuals[relationTone(type)] || defaultRelationVisual(type);
+    element.style.fill = visual.color;
   });
 }
 
@@ -3335,6 +3453,14 @@ function tickMapSimulation(timestamp) {
 
   let energy = 0;
   nodes.forEach((node) => {
+    const draggingNode = state.dragState?.kind === "node" && state.dragState.nodeKey === node.key;
+    if (draggingNode) {
+      node.vx = 0;
+      node.vy = 0;
+      node.targetX = node.x;
+      node.targetY = node.y;
+      return;
+    }
     const memory = node.primary ? gravity * 1.28 : gravity;
     node.vx += (node.targetX - node.x) * memory;
     node.vy += (node.targetY - node.y) * memory;
@@ -3543,6 +3669,7 @@ function renderMiniMapField(targetId, cycle, copy) {
 
 function buildMapModel(cycle) {
   const raw = buildRawMapModel(cycle);
+  const discovered = syncDiscoveredMapControls(raw);
   const anchorKey = resolveMapAnchorKey(raw, cycle);
   const filteredNodes = raw.nodes.filter((node) => nodeFilterEnabled(node.kind));
   const allowedNodeKeys = new Set(filteredNodes.map((node) => node.key));
@@ -3573,6 +3700,8 @@ function buildMapModel(cycle) {
   const visibleDepth = neighborhoodDepthMap(visibleModel, anchorKey);
   return {
     anchorKey,
+    availableKinds: discovered.nodeKinds,
+    availableRelationTypes: discovered.relationTypes,
     nodes: layoutMapNodes(visibleNodes, anchorKey, visibleDepth),
     links: filteredLinks.map((link) => ({ ...link, tone: relationTone(link.type), priority: relationPriority(link.type) })),
     depthMap: visibleDepth
@@ -3626,6 +3755,18 @@ function applyMapTransform() {
   renderHoverProbe();
 }
 
+function graphPointFromPointer(clientX, clientY) {
+  const stage = document.getElementById("graph-stage");
+  if (!stage) return { x: 50, y: 50 };
+  const rect = stage.getBoundingClientRect();
+  const localX = (clientX - rect.left - state.mapOffset.x) / state.mapScale;
+  const localY = (clientY - rect.top - state.mapOffset.y) / state.mapScale;
+  return {
+    x: clamp((localX / rect.width) * 100, 4, 96),
+    y: clamp((localY / rect.height) * 100, 6, 94)
+  };
+}
+
 function zoomMap(delta) {
   state.mapScale = clamp(Number((state.mapScale + delta).toFixed(2)), 0.76, 1.9);
   applyMapTransform();
@@ -3643,11 +3784,18 @@ function resetMapView() {
   state.mapLabelDensity = "balanced";
   state.mapEntityFilters = defaultMapEntityFilters();
   state.mapRelationFilters = defaultMapRelationFilters();
+  state.mapControlsOpen = false;
+  state.mapControlsFilterOpen = false;
+  state.mapControlsVisualOpen = false;
+  state.mapControlsRelationVisualOpen = false;
+  state.mapControlsEntityVisualOpen = false;
   state.mapPhysics = defaultMapPhysics();
   state.mapNodeSize = 1;
   state.mapLinkThickness = 1;
   state.mapFrozen = false;
-  state.mapAnimate = true;
+  state.mapAnimate = false;
+  state.mapNodeVisuals = {};
+  state.mapRelationVisuals = {};
   state.mapShowIsolated = false;
   renderMapView();
 }
@@ -3685,15 +3833,81 @@ function renderMapLegend(model) {
   `;
 }
 
+function mapKindLabel(kind) {
+  return titleCase(String(kind || "node").replaceAll("_", " "));
+}
+
+function renderNodeVisualControls(kinds) {
+  return kinds.map((kind) => {
+    const visual = state.mapNodeVisuals[kind] || defaultNodeVisual(kind);
+    return `
+      <details class="graph-visual-type" ${state.mapControlsEntityVisualOpen ? "open" : ""}>
+        <summary>${escapeHtml(mapKindLabel(kind))}</summary>
+        <div class="graph-visual-grid">
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Color</span><span>${escapeHtml(visual.color)}</span></div>
+            <input type="color" value="${escapeHtml(visual.color)}" data-map-node-color="${escapeHtml(kind)}" />
+          </label>
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Size</span><span>${escapeHtml(String(Math.round(visual.size * 100)))}%</span></div>
+            <input type="range" min="70" max="160" value="${escapeHtml(String(Math.round(visual.size * 100)))}" data-map-node-visual-size="${escapeHtml(kind)}" />
+          </label>
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Force</span><span>${escapeHtml(String(Math.round(visual.force * 100)))}%</span></div>
+            <input type="range" min="60" max="170" value="${escapeHtml(String(Math.round(visual.force * 100)))}" data-map-node-visual-force="${escapeHtml(kind)}" />
+          </label>
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
+function renderRelationVisualControls(types) {
+  return types.map((type) => {
+    const visual = state.mapRelationVisuals[type] || defaultRelationVisual(type);
+    return `
+      <details class="graph-visual-type" ${state.mapControlsRelationVisualOpen ? "open" : ""}>
+        <summary>${escapeHtml(relationLabel(type))}</summary>
+        <div class="graph-visual-grid">
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Color</span><span>${escapeHtml(visual.color)}</span></div>
+            <input type="color" value="${escapeHtml(visual.color)}" data-map-relation-color="${escapeHtml(type)}" />
+          </label>
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Thickness</span><span>${escapeHtml(String(Math.round(visual.thickness * 100)))}%</span></div>
+            <input type="range" min="60" max="180" value="${escapeHtml(String(Math.round(visual.thickness * 100)))}" data-map-relation-thickness="${escapeHtml(type)}" />
+          </label>
+          <label class="graph-range compact">
+            <div class="graph-range-head"><span>Force</span><span>${escapeHtml(String(Math.round(visual.force * 100)))}%</span></div>
+            <input type="range" min="60" max="180" value="${escapeHtml(String(Math.round(visual.force * 100)))}" data-map-relation-force="${escapeHtml(type)}" />
+          </label>
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
 function renderMapToolbar(model, cycle) {
+  if (!state.mapControlsOpen) {
+    return `
+      <button class="graph-toolbar-collapsed" type="button" data-map-controls-toggle>
+        <span>Field controls</span>
+        <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+      </button>
+    `;
+  }
+  const availableKinds = model.availableKinds || [];
+  const availableRelationTypes = model.availableRelationTypes || [];
   return `
+    <div class="graph-toolbar-panel">
     <div class="graph-toolbar-header">
       <div>
         <div class="graph-toolbar-title">Field controls</div>
-        <div class="graph-toolbar-copy">Shape the neighborhood without leaving the field.</div>
+        <div class="graph-toolbar-copy">Govern the local world without leaving the map.</div>
       </div>
-      <div class="badge-row">
+      <div class="badge-row graph-toolbar-actions">
         <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+        <button class="graph-chip active" type="button" data-map-controls-toggle>Collapse</button>
       </div>
     </div>
     <div class="graph-control-stack">
@@ -3736,31 +3950,6 @@ function renderMapToolbar(model, cycle) {
         </div>
       </div>
       <div class="graph-control-row">
-        <div class="graph-control-label">Node filters</div>
-        <div class="graph-filter-grid">
-          ${Object.entries({
-            cycles: "Cycles",
-            activities: "Activities",
-            documents: "Documents",
-            risks: "Risks",
-            entities: "Entities"
-          }).map(([key, label]) => `<button class="graph-filter-chip ${state.mapEntityFilters[key] ? "active" : ""}" type="button" data-map-entity-filter="${escapeHtml(key)}">${escapeHtml(label)}</button>`).join("")}
-        </div>
-      </div>
-      <div class="graph-control-row">
-        <div class="graph-control-label">Relation filters</div>
-        <div class="graph-filter-grid">
-          ${Object.entries({
-            blocks: "Blocks",
-            supports: "Supports",
-            requires: "Requires",
-            impacts: "Impacts",
-            references: "References",
-            owns: "Owns"
-          }).map(([key, label]) => `<button class="graph-filter-chip ${state.mapRelationFilters[key] ? "active" : ""}" type="button" data-map-relation-filter="${escapeHtml(key)}">${escapeHtml(label)}</button>`).join("")}
-        </div>
-      </div>
-      <div class="graph-control-row">
         <div class="graph-control-group">
           <button class="graph-tool-button ${state.isolatedNodeId ? "active" : ""}" type="button" data-map-isolate>Isolate</button>
           <button class="graph-tool-button ${state.mapShowIsolated ? "active" : ""}" type="button" data-map-show-isolated>Keep isolated</button>
@@ -3772,6 +3961,40 @@ function renderMapToolbar(model, cycle) {
         </div>
       </div>
     </div>
+    <details class="graph-section" ${state.mapControlsFilterOpen ? "open" : ""} data-map-section="filters">
+      <summary data-map-section-toggle="filters">Filter</summary>
+      <div class="graph-section-body">
+        <div class="graph-control-row">
+          <div class="graph-control-label">Relations</div>
+          <div class="graph-filter-grid">
+            ${availableRelationTypes.map((type) => `<button class="graph-filter-chip ${state.mapRelationFilters[type] ? "active" : ""}" type="button" data-map-relation-filter="${escapeHtml(type)}">${escapeHtml(relationLabel(type))}</button>`).join("")}
+          </div>
+        </div>
+        <div class="graph-control-row">
+          <div class="graph-control-label">Entities</div>
+          <div class="graph-filter-grid">
+            ${availableKinds.map((kind) => `<button class="graph-filter-chip ${state.mapEntityFilters[kind] ? "active" : ""}" type="button" data-map-entity-filter="${escapeHtml(kind)}">${escapeHtml(mapKindLabel(kind))}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+    </details>
+    <details class="graph-section" ${state.mapControlsVisualOpen ? "open" : ""} data-map-section="visual">
+      <summary data-map-section-toggle="visual">Visual</summary>
+      <div class="graph-section-body">
+        <details class="graph-section nested" ${state.mapControlsRelationVisualOpen ? "open" : ""} data-map-section="relation-visual">
+          <summary data-map-section-toggle="relation-visual">Relations</summary>
+          <div class="graph-section-body">
+            ${renderRelationVisualControls(availableRelationTypes)}
+          </div>
+        </details>
+        <details class="graph-section nested" ${state.mapControlsEntityVisualOpen ? "open" : ""} data-map-section="entity-visual">
+          <summary data-map-section-toggle="entity-visual">Entities</summary>
+          <div class="graph-section-body">
+            ${renderNodeVisualControls(availableKinds)}
+          </div>
+        </details>
+      </div>
+    </details>
     <details ${state.mapControlsAdvanced ? "open" : ""} data-map-advanced>
       <summary data-map-advanced-toggle>Advanced field physics</summary>
       <div class="graph-advanced-grid">
@@ -3789,6 +4012,7 @@ function renderMapToolbar(model, cycle) {
         `).join("")}
       </div>
     </details>
+    </div>
   `;
 }
 
@@ -3876,6 +4100,7 @@ function renderMapView() {
           data-from-key="${escapeHtml(link.from)}"
           data-to-key="${escapeHtml(link.to)}"
           data-relation-type="${escapeHtml(link.type)}"
+          style="${relationVisualStyle(link.type)}"
           ${hidden ? "hidden" : ""}
           d="${graphLinkPath(from, to, link.type)}"
         ></path>
@@ -3885,6 +4110,7 @@ function renderMapView() {
           data-from-key="${escapeHtml(link.from)}"
           data-to-key="${escapeHtml(link.to)}"
           data-relation-type="${escapeHtml(link.type)}"
+          style="fill:${escapeHtml((state.mapRelationVisuals[relationTone(link.type)] || defaultRelationVisual(link.type)).color)}"
           ${hidden ? "hidden" : ""}
           x="${midX}"
           y="${midY}"
@@ -4552,9 +4778,30 @@ function bindEvents() {
   });
 
   document.addEventListener("click", async (event) => {
+    if (Date.now() < state.dragSuppressUntil && event.target.closest(".graph-node")) {
+      return;
+    }
     const viewButton = event.target.closest("[data-view]");
     if (viewButton && !viewButton.closest("#main-nav")) {
       activateView(viewButton.dataset.view);
+      return;
+    }
+    const controlsToggle = event.target.closest("[data-map-controls-toggle]");
+    if (controlsToggle) {
+      state.mapControlsOpen = !state.mapControlsOpen;
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const sectionToggle = event.target.closest("[data-map-section-toggle]");
+    if (sectionToggle) {
+      const key = sectionToggle.dataset.mapSectionToggle;
+      if (key === "filters") state.mapControlsFilterOpen = !state.mapControlsFilterOpen;
+      if (key === "visual") state.mapControlsVisualOpen = !state.mapControlsVisualOpen;
+      if (key === "relation-visual") state.mapControlsRelationVisualOpen = !state.mapControlsRelationVisualOpen;
+      if (key === "entity-visual") state.mapControlsEntityVisualOpen = !state.mapControlsEntityVisualOpen;
+      renderMapView();
+      revealRails();
       return;
     }
     const cycleButton = event.target.closest("[data-select-cycle]");
@@ -4580,6 +4827,7 @@ function bindEvents() {
     if (graphButton) {
       const [type, id] = graphButton.dataset.select.split(":");
       state.mapFieldRegime = "focused";
+      state.mapDepth = "1";
       state.focusedNodeId = nodeKey(type, id);
       if (type === "cycle" || type === "activity" || type === "document") {
         state.selected = { type: type === "cycle" ? "cycle" : type, id };
@@ -4737,6 +4985,21 @@ function bindEvents() {
 
   document.addEventListener("mousemove", (event) => {
     if (!state.dragState) return;
+    if (state.dragState.kind === "node") {
+      const simulation = state.mapSimulation;
+      const node = simulation?.nodes.get(state.dragState.nodeKey);
+      if (!node) return;
+      const point = graphPointFromPointer(event.clientX, event.clientY);
+      node.x = point.x;
+      node.y = point.y;
+      node.targetX = point.x;
+      node.targetY = point.y;
+      state.dragState.moved = true;
+      syncMapPositionsFromSimulation(simulation);
+      applySimulationFrame(simulation);
+      revealRails();
+      return;
+    }
     state.mapOffset = {
       x: state.dragState.originOffset.x + (event.clientX - state.dragState.startX),
       y: state.dragState.originOffset.y + (event.clientY - state.dragState.startY)
@@ -4746,6 +5009,58 @@ function bindEvents() {
   });
 
   document.addEventListener("input", (event) => {
+    const nodeColor = event.target.closest("[data-map-node-color]");
+    if (nodeColor) {
+      const key = nodeColor.dataset.mapNodeColor;
+      state.mapNodeVisuals[key] = { ...defaultNodeVisual(key), ...(state.mapNodeVisuals[key] || {}), color: nodeColor.value };
+      applyMapVisualTuning();
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const nodeVisualSize = event.target.closest("[data-map-node-visual-size]");
+    if (nodeVisualSize) {
+      const key = nodeVisualSize.dataset.mapNodeVisualSize;
+      state.mapNodeVisuals[key] = { ...defaultNodeVisual(key), ...(state.mapNodeVisuals[key] || {}), size: Number(nodeVisualSize.value) / 100 };
+      applyMapVisualTuning();
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const nodeVisualForce = event.target.closest("[data-map-node-visual-force]");
+    if (nodeVisualForce) {
+      const key = nodeVisualForce.dataset.mapNodeVisualForce;
+      state.mapNodeVisuals[key] = { ...defaultNodeVisual(key), ...(state.mapNodeVisuals[key] || {}), force: Number(nodeVisualForce.value) / 100 };
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const relationColor = event.target.closest("[data-map-relation-color]");
+    if (relationColor) {
+      const key = relationColor.dataset.mapRelationColor;
+      state.mapRelationVisuals[key] = { ...defaultRelationVisual(key), ...(state.mapRelationVisuals[key] || {}), color: relationColor.value };
+      applyMapVisualTuning();
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const relationThickness = event.target.closest("[data-map-relation-thickness]");
+    if (relationThickness) {
+      const key = relationThickness.dataset.mapRelationThickness;
+      state.mapRelationVisuals[key] = { ...defaultRelationVisual(key), ...(state.mapRelationVisuals[key] || {}), thickness: Number(relationThickness.value) / 100 };
+      applyMapVisualTuning();
+      renderMapView();
+      revealRails();
+      return;
+    }
+    const relationForce = event.target.closest("[data-map-relation-force]");
+    if (relationForce) {
+      const key = relationForce.dataset.mapRelationForce;
+      state.mapRelationVisuals[key] = { ...defaultRelationVisual(key), ...(state.mapRelationVisuals[key] || {}), force: Number(relationForce.value) / 100 };
+      renderMapView();
+      revealRails();
+      return;
+    }
     const nodeSize = event.target.closest("[data-map-node-size]");
     if (nodeSize) {
       state.mapNodeSize = Number(nodeSize.value) / 100;
@@ -4771,6 +5086,9 @@ function bindEvents() {
   });
 
   document.addEventListener("mouseup", () => {
+    if (state.dragState?.kind === "node" && state.dragState.moved) {
+      state.dragSuppressUntil = Date.now() + 200;
+    }
     state.dragState = null;
   });
 
@@ -4781,10 +5099,21 @@ function bindEvents() {
   }, { passive: false });
 
   document.getElementById("graph-stage")?.addEventListener("mousedown", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (node) {
+      state.dragState = {
+        kind: "node",
+        nodeKey: node.dataset.nodeKey,
+        moved: false
+      };
+      revealRails();
+      return;
+    }
     if (event.target.closest(".graph-node, .graph-toolbar, .map-stage-overlay, .hover-probe")) {
       return;
     }
     state.dragState = {
+      kind: "pan",
       startX: event.clientX,
       startY: event.clientY,
       originOffset: { ...state.mapOffset }
