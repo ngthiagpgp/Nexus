@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 
 def render_cockpit_page() -> str:
@@ -464,46 +464,48 @@ button, input, select { font: inherit; }
   min-height: 720px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 42%, rgba(151, 134, 255, 0.12), transparent 20%),
-    radial-gradient(circle at top, rgba(141, 182, 255, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(11, 18, 26, 0.96), rgba(9, 15, 23, 0.96));
-  border-color: rgba(141, 182, 255, 0.16);
-  border-radius: 26px;
+    radial-gradient(circle at 50% 44%, rgba(151, 134, 255, 0.08), transparent 18%),
+    radial-gradient(circle at top, rgba(141, 182, 255, 0.06), transparent 32%),
+    linear-gradient(180deg, rgba(10, 16, 23, 0.98), rgba(7, 12, 18, 1));
+  border-color: rgba(141, 182, 255, 0.12);
+  border-radius: 30px;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.02),
-    0 20px 54px rgba(0, 0, 0, 0.28);
+    0 24px 60px rgba(0, 0, 0, 0.3);
 }
 
 .graph-toolbar {
   position: absolute;
-  left: 18px;
-  bottom: 18px;
+  left: 16px;
+  bottom: 16px;
   z-index: 3;
-  max-width: min(360px, calc(100% - 36px));
+  max-width: min(320px, calc(100% - 32px));
 }
 
 .graph-toolbar-collapsed,
 .graph-toolbar-panel {
-  border: 1px solid rgba(141, 182, 255, 0.12);
+  border: 1px solid rgba(141, 182, 255, 0.08);
   border-radius: 16px;
-  background: rgba(8, 13, 20, 0.76);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0.64), rgba(7, 12, 18, 0.42));
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
 }
 
 .graph-toolbar-collapsed {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 11px;
   color: var(--text-soft);
   cursor: pointer;
 }
 
 .graph-toolbar-panel {
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 11px;
+  max-height: min(68vh, 560px);
+  overflow: auto;
 }
 
 .graph-tool-button {
@@ -538,7 +540,7 @@ button, input, select { font: inherit; }
   position: absolute;
   inset: 0;
   transform-origin: 50% 50%;
-  transition: transform 140ms ease;
+  transition: transform 240ms cubic-bezier(0.22, 0.78, 0.18, 1);
   will-change: transform;
 }
 
@@ -552,19 +554,19 @@ button, input, select { font: inherit; }
 
 .graph-stage::before {
   background:
-    radial-gradient(circle at 50% 48%, rgba(151, 134, 255, 0.18), transparent 18%),
-    radial-gradient(circle at 20% 18%, rgba(143, 176, 159, 0.08), transparent 14%),
-    radial-gradient(circle at 80% 24%, rgba(240, 195, 122, 0.06), transparent 16%);
-  opacity: 0.92;
+    radial-gradient(circle at 50% 48%, rgba(151, 134, 255, 0.12), transparent 16%),
+    radial-gradient(circle at 20% 18%, rgba(143, 176, 159, 0.05), transparent 13%),
+    radial-gradient(circle at 80% 24%, rgba(240, 195, 122, 0.04), transparent 15%);
+  opacity: 0.88;
 }
 
 .graph-stage::after {
   background-image:
-    linear-gradient(rgba(141, 182, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(141, 182, 255, 0.04) 1px, transparent 1px);
-  background-size: 84px 84px;
+    linear-gradient(rgba(141, 182, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(141, 182, 255, 0.028) 1px, transparent 1px);
+  background-size: 88px 88px;
   mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.72), transparent 86%);
-  opacity: 0.22;
+  opacity: 0.14;
 }
 
 .graph-svg {
@@ -577,44 +579,45 @@ button, input, select { font: inherit; }
 
 .map-stage-overlay {
   position: absolute;
-  left: 20px;
-  top: 18px;
+  left: 18px;
+  top: 16px;
   z-index: 2;
-  max-width: 360px;
-  padding: 14px 16px;
-  border: 1px solid rgba(141, 182, 255, 0.16);
+  max-width: 300px;
+  padding: 11px 13px;
+  border: 1px solid rgba(141, 182, 255, 0.08);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(11, 18, 26, 0.74), rgba(8, 13, 20, 0.58));
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(180deg, rgba(10, 16, 23, 0.46), rgba(7, 12, 18, 0.22));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
   backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 
 .map-stage-kicker {
   color: var(--text-faint);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
 
 .map-stage-title {
-  margin-top: 8px;
-  font-size: 1.24rem;
+  margin-top: 6px;
+  font-size: 1.12rem;
   font-weight: 600;
   letter-spacing: -0.03em;
 }
 
 .map-stage-copy {
-  margin-top: 8px;
-  color: var(--text-soft);
-  line-height: 1.52;
-  font-size: 0.93rem;
+  margin-top: 7px;
+  color: var(--text-muted);
+  line-height: 1.46;
+  font-size: 0.88rem;
 }
 
 .map-stage-metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 9px;
 }
 
 .hover-probe {
@@ -1290,27 +1293,27 @@ button, input, select { font: inherit; }
 }
 
 .graph-stage::after {
-  opacity: 0.12;
+  opacity: 0.08;
 }
 
 .map-stage-overlay {
-  max-width: 340px;
-  padding: 13px 15px;
-  background: linear-gradient(180deg, rgba(9, 15, 22, 0.42), rgba(7, 12, 18, 0.18));
-  border-color: rgba(141, 182, 255, 0.08);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+  max-width: 280px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(9, 15, 22, 0.28), rgba(7, 12, 18, 0.08));
+  border-color: rgba(141, 182, 255, 0.06);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
 }
 
 .graph-toolbar {
-  left: 18px;
-  bottom: 18px;
+  left: 14px;
+  bottom: 14px;
   display: grid;
-  gap: 10px;
-  min-width: 292px;
-  padding: 12px;
-  background: rgba(7, 12, 18, 0.42);
-  border-color: rgba(141, 182, 255, 0.08);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  gap: 8px;
+  min-width: 268px;
+  padding: 10px;
+  background: rgba(7, 12, 18, 0.24);
+  border-color: rgba(141, 182, 255, 0.05);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
 }
 
 .graph-toolbar-header {
@@ -1329,17 +1332,17 @@ button, input, select { font: inherit; }
 
 .graph-toolbar-copy {
   color: var(--text-muted);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
 }
 
 .graph-control-stack {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .graph-control-row {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .graph-control-label {
@@ -1353,7 +1356,7 @@ button, input, select { font: inherit; }
 .graph-filter-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 6px;
 }
 
 .graph-filter-grid {
@@ -1363,11 +1366,11 @@ button, input, select { font: inherit; }
 .graph-tool-button,
 .graph-chip,
 .graph-filter-chip {
-  min-height: 32px;
-  padding: 0 11px;
+  min-height: 30px;
+  padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid rgba(141, 182, 255, 0.08);
-  background: rgba(10, 16, 23, 0.42);
+  border: 1px solid rgba(141, 182, 255, 0.06);
+  background: rgba(10, 16, 23, 0.28);
   color: var(--text-muted);
   cursor: pointer;
   transition: 120ms ease;
@@ -1383,9 +1386,9 @@ button, input, select { font: inherit; }
 .graph-tool-button.active,
 .graph-chip.active,
 .graph-filter-chip.active {
-  background: rgba(141, 182, 255, 0.12);
+  background: rgba(141, 182, 255, 0.1);
   color: var(--accent-strong);
-  border-color: rgba(141, 182, 255, 0.28);
+  border-color: rgba(141, 182, 255, 0.18);
 }
 
 .graph-tool-button {
@@ -1455,10 +1458,10 @@ button, input, select { font: inherit; }
 }
 
 .graph-range.compact {
-  padding: 10px;
-  border: 1px solid rgba(141, 182, 255, 0.08);
+  padding: 9px;
+  border: 1px solid rgba(141, 182, 255, 0.06);
   border-radius: 14px;
-  background: rgba(10, 16, 24, 0.44);
+  background: rgba(10, 16, 24, 0.28);
 }
 
 .graph-range-head {
@@ -1507,87 +1510,91 @@ button, input, select { font: inherit; }
 }
 
 .graph-link {
-  stroke-width: 0.92;
-  opacity: 0.2;
+  stroke-width: 0.68;
+  opacity: 0.12;
   filter: none;
 }
 
 .graph-link.active {
-  stroke-width: 1.54;
-  opacity: 1;
+  stroke-width: 1.12;
+  opacity: 0.72;
 }
 
 .graph-link.blocks {
-  stroke: rgba(255, 154, 147, 0.86);
-  stroke-width: 1.2;
+  stroke: rgba(255, 154, 147, 0.46);
+  stroke-width: 0.9;
 }
 
 .graph-link.supports {
-  stroke: rgba(117, 176, 255, 0.54);
+  stroke: rgba(117, 176, 255, 0.26);
   stroke-linecap: round;
 }
 
 .graph-link.requires {
-  stroke: rgba(191, 205, 231, 0.42);
-  stroke-dasharray: 9 8;
+  stroke: rgba(191, 205, 231, 0.24);
+  stroke-dasharray: 8 8;
 }
 
 .graph-link.impacts {
-  stroke: rgba(240, 195, 122, 0.58);
-  stroke-dasharray: 12 10;
-  animation: lowPulse 4.8s ease-in-out infinite;
+  stroke: rgba(240, 195, 122, 0.28);
+  stroke-dasharray: 10 10;
+  animation: none;
 }
 
 .graph-link.references {
-  stroke: rgba(155, 170, 189, 0.28);
+  stroke: rgba(155, 170, 189, 0.16);
   stroke-dasharray: 2 8;
 }
 
 .graph-link.owns,
 .graph-link.ownership {
-  stroke: rgba(166, 179, 196, 0.44);
-  stroke-width: 1.34;
+  stroke: rgba(166, 179, 196, 0.22);
+  stroke-width: 0.84;
 }
 
-.graph-link.muted { opacity: 0.06; }
+.graph-link.muted { opacity: 0.035; }
 
-.graph-link.contextual { opacity: 0.2; }
-.graph-link.secondary { opacity: 0.45; }
-.graph-link.primary-tone { opacity: 1; }
+.graph-link.contextual { opacity: 0.08; }
+.graph-link.secondary { opacity: 0.16; }
+.graph-link.primary-tone { opacity: 0.24; }
 
 .graph-link-label {
   opacity: 0;
-  font-size: 1.8px;
+  font-size: 1.55px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 .graph-link-label.visible,
 .graph-link-label.active {
-  opacity: 0.84;
+  opacity: 0.48;
 }
 
 .graph-node {
-  min-width: 0;
-  max-width: 160px;
-  padding: 0;
+  min-width: 88px;
+  max-width: 150px;
+  padding: 18px;
   background: transparent;
   border: 0;
   box-shadow: none;
   backdrop-filter: none;
+  overflow: visible;
 }
 
 .graph-node::before {
   content: "";
   position: absolute;
-  inset: 8px 12px;
+  inset: 10px;
   border-radius: 999px;
-  background: rgba(17, 28, 40, 0.12);
-  box-shadow: 0 0 0 18px rgba(141, 182, 255, 0.012);
+  background: rgba(17, 28, 40, 0);
+  box-shadow: 0 0 0 14px rgba(141, 182, 255, 0.008);
 }
 
 .graph-node.primary::before {
-  inset: -6px;
-  background: radial-gradient(circle, rgba(169, 143, 255, 0.2), rgba(32, 26, 53, 0.1) 58%, transparent 76%);
-  box-shadow: 0 0 0 34px rgba(151, 134, 255, 0.08), 0 0 48px rgba(151, 134, 255, 0.16);
+  inset: 2px;
+  background: radial-gradient(circle, rgba(169, 143, 255, 0.12), rgba(32, 26, 53, 0.05) 58%, transparent 76%);
+  box-shadow: 0 0 0 24px rgba(151, 134, 255, 0.05), 0 0 32px rgba(151, 134, 255, 0.1);
 }
 
 .graph-node:hover,
@@ -1596,31 +1603,53 @@ button, input, select { font: inherit; }
 }
 
 .graph-node.focused::before {
-  box-shadow: 0 0 0 26px rgba(141, 182, 255, 0.05), 0 0 28px rgba(141, 182, 255, 0.18);
+  box-shadow: 0 0 0 18px rgba(141, 182, 255, 0.04), 0 0 20px rgba(141, 182, 255, 0.12);
 }
 
 .graph-node-shell {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 4px;
+  gap: 5px;
   justify-items: center;
   text-align: center;
+  min-width: 18px;
+  padding: 2px 0;
+  transition: transform 140ms ease, opacity 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.graph-node.primary .graph-node-shell,
+.graph-node.hovered .graph-node-shell,
+.graph-node.focused .graph-node-shell,
+.graph-node.dragging .graph-node-shell,
+.graph-node.show-label .graph-node-shell {
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(12, 19, 28, 0.78), rgba(8, 13, 19, 0.7));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .graph-node-glyph {
-  width: 11px;
-  height: 11px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(141, 182, 255, 0.72);
-  box-shadow: 0 0 0 6px rgba(141, 182, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(141, 182, 255, 0.06);
 }
 
-.graph-node.cycle .graph-node-glyph { background: rgba(170, 143, 255, 0.92); }
-.graph-node.activity .graph-node-glyph { background: rgba(111, 177, 255, 0.82); }
-.graph-node.document .graph-node-glyph { background: rgba(240, 195, 122, 0.82); }
-.graph-node.entity .graph-node-glyph { background: rgba(143, 176, 159, 0.78); }
-.graph-node.risk .graph-node-glyph { background: rgba(255, 154, 147, 0.88); }
+.graph-node.primary .graph-node-glyph,
+.graph-node.hovered .graph-node-glyph,
+.graph-node.focused .graph-node-glyph,
+.graph-node.dragging .graph-node-glyph {
+  width: 10px;
+  height: 10px;
+}
+
+.graph-node.cycle .graph-node-glyph { background: rgba(170, 143, 255, 0.88); }
+.graph-node.activity .graph-node-glyph { background: rgba(111, 177, 255, 0.72); }
+.graph-node.document .graph-node-glyph { background: rgba(240, 195, 122, 0.74); }
+.graph-node.entity .graph-node-glyph { background: rgba(143, 176, 159, 0.68); }
+.graph-node.risk .graph-node-glyph { background: rgba(255, 154, 147, 0.82); }
 
 .graph-node-title,
 .graph-node-state {
@@ -1629,19 +1658,50 @@ button, input, select { font: inherit; }
 }
 
 .graph-node-title {
-  font-size: 0.84rem;
-  line-height: 1.24;
+  max-width: 18ch;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 120ms ease, transform 120ms ease;
 }
 
 .graph-node.primary .graph-node-title {
-  font-size: 1.04rem;
+  font-size: 0.96rem;
 }
 
 .graph-node-state {
-  margin-top: 2px;
-  padding: 3px 8px;
-  background: rgba(15, 24, 35, 0.24);
-  color: rgba(237, 243, 248, 0.66);
+  margin-top: 1px;
+  padding: 2px 7px;
+  background: rgba(15, 24, 35, 0.16);
+  color: rgba(237, 243, 248, 0.6);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.graph-node.show-label .graph-node-title,
+.graph-node.primary .graph-node-title {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.graph-node.show-state .graph-node-state,
+.graph-node.dragging .graph-node-state {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.graph-node.muted {
+  opacity: 0.22;
+}
+
+.graph-node.dragging {
+  z-index: 6;
+}
+
+.graph-node.dragging .graph-node-shell {
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .flow-grid {
@@ -1950,14 +2010,14 @@ def _body() -> str:
           </section>
           <aside class="map-aside">
             <article class="surface inspect-card">
-              <h3>Read the scene</h3>
+              <h3>Field reading</h3>
               <p class="quiet-copy" id="map-guide-copy">
                 Select a node to move directly into operational inspection.
               </p>
               <div class="badge-row" id="map-legend"></div>
             </article>
             <article class="surface inspect-card">
-              <h3>Cycle narrative</h3>
+              <h3>Focused world</h3>
               <div id="map-cycle-narrative" class="evidence-block">
                 Cycle context will appear here once the workspace is ready.
               </div>
@@ -2131,11 +2191,11 @@ function defaultMapRelationFilters() {
 
 function defaultMapPhysics() {
   return {
-    center: 0.58,
-    repel: 0.52,
-    link: 0.56,
-    distance: 0.54,
-    focus: 0.66
+    center: 0.52,
+    repel: 0.62,
+    link: 0.48,
+    distance: 0.6,
+    focus: 0.74
   };
 }
 
@@ -2143,7 +2203,7 @@ const state = {
   view: "map",
   inspectTab: "context",
   mapMode: "signal",
-  mapLabelDensity: "balanced",
+  mapLabelDensity: "sparse",
   mapSpread: "balanced",
   mapFieldRegime: "global",
   mapDepth: "all",
@@ -2157,8 +2217,8 @@ const state = {
   mapControlsEntityVisualOpen: false,
   mapControlsAdvanced: false,
   mapPhysics: defaultMapPhysics(),
-  mapNodeSize: 1,
-  mapLinkThickness: 1,
+  mapNodeSize: 0.94,
+  mapLinkThickness: 0.82,
   mapFrozen: false,
   mapAnimate: false,
   mapNodeVisuals: {},
@@ -2177,6 +2237,8 @@ const state = {
   isolatedNodeId: null,
   mapScale: 1,
   mapOffset: { x: 0, y: 0 },
+  mapGlobalCamera: null,
+  mapNeedsReframe: true,
   mapPositions: {},
   dragState: null,
   dragSuppressUntil: 0,
@@ -2932,6 +2994,7 @@ function graphNodeMarkup(node) {
       data-node-key="${escapeHtml(node.key)}"
       data-node-kind="${escapeHtml(node.kind)}"
       data-node-summary="${escapeHtml(node.summary)}"
+      data-node-state="${escapeHtml(node.stateLabel)}"
       data-node-depth="${escapeHtml(String(node.depth ?? 99))}"
     >
       <div class="graph-node-shell">
@@ -3016,7 +3079,7 @@ function relationTypeColor(type) {
 function defaultNodeVisual(kind) {
   return {
     color: nodeTypeColor(kind),
-    size: 1,
+    size: 0.96,
     force: 1
   };
 }
@@ -3024,8 +3087,8 @@ function defaultNodeVisual(kind) {
 function defaultRelationVisual(type) {
   return {
     color: relationTypeColor(type),
-    thickness: 1,
-    force: 1
+    thickness: 0.76,
+    force: 0.94
   };
 }
 
@@ -3190,9 +3253,41 @@ function graphNodeMass(kind) {
 }
 
 function graphNodeScaleFor(node) {
-  const base = node?.primary ? 1.12 : node?.kind === "risk" ? 0.94 : 1;
+  const base =
+    node?.primary
+      ? 1.04
+      : node?.kind === "cycle"
+      ? 0.92
+      : node?.kind === "risk"
+      ? 0.88
+      : 0.84;
   const local = node?.kind ? state.mapNodeVisuals[node.kind]?.size ?? 1 : 1;
-  return clamp(state.mapNodeSize * local * base, 0.72, 1.72);
+  return clamp(state.mapNodeSize * local * base, 0.58, 1.36);
+}
+
+function nodeIsEngaged(nodeKey, activeKey) {
+  return Boolean(
+    nodeKey &&
+      (nodeKey === activeKey ||
+        nodeKey === state.hoveredNodeId ||
+        (state.dragState?.kind === "node" && state.dragState.nodeKey === nodeKey))
+  );
+}
+
+function graphNodeCollisionRadius(node, activeKey) {
+  const base =
+    node?.primary
+      ? 10.8
+      : node?.kind === "cycle"
+      ? 7.8
+      : node?.kind === "document"
+      ? 7
+      : node?.kind === "risk"
+      ? 7.6
+      : 6.2;
+  const engaged = nodeIsEngaged(node?.key, activeKey);
+  const labelBonus = engaged || labelVisibilityForNode(node, activeKey) ? 3.8 : 0;
+  return (base + labelBonus) * graphNodeScaleFor(node);
 }
 
 function baseLinkDistance(type) {
@@ -3381,6 +3476,7 @@ function tickMapSimulation(timestamp) {
   const gravity = 0.004 + state.mapPhysics.center * 0.02;
   const focusGravity = 0.005 + state.mapPhysics.focus * 0.032;
   const preferredDistance = 0.7 + state.mapPhysics.distance * 0.85;
+  const activeKey = activeMapNodeKey();
 
   for (let left = 0; left < nodes.length; left += 1) {
     for (let right = left + 1; right < nodes.length; right += 1) {
@@ -3388,14 +3484,24 @@ function tickMapSimulation(timestamp) {
       const b = nodes[right];
       const dx = b.x - a.x;
       const dy = b.y - a.y;
-      const distance = Math.max(1.2, Math.hypot(dx, dy));
+      const distance = Math.max(0.9, Math.hypot(dx, dy));
+      const nx = dx / distance;
+      const ny = dy / distance;
       const force = repulsion * ((a.mass + b.mass) / distance);
-      const fx = (dx / distance) * force;
-      const fy = (dy / distance) * force;
+      const fx = nx * force;
+      const fy = ny * force;
       a.vx -= fx / a.mass;
       a.vy -= fy / a.mass;
       b.vx += fx / b.mass;
       b.vy += fy / b.mass;
+      const minDistance = graphNodeCollisionRadius(a, activeKey) + graphNodeCollisionRadius(b, activeKey);
+      if (distance < minDistance) {
+        const push = (minDistance - distance) * 0.012;
+        a.vx -= nx * push / a.mass;
+        a.vy -= ny * push / a.mass;
+        b.vx += nx * push / b.mass;
+        b.vy += ny * push / b.mass;
+      }
     }
   }
 
@@ -3482,7 +3588,8 @@ function tickMapSimulation(timestamp) {
       node.vy += Math.sin(pulse * 0.82) * 0.0021;
     }
 
-    const damping = state.mapAnimate ? 0.88 : 0.81;
+    const releaseBias = node.releasedAt && timestamp - node.releasedAt < 520 ? 0.9 : 1;
+    const damping = (state.mapAnimate ? 0.88 : 0.81) * releaseBias;
     node.vx *= damping;
     node.vy *= damping;
     node.x = clamp(node.x + node.vx * frame, 6, 94);
@@ -3724,6 +3831,65 @@ function fadedMapNodeKeys(model) {
   return faded;
 }
 
+function captureGlobalMapCamera() {
+  const cycle = pickFocusedCycle();
+  state.mapGlobalCamera = {
+    cycleId: cycle?.id || null,
+    scale: state.mapScale,
+    offset: { ...state.mapOffset }
+  };
+}
+
+function applyMapCameraFrame(model) {
+  const stage = document.getElementById("graph-stage");
+  if (!stage) {
+    applyMapTransform();
+    state.mapNeedsReframe = false;
+    return;
+  }
+  if (state.mapFieldRegime !== "focused") {
+    const memory = state.mapGlobalCamera;
+    const cycle = pickFocusedCycle();
+    if (memory && memory.cycleId === (cycle?.id || null)) {
+      state.mapScale = memory.scale;
+      state.mapOffset = { ...memory.offset };
+    } else {
+      state.mapScale = 1;
+      state.mapOffset = { x: 0, y: 0 };
+    }
+    applyMapTransform();
+    state.mapNeedsReframe = false;
+    return;
+  }
+  const anchor = model?.nodes?.find((node) => node.key === model.anchorKey) || model?.nodes?.[0];
+  if (!anchor || !model?.nodes?.length) {
+    applyMapTransform();
+    state.mapNeedsReframe = false;
+    return;
+  }
+  const bounds = model.nodes.reduce(
+    (acc, node) => ({
+      minX: Math.min(acc.minX, node.x),
+      maxX: Math.max(acc.maxX, node.x),
+      minY: Math.min(acc.minY, node.y),
+      maxY: Math.max(acc.maxY, node.y)
+    }),
+    { minX: anchor.x, maxX: anchor.x, minY: anchor.y, maxY: anchor.y }
+  );
+  const width = Math.max(10, bounds.maxX - bounds.minX);
+  const height = Math.max(10, bounds.maxY - bounds.minY);
+  const desiredScale = clamp(Math.min(1.26, Math.max(1.06, Math.min(74 / width, 72 / height))), 1.04, 1.28);
+  const centerX = anchor.x * 0.68 + ((bounds.minX + bounds.maxX) / 2) * 0.32;
+  const centerY = anchor.y * 0.72 + ((bounds.minY + bounds.maxY) / 2) * 0.28;
+  state.mapScale = Number(desiredScale.toFixed(2));
+  state.mapOffset = {
+    x: Number((((50 - centerX) / 100) * stage.clientWidth * state.mapScale + stage.clientWidth * 0.03).toFixed(1)),
+    y: Number((((50 - centerY) / 100) * stage.clientHeight * state.mapScale + stage.clientHeight * 0.014).toFixed(1))
+  };
+  applyMapTransform();
+  state.mapNeedsReframe = false;
+}
+
 function renderHoverProbe() {
   const probe = document.getElementById("hover-probe");
   const stage = document.getElementById("graph-stage");
@@ -3776,12 +3942,13 @@ function zoomMap(delta) {
 function resetMapView() {
   state.mapScale = 1;
   state.mapOffset = { x: 0, y: 0 };
+  state.mapGlobalCamera = null;
   state.isolatedNodeId = null;
   state.hoveredNodeId = null;
   state.mapFieldRegime = "global";
   state.mapDepth = "all";
   state.mapSpread = "balanced";
-  state.mapLabelDensity = "balanced";
+  state.mapLabelDensity = "sparse";
   state.mapEntityFilters = defaultMapEntityFilters();
   state.mapRelationFilters = defaultMapRelationFilters();
   state.mapControlsOpen = false;
@@ -3797,6 +3964,7 @@ function resetMapView() {
   state.mapNodeVisuals = {};
   state.mapRelationVisuals = {};
   state.mapShowIsolated = false;
+  state.mapNeedsReframe = true;
   renderMapView();
 }
 
@@ -3808,27 +3976,40 @@ function toggleMapIsolation() {
 }
 
 function labelVisibilityForNode(node, activeKey) {
+  if (!node) return false;
+  const engaged = nodeIsEngaged(node.key, activeKey);
   if (state.mapLabelDensity === "full") return true;
+  if (engaged || node.primary || node.selected) return true;
   if (state.mapLabelDensity === "balanced") {
-    return node.primary || node.key === activeKey || (node.depth ?? 99) <= 1;
+    if (state.mapFieldRegime === "focused") return (node.depth ?? 99) <= 1;
+    return node.kind === "cycle";
   }
-  return node.primary || node.key === activeKey;
+  return false;
+}
+
+function stateVisibilityForNode(node, activeKey) {
+  if (!node) return false;
+  const engaged = nodeIsEngaged(node.key, activeKey);
+  if (engaged || node.selected) return true;
+  return Boolean(node.primary && state.mapLabelDensity !== "sparse");
+}
+
+function relationLabelVisibility(link, activeKey) {
+  if (!link || !modeAllowsRelation(link.type)) return false;
+  const active = Boolean(activeKey && (link.from === activeKey || link.to === activeKey));
+  if (active) return true;
+  return state.mapMode === "trace" && state.mapLabelDensity !== "sparse" && relationPriority(link.type) !== "contextual";
 }
 
 function renderMapLegend(model) {
   const totalNodes = model.nodes.length;
   const totalLinks = model.links.length;
-  const activeRelations = Object.entries(state.mapRelationFilters)
-    .filter(([, enabled]) => enabled)
-    .map(([type]) => titleCase(type))
-    .join(" • ");
   return `
     <div class="map-legend-grid">
       <div class="map-legend-row"><span>Regime</span><strong>${escapeHtml(state.mapFieldRegime === "focused" ? "Focused field" : "Global field")}</strong></div>
       <div class="map-legend-row"><span>Depth</span><strong>${escapeHtml(state.mapDepth === "all" ? "All visible topology" : `${state.mapDepth} hops`)}</strong></div>
       <div class="map-legend-row"><span>Field</span><strong>${totalNodes} nodes • ${totalLinks} relations</strong></div>
       <div class="map-legend-row"><span>Preset</span><strong>${escapeHtml(titleCase(state.mapMode))}</strong></div>
-      <div class="map-legend-row"><span>Relations</span><strong>${escapeHtml(activeRelations || "None")}</strong></div>
     </div>
   `;
 }
@@ -3891,7 +4072,7 @@ function renderMapToolbar(model, cycle) {
   if (!state.mapControlsOpen) {
     return `
       <button class="graph-toolbar-collapsed" type="button" data-map-controls-toggle>
-        <span>Field controls</span>
+        <span>Controls</span>
         <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
       </button>
     `;
@@ -3903,7 +4084,7 @@ function renderMapToolbar(model, cycle) {
     <div class="graph-toolbar-header">
       <div>
         <div class="graph-toolbar-title">Field controls</div>
-        <div class="graph-toolbar-copy">Govern the local world without leaving the map.</div>
+        <div class="graph-toolbar-copy">Tune the field without leaving it.</div>
       </div>
       <div class="badge-row graph-toolbar-actions">
         <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
@@ -4028,12 +4209,16 @@ function syncGraphAttention() {
     const hidden = key && !visibleKeys.has(key);
     const node = model.nodes.find((item) => item.key === key);
     element.hidden = hidden;
+    const dragging = Boolean(key && state.dragState?.kind === "node" && state.dragState.nodeKey === key);
+    const hovered = Boolean(key && state.hoveredNodeId === key);
+    const showLabel = labelVisibilityForNode(node || { primary: false }, activeKey);
+    const showState = stateVisibilityForNode(node || { primary: false }, activeKey);
     element.classList.toggle("focused", Boolean(key && activeKey && key === activeKey));
     element.classList.toggle("muted", Boolean(key && !hidden && (fadedKeys.has(key) || (activeKey && key !== activeKey && !modeHighlightsNode(node)))));
-    const stateLabel = element.querySelector(".graph-node-state");
-    if (stateLabel) {
-      stateLabel.hidden = !labelVisibilityForNode(node || { primary: false }, activeKey);
-    }
+    element.classList.toggle("hovered", hovered);
+    element.classList.toggle("dragging", dragging);
+    element.classList.toggle("show-label", showLabel);
+    element.classList.toggle("show-state", showState);
   });
   stage.querySelectorAll(".graph-link").forEach((element) => {
     const from = element.dataset.fromKey;
@@ -4044,7 +4229,21 @@ function syncGraphAttention() {
     const active = Boolean(activeKey && (from === activeKey || to === activeKey));
     const allowedByMode = modeAllowsRelation(type);
     const priority = relationPriority(type);
-    element.style.opacity = hidden ? "0" : !allowedByMode ? "0.08" : priority === "primary" ? "1" : priority === "secondary" ? "0.45" : "0.2";
+    const opacity =
+      hidden
+        ? "0"
+        : !allowedByMode
+        ? "0.02"
+        : active
+        ? "0.72"
+        : priority === "primary"
+        ? state.mapMode === "pressure"
+          ? "0.32"
+          : "0.24"
+        : priority === "secondary"
+        ? "0.16"
+        : "0.08";
+    element.style.opacity = opacity;
     element.classList.toggle("primary-tone", priority === "primary");
     element.classList.toggle("secondary", priority === "secondary");
     element.classList.toggle("contextual", priority === "contextual");
@@ -4058,7 +4257,8 @@ function syncGraphAttention() {
     const hidden = !visibleKeys.has(from) || !visibleKeys.has(to);
     element.hidden = hidden;
     const active = Boolean(activeKey && (from === activeKey || to === activeKey));
-    const showByDensity = state.mapLabelDensity === "full" || (state.mapLabelDensity === "balanced" ? active || state.isolatedNodeId : active);
+    const link = model.links.find((item) => item.id === element.dataset.linkId);
+    const showByDensity = relationLabelVisibility(link, activeKey);
     element.classList.toggle("active", active);
     element.classList.toggle("visible", showByDensity && modeAllowsRelation(type));
   });
@@ -4081,6 +4281,7 @@ function renderMapView() {
   const model = buildMapModel(cycle);
   state.mapModel = model;
   const summary = summarizeCycle(cycle);
+  const anchorNode = model.nodes.find((node) => node.key === model.anchorKey) || null;
   const positions = Object.fromEntries(model.nodes.map((node) => [node.key, node]));
   const activeKey = activeMapNodeKey();
   const visibleKeys = visibleMapNodeKeys(model);
@@ -4119,17 +4320,31 @@ function renderMapView() {
       `;
     })
     .join("");
+  const stageTitle = state.mapFieldRegime === "focused" && anchorNode ? anchorNode.title : cycleLabel(cycle);
+  const stageCopy = state.mapFieldRegime === "focused" && anchorNode ? anchorNode.summary : cycleNarrative(cycle);
+  const stageKicker =
+    state.mapFieldRegime === "focused" && anchorNode ? `${mapKindLabel(anchorNode.kind)} world` : "Global field";
+  const stageBadges =
+    state.mapFieldRegime === "focused" && anchorNode
+      ? `
+        <span class="badge ${statusBadgeClass(anchorNode.kind === "risk" ? "blocked" : cycle.status)}">${escapeHtml(anchorNode.stateLabel || statusLabel(cycle.status))}</span>
+        <span class="badge">${model.nodes.length} nodes</span>
+        <span class="badge">${model.links.length} relations</span>
+      `
+      : `
+        <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
+        <span class="badge ${statusBadgeClass(summary.pressure === "Critical" ? "blocked" : summary.pressure === "Elevated" ? "pending" : "completed")}">${escapeHtml(summary.pressure)}</span>
+        <span class="badge ${statusBadgeClass(summary.evidence === "Fragile" ? "warning" : summary.evidence === "Degraded" ? "error" : "completed")}">${escapeHtml(summary.evidence)}</span>
+      `;
   setHtml(
     "graph-stage",
     `
       <div class="map-stage-overlay">
-        <div class="map-stage-kicker">${escapeHtml(state.mapFieldRegime === "focused" ? "Focused field" : "Global field")}</div>
-        <div class="map-stage-title">${escapeHtml(cycleLabel(cycle))}</div>
-        <div class="map-stage-copy">${escapeHtml(cycleNarrative(cycle))}</div>
+        <div class="map-stage-kicker">${escapeHtml(stageKicker)}</div>
+        <div class="map-stage-title">${escapeHtml(stageTitle)}</div>
+        <div class="map-stage-copy">${escapeHtml(stageCopy)}</div>
         <div class="map-stage-metrics">
-          <span class="badge ${statusBadgeClass(cycle.status)}">${escapeHtml(statusLabel(cycle.status))}</span>
-          <span class="badge ${statusBadgeClass(summary.pressure === "Critical" ? "blocked" : summary.pressure === "Elevated" ? "pending" : "completed")}">${escapeHtml(summary.pressure)}</span>
-          <span class="badge ${statusBadgeClass(summary.evidence === "Fragile" ? "warning" : summary.evidence === "Degraded" ? "error" : "completed")}">${escapeHtml(summary.evidence)}</span>
+          ${stageBadges}
         </div>
       </div>
       <div class="graph-viewport">
@@ -4143,9 +4358,18 @@ function renderMapView() {
     `
   );
   setHtml("map-legend", renderMapLegend(model));
-  setText("map-guide-copy", "Start with the cycle, then narrow the field through depth, filters, and focus.");
-  setText("map-cycle-narrative", cycleNarrative(cycle));
-  applyMapTransform();
+  setText(
+    "map-guide-copy",
+    state.mapFieldRegime === "focused"
+      ? "You are inside a local world. Drag nodes apart when needed or step back to the global field."
+      : "Click a node to enter its local world. Drag directly in the field to resolve overlap."
+  );
+  setText("map-cycle-narrative", state.mapFieldRegime === "focused" && anchorNode ? anchorNode.summary : operatorGuidance(cycle));
+  if (state.mapNeedsReframe) {
+    applyMapCameraFrame(model);
+  } else {
+    applyMapTransform();
+  }
   syncGraphAttention();
   if (state.view === "map") {
     startMapSimulation(model);
@@ -4807,6 +5031,8 @@ function bindEvents() {
     const cycleButton = event.target.closest("[data-select-cycle]");
     if (cycleButton) {
       state.mapFieldRegime = "global";
+      state.mapGlobalCamera = null;
+      state.mapNeedsReframe = true;
       state.focusedNodeId = nodeKey("cycle", cycleButton.dataset.selectCycle);
       selectObject("cycle", cycleButton.dataset.selectCycle);
       return;
@@ -4826,8 +5052,12 @@ function bindEvents() {
     const graphButton = event.target.closest("[data-select]");
     if (graphButton) {
       const [type, id] = graphButton.dataset.select.split(":");
+      if (state.mapFieldRegime !== "focused") {
+        captureGlobalMapCamera();
+      }
       state.mapFieldRegime = "focused";
       state.mapDepth = "1";
+      state.mapNeedsReframe = true;
       state.focusedNodeId = nodeKey(type, id);
       if (type === "cycle" || type === "activity" || type === "document") {
         state.selected = { type: type === "cycle" ? "cycle" : type, id };
@@ -4877,7 +5107,11 @@ function bindEvents() {
     }
     const fieldButton = event.target.closest("[data-map-field]");
     if (fieldButton) {
+      if (fieldButton.dataset.mapField === "focused" && state.mapFieldRegime !== "focused") {
+        captureGlobalMapCamera();
+      }
       state.mapFieldRegime = fieldButton.dataset.mapField;
+      state.mapNeedsReframe = true;
       renderMapView();
       revealRails();
       return;
@@ -4885,6 +5119,7 @@ function bindEvents() {
     const depthButton = event.target.closest("[data-map-depth]");
     if (depthButton) {
       state.mapDepth = depthButton.dataset.mapDepth;
+      state.mapNeedsReframe = state.mapFieldRegime === "focused";
       renderMapView();
       revealRails();
       return;
@@ -4907,6 +5142,7 @@ function bindEvents() {
     if (entityFilterButton) {
       const key = entityFilterButton.dataset.mapEntityFilter;
       state.mapEntityFilters[key] = !state.mapEntityFilters[key];
+      state.mapNeedsReframe = state.mapFieldRegime === "focused";
       renderMapView();
       revealRails();
       return;
@@ -4915,6 +5151,7 @@ function bindEvents() {
     if (relationFilterButton) {
       const key = relationFilterButton.dataset.mapRelationFilter;
       state.mapRelationFilters[key] = !state.mapRelationFilters[key];
+      state.mapNeedsReframe = state.mapFieldRegime === "focused";
       renderMapView();
       revealRails();
       return;
@@ -5087,6 +5324,13 @@ function bindEvents() {
 
   document.addEventListener("mouseup", () => {
     if (state.dragState?.kind === "node" && state.dragState.moved) {
+      const simulation = state.mapSimulation;
+      const node = simulation?.nodes.get(state.dragState.nodeKey);
+      if (node) {
+        node.targetX = node.x;
+        node.targetY = node.y;
+        node.releasedAt = performance.now();
+      }
       state.dragSuppressUntil = Date.now() + 200;
     }
     state.dragState = null;
@@ -5099,8 +5343,10 @@ function bindEvents() {
   }, { passive: false });
 
   document.getElementById("graph-stage")?.addEventListener("mousedown", (event) => {
+    if (event.button !== 0) return;
     const node = event.target.closest(".graph-node");
     if (node) {
+      event.preventDefault();
       state.dragState = {
         kind: "node",
         nodeKey: node.dataset.nodeKey,
@@ -5144,3 +5390,4 @@ async function boot() {
 
 boot();
 """
+
