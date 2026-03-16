@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
-from nexus.activities import create_activity, update_activity_status
+from nexus.modules.activities import create_activity, update_activity_status
 from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,
@@ -12,11 +12,11 @@ from nexus.core.workspace import (
     require_workspace,
     utc_now,
 )
-from nexus.cycles import create_cycle
+from nexus.modules.cycles import create_cycle
 from nexus.demo_seed import DemoSeedResult
-from nexus.documents import create_document, reconcile_document, update_document_status
-from nexus.entities import create_entity
-from nexus.relations import create_relation
+from nexus.modules.documents import create_document, reconcile_document, update_document_status
+from nexus.modules.entities import create_entity
+from nexus.modules.relations import create_relation
 
 RICH_DEMO_SEED_VERSION = "1"
 RICH_DEMO_SEED_MARKER = "demo_seed_rich_version"

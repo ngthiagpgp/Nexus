@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from nexus.activities import create_activity, update_activity_status
-from nexus.cycles import create_cycle
-from nexus.documents import create_document, reconcile_document, update_document_status
-from nexus.entities import create_entity
-from nexus.relations import create_relation
+from nexus.modules.activities import create_activity, update_activity_status
+from nexus.modules.cycles import create_cycle
+from nexus.modules.documents import create_document, reconcile_document, update_document_status
+from nexus.modules.entities import create_entity
+from nexus.modules.relations import create_relation
 from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,

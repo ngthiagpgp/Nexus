@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from nexus.entities import validate_required_text
+from nexus.modules.entities import validate_required_text
 from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,

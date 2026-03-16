@@ -5,7 +5,7 @@ from typing import Callable, TypeVar
 
 import typer
 
-from nexus.activities import create_activity, list_activities, update_activity_status
+from nexus.modules.activities import create_activity, list_activities, update_activity_status
 from nexus.audit import list_audit_log
 from nexus.core.read_models import inspect_workspace_read_model
 from nexus.core.workspace import (
@@ -13,10 +13,10 @@ from nexus.core.workspace import (
     WorkspaceBootstrapError,
     initialize_workspace,
 )
-from nexus.cycles import create_cycle, list_cycles
+from nexus.modules.cycles import create_cycle, list_cycles
 from nexus.demo_seed import seed_demo_workspace
 from nexus.demo_seed_rich import seed_rich_demo_workspace
-from nexus.documents import (
+from nexus.modules.documents import (
     create_document,
     inspect_document,
     list_documents,
@@ -25,8 +25,8 @@ from nexus.documents import (
     verify_document,
     verify_documents,
 )
-from nexus.entities import create_entity, list_entities, validate_required_text
-from nexus.relations import create_relation, list_relations, relation_display_map
+from nexus.modules.entities import create_entity, list_entities, validate_required_text
+from nexus.modules.relations import create_relation, list_relations, relation_display_map
 
 app = typer.Typer(
     add_completion=False,

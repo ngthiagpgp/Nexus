@@ -8,13 +8,13 @@ from typing import Any
 from fastapi import Body, FastAPI, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from nexus.activities import ActivityRecord, get_activity, list_activities, update_activity_status
+from nexus.modules.activities import ActivityRecord, get_activity, list_activities, update_activity_status
 from nexus.audit import AuditLogRecord, list_audit_log
 from nexus.cockpit import render_cockpit_page
 from nexus.core.read_models import WorkspaceStatusReadModel, inspect_workspace_read_model
 from nexus.core.workspace import WorkspaceBootstrapError
-from nexus.cycles import CycleRecord, get_cycle, list_cycles
-from nexus.documents import (
+from nexus.modules.cycles import CycleRecord, get_cycle, list_cycles
+from nexus.modules.documents import (
     DocumentIntegrityResult,
     DocumentInspection,
     DocumentReconciliationResult,
@@ -25,8 +25,8 @@ from nexus.documents import (
     verify_document,
     verify_documents,
 )
-from nexus.entities import EntityRecord, get_entity, list_entities
-from nexus.relations import RelationRecord, list_relations
+from nexus.modules.entities import EntityRecord, get_entity, list_entities
+from nexus.modules.relations import RelationRecord, list_relations
 
 API_PREFIX = "/api"
 

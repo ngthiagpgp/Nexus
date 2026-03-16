@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from nexus.core.registry import get_type_capabilities
 from nexus.core.workspace import WorkspaceBootstrapError, fetch_system_state_value, utc_now
-from nexus.entities import validate_required_text
+from nexus.modules.entities import validate_required_text
 
 T = TypeVar("T")
 

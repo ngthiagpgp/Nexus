@@ -7,7 +7,7 @@ from datetime import date, datetime, time
 from pathlib import Path
 from uuid import uuid4
 
-from nexus.entities import normalize_optional_text, validate_required_text
+from nexus.modules.entities import normalize_optional_text, validate_required_text
 from nexus.core.workspace import (
     WorkspaceBootstrapError,
     connect_workspace_database,
